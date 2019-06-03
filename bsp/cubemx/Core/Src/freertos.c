@@ -54,6 +54,12 @@
 #include "main.h"
 #include "cmsis_os.h"
 
+#if defined ( __GNUC__ ) && !defined (__CC_ARM) /* GNU Compiler */
+  #ifndef __weak
+    #define __weak   __attribute__((weak))
+  #endif /* __weak */
+#endif
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -95,7 +101,7 @@ void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTaskName);
 void vApplicationMallocFailedHook(void);
 
 /* USER CODE BEGIN 4 */
-__attribute__((weak)) void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTaskName)
+__weak void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTaskName)
 {
   /* Run time stack overflow checking is performed if
    configCHECK_FOR_STACK_OVERFLOW is defined to 1 or 2. This hook function is
@@ -104,7 +110,7 @@ __attribute__((weak)) void vApplicationStackOverflowHook(xTaskHandle xTask, sign
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN 5 */
-__attribute__((weak)) void vApplicationMallocFailedHook(void)
+__weak void vApplicationMallocFailedHook(void)
 {
   /* vApplicationMallocFailedHook() will only be called if
    configUSE_MALLOC_FAILED_HOOK is set to 1 in FreeRTOSConfig.h. It is a hook
