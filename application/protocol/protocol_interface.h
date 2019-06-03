@@ -28,7 +28,7 @@
 #include "linux_list.h"
 #include "mem_mang.h"
 #include "macro_mutex.h"
-#include "MF_CRC.h"
+#include "mf_crc.h"
 
 #define PROTOCOL_CAN_PORT1 0
 #define PROTOCOL_CAN_PORT2 1
@@ -116,7 +116,7 @@ int32_t protocol_can_interface_register(char *interface_name,
                                         uint8_t can_port,
                                         uint32_t can_tx_id,
                                         uint32_t can_rx_id,
-                                        int (*can_send_fn)(uint32_t std_id, uint8_t *p_data, uint32_t len));
+                                        int32_t (*can_send_fn)(uint32_t std_id, uint8_t *p_data, uint32_t len));
 int32_t protocol_uart_interface_register(char *interface_name,
                                         uint16_t rcv_buf_size,
                                         uint8_t boardcast_output_enable,

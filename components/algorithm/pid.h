@@ -24,7 +24,7 @@
 #define PID_H_EXTERN extern
 #endif
 
-typedef struct pid *pid_t;
+typedef struct pid *PID_t;
 
 struct pid_param
 {

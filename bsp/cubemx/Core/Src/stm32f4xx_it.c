@@ -82,7 +82,7 @@ void HardFault_Handler(void)
 {
   /* USER CODE BEGIN HardFault_IRQn 0 */
   if (CoreDebug->DHCSR & 1) {  //check C_DEBUGEN == 1 -> Debugger Connected  
-    __breakpoint(0);  // halt program execution here         
+    __BKPT(0);  // halt program execution here         
   }  
   /* USER CODE END HardFault_IRQn 0 */
   while (1)

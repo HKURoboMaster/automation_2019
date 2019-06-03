@@ -35,7 +35,7 @@ int32_t pid_controller_register(struct controller *ctrl,
 
 int32_t pid_control(struct controller *ctrl, void *param, void *feedback, float input)
 {
-  pid_t pid_param = (pid_t)param;
+  PID_t pid_param = (PID_t)param;
   pid_feedback_t pid_feedback = (pid_feedback_t)feedback;
   
   pid_calculate(pid_param, pid_feedback->feedback, input);

@@ -35,7 +35,7 @@
 #include "linux_list.h"
 #include "mem_mang.h"
 #include "fifo.h"
-#include "MF_CRC.h"
+#include "mf_crc.h"
 
 #include "stm32f4xx_hal.h"
 #include "FreeRTOS.h"

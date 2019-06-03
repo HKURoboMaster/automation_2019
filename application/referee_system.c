@@ -225,7 +225,7 @@ static const uint8_t ref_crc8_tab[256] =
 };
 
 
-uint8_t ref_get_crc8(uint8_t *p_msg, unsigned int len, uint8_t crc8)
+uint8_t ref_get_crc8(uint8_t *p_msg, uint32_t len, uint8_t crc8)
 {
     uint8_t uc_index;
 
@@ -244,7 +244,7 @@ uint8_t ref_get_crc8(uint8_t *p_msg, unsigned int len, uint8_t crc8)
 **  Input:        Data to Verify,Stream length = Data + checksum
 **  Output:       True or False (CRC Verify Result)
 */
-unsigned int ref_verify_crc8(uint8_t *p_msg, unsigned int len)
+uint32_t ref_verify_crc8(uint8_t *p_msg, uint32_t len)
 {
     uint8_t uc_expected = 0;
 
@@ -261,7 +261,7 @@ unsigned int ref_verify_crc8(uint8_t *p_msg, unsigned int len)
 **  Input:        Data to CRC and append,Stream length = Data + checksum
 **  Output:       True or False (CRC Verify Result)
 */
-void ref_append_crc8(uint8_t *p_msg, unsigned int len)
+void ref_append_crc8(uint8_t *p_msg, uint32_t len)
 {
     uint8_t crc8 = 0;
 
