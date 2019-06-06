@@ -38,4 +38,5 @@ build/*
 !build/infantry.sct
 rm_infantry.hex
 rm_infantry.elf
+rm_infantry.bin
 .vscode/

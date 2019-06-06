@@ -11,19 +11,30 @@ endif
 ifeq ($(OBJCOPY),)
     OBJCOPY := arm-none-eabi-objcopy
 endif
-CFLAGS += -O0 -g
-LDFLAGS += -O0 -g
+ifeq ($(OPTIMIZE),size)
+    CFLAGS += -Os -g
+    LDFLAGS += -Os -g
+else ifeq ($(OPTIMIZE),speed)
+    CFLAGS += -O2 -g
+    LDFLAGS += -O2 -g
+else
+    CFLAGS += -Og -g
+    LDFLAGS += -Og -g
+endif
 CFLAGS += -march=armv7e-m -mcpu=cortex-m4 -mthumb -std=c11 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant -finline-functions -ffunction-sections -fdata-sections
 LDFLAGS += -march=armv7e-m -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -lm -lc -lgcc -ffunction-sections -fdata-sections -specs=nosys.specs -Wl,--gc-sections,-Tstm32.ld,-Map,rm_infantry.map,-orm_infantry.elf,--no-wchar-size-warning
 CFLAGS += -I bsp/cubemx/Core/Inc -I bsp/cubemx/Drivers/STM32F4xx_HAL_Driver/Inc -I bsp/cubemx/Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I bsp/cubemx/Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F -I bsp/cubemx/Middlewares/ST/STM32_USB_Device_Library/Core/Inc -I bsp/cubemx/Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -I bsp/cubemx/Drivers/CMSIS/Include -I bsp/cubemx/Drivers/CMSIS/Device/ST/STM32F4xx/Include -I bsp/cubemx/Middlewares/Third_Party/FreeRTOS/Source/include -I bsp/cubemx/Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS -I bsp/cubemx/USB_DEVICE/App -I bsp/cubemx/USB_DEVICE/Target -I bsp/boards -I components/algorithm -I components/devices -I components/modules -I components/object -I components/support -I application -I components/controller -I test -I utilities -I utilities/ulog -I utilities/finsh -I application/protocol -I config
 CFLAGS += -D USE_HAL_DRIVER -D STM32F427xx -D ARM_MATH_CM4 -D _RTE_ -D __UVISION_VERSION=\"524\" -D __MICROLIB
 
-all: rm_infantry.elf rm_infantry.hex
+all: rm_infantry.elf rm_infantry.hex rm_infantry.bin
 
 -include $(depends)
 
 rm_infantry.hex: rm_infantry.elf
 	$(OBJCOPY) -O ihex rm_infantry.elf rm_infantry.hex
+
+rm_infantry.bin: rm_infantry.elf
+	$(OBJCOPY) -O binary rm_infantry.elf rm_infantry.bin
 
 rm_infantry.elf: $(objects)
 	$(CC) $(objects) $(LDFLAGS)
@@ -35,7 +46,7 @@ rm_infantry.elf: $(objects)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -rf rm_infantry.elf rm_infantry.map rm_infantry.hex $(objects) $(depends)
+	rm -rf rm_infantry.elf rm_infantry.map rm_infantry.hex rm_infantry.bin $(objects) $(depends)
 
 flash:
 	sudo JLinkExe -device STM32F427II -if SWD -speed 4000 -CommanderScript flash.jlink
