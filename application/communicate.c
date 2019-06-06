@@ -34,27 +34,6 @@ static int32_t usb_interface_send(uint8_t *p_data, uint32_t len);
 
 extern osThreadId communicate_task_t;
 
-int32_t uwb_rcv_callback(CAN_RxHeaderTypeDef *header, uint8_t *rx_data)
-{
-  static uint32_t uwb_time;
-  static uint8_t uwb_seq;
-  static struct uwb_data uwb_data;
-  if (header->StdId == 0X259)
-  {
-    if ((get_time_ms() - uwb_time > 10))
-      uwb_seq = 0;
-    uwb_time = HAL_GetTick();
-    memcpy((uint8_t *)&uwb_data + uwb_seq * 8, rx_data, 8);
-    uwb_seq++;
-    if (uwb_seq == 3)
-    {
-      protocol_send(MANIFOLD2_ADDRESS, CMD_PUSH_UWB_INFO, &uwb_data, sizeof(uwb_data));
-      uwb_seq = 0;
-    }
-  }
-  return header->DLC;
-}
-
 int32_t can2_rcv_callback(CAN_RxHeaderTypeDef *header, uint8_t *rx_data)
 {
   protocol_can_rcv_data(PROTOCOL_CAN_PORT2, header->StdId, rx_data, header->DLC);
@@ -125,7 +104,6 @@ void communicate_task(void const *argument)
   soft_timer_register(usb_tx_flush, NULL, 1);
 	protocol_send_list_add_callback_reg(protocol_send_success_callback);
 
-  can_fifo0_rx_callback_register(&can2_manage, uwb_rcv_callback);
   can_fifo0_rx_callback_register(&can2_manage, can2_rcv_callback);
 
   while (1)

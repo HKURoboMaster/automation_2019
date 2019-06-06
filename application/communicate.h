@@ -37,15 +37,6 @@ enum interface{
   CAN2_0x600_INTERFACE,
 };
 
-struct uwb_data{
-  int16_t   x;
-  int16_t   y;
-  uint16_t  yaw;
-  int16_t   distance[6];
-  uint16_t  error;
-  uint16_t  res;
-};
-
 int32_t gimbal_adjust(void);
 void communicate_task(void const * argument);
 
