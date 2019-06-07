@@ -230,7 +230,7 @@ static void auto_gimbal_adjust(gimbal_t pgimbal)
       }
     }
 
-    {
+    /*{
       yaw_time = get_time_ms();
       while (get_time_ms() - yaw_time <= 2000)
       {
@@ -262,7 +262,8 @@ static void auto_gimbal_adjust(gimbal_t pgimbal)
           yaw_ecd_c = (yaw_ecd_l + yaw_ecd_r) / 2 + 4096;
         }
       }
-    }
+    }*/
+    yaw_ecd_c = pgimbal->motor[YAW_MOTOR_INDEX].data.ecd;
     gimbal_save_data(yaw_ecd_c, pit_ecd_c);
     gimbal_set_offset(pgimbal, yaw_ecd_c, pit_ecd_c);
     auto_adjust_f = 0;
