@@ -38,7 +38,7 @@ int32_t rc_device_register(rc_device_t rc_dev, const char *name, uint16_t flags)
   return RM_OK;
 }
 
-int32_t rc_device_date_update(rc_device_t rc_dev, uint8_t *buff)
+int32_t rc_device_data_update(rc_device_t rc_dev, uint8_t *buff)
 { 
   if (rc_dev != NULL)
   {

@@ -54,7 +54,7 @@ int32_t dr16_rx_data_by_can(uint8_t *buff, uint16_t len)
   struct detect_device *rc_offline;
   rc_offline = get_offline_dev();
   rc_dev = (rc_device_t)device_find("can_rc");
-  rc_device_date_update(rc_dev, buff);
+  rc_device_data_update(rc_dev, buff);
   detect_device_update(rc_offline, RC_OFFLINE_EVENT);
   return 0;
 }

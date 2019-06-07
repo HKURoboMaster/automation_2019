@@ -52,7 +52,7 @@ int32_t dr16_rx_data_by_uart(uint8_t *buff, uint16_t len)
 
   rc_device_t rc_dev;
   rc_dev = (rc_device_t)device_find("uart_rc");
-  rc_device_date_update(rc_dev, buff);
+  rc_device_data_update(rc_dev, buff);
   return 0;
 }
 

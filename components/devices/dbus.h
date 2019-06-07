@@ -110,7 +110,7 @@ struct rc_device
 };
 
 int32_t rc_device_register(rc_device_t rc_dev, const char *name, uint16_t flags);
-int32_t rc_device_date_update(rc_device_t rc_dev, uint8_t *buff);
+int32_t rc_device_data_update(rc_device_t rc_dev, uint8_t *buff);
 int32_t rc_device_get_state(rc_device_t rc_dev, uint16_t state);
 rc_info_t rc_device_get_info(rc_device_t rc_dev);
 rc_device_t rc_device_find(const char *name);
