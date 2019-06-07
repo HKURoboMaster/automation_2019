@@ -138,7 +138,7 @@ int32_t chassis_execute(struct chassis *chassis)
   return RM_OK;
 }
 
-int32_t chassis_gyro_updata(struct chassis *chassis, float yaw_angle, float yaw_rate)
+int32_t chassis_gyro_update(struct chassis *chassis, float yaw_angle, float yaw_rate)
 {
   if (chassis == NULL)
     return -RM_INVAL;

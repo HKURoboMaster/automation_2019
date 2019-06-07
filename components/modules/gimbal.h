@@ -48,7 +48,6 @@
 #define YAW_MOTOR_POSITIVE_DIR  1.0f
 
 #include "motor.h"
-#include "single_gyro.h"
 #include "pid_controller.h"
 
 #define YAW_MOTOR_INDEX 0

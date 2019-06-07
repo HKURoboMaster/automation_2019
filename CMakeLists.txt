@@ -31,7 +31,6 @@ components/controller/pid_controller.c
 components/modules/chassis.c
 components/modules/gimbal.c
 components/modules/shoot.c
-components/modules/single_gyro.c
 components/algorithm/mecanum.c
 components/algorithm/madgwick_ahrs.c
 components/algorithm/mahony_ahrs.c

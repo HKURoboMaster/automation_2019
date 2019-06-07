@@ -19,11 +19,13 @@
 #include "chassis_task.h"
 #include "timer_task.h"
 #include "infantry_cmd.h"
+#include "ahrs.h"
 
 static float vx, vy, wz;
 
 float follow_relative_angle;
 struct pid pid_follow = {0}; //angle control
+static void chassis_imu_update(void *argc);
 
 void chassis_task(void const *argument)
 {
@@ -81,9 +83,24 @@ void chassis_task(void const *argument)
       chassis_set_acc(pchassis, 0, 0, 0);
     }
 
+    chassis_imu_update(pchassis);
     chassis_execute(pchassis);
     osDelayUntil(&period, 2);
   }
+}
+
+#define RAD_TO_DEG 57.3f
+static void chassis_imu_update(void *argc)
+{
+  struct ahrs_sensor mpu_sensor;
+  struct attitude mahony_atti;
+  chassis_t pchassis = (chassis_t)argc;
+  mpu_get_data(&mpu_sensor);
+  mahony_ahrs_updateIMU(&mpu_sensor, &mahony_atti);
+  // TODO: adapt coordinates to our own design
+  chassis_gyro_update(pchassis, -mahony_atti.yaw, mpu_sensor.wz * RAD_TO_DEG);
+  // TODO: adapt coordinates to our own design
+  return 0;
 }
 
 int32_t chassis_set_relative_angle(float angle)

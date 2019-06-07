@@ -60,7 +60,6 @@ void offline_init(void)
   detect_device_register(&offline_dev, "detect", 0, 0);
 
   detect_device_add_event(&offline_dev, RC_OFFLINE_EVENT, 100, rc_offline_callback, NULL);
-  detect_device_add_event(&offline_dev, GYRO_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[8]);
 
   if (app == CHASSIS_APP)
   {
@@ -159,9 +158,6 @@ int32_t can2_detect_update(CAN_RxHeaderTypeDef *header, uint8_t *rx_data)
 {
   switch (header->StdId)
   {
-  case 0x401:
-    detect_device_update(&offline_dev, GYRO_OFFLINE_EVENT);
-    break;
   default:
     break;
   }

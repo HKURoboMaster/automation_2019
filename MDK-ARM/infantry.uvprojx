@@ -552,11 +552,6 @@
               <FileType>1</FileType>
               <FilePath>..\components\modules\shoot.c</FilePath>
             </File>
-            <File>
-              <FileName>single_gyro.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\components\modules\single_gyro.c</FilePath>
-            </File>
           </Files>
         </Group>
         <Group>

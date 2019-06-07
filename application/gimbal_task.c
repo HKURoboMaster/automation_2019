@@ -36,7 +36,7 @@
 float pit_delta, yaw_delta;
 
 static void imu_temp_ctrl_init(void);
-static int32_t gimbal_imu_updata(void *argc);
+static int32_t gimbal_imu_update(void *argc);
 static int32_t imu_temp_keep(void *argc);
 static void auto_gimbal_adjust(gimbal_t pgimbal);
 static void gimbal_state_init(gimbal_t pgimbal);
@@ -139,21 +139,24 @@ void gimbal_task(void const *argument)
     pit_spd_fdb_js = pgimbal->cascade[1].inter.get * 1000;
     pit_spd_ref_js = pgimbal->cascade[1].inter.set * 1000;
 
-    gimbal_imu_updata(pgimbal);
+    gimbal_imu_update(pgimbal);
     gimbal_execute(pgimbal);
     osDelayUntil(&period, 2);
   }
 }
 
-static int32_t gimbal_imu_updata(void *argc)
+static int32_t gimbal_imu_update(void *argc)
 {
   struct ahrs_sensor mpu_sensor;
   struct attitude mahony_atti;
   gimbal_t pgimbal = (gimbal_t)argc;
   mpu_get_data(&mpu_sensor);
   mahony_ahrs_updateIMU(&mpu_sensor, &mahony_atti);
+  // TODO: adapt coordinates to our own design
   gimbal_pitch_gyro_update(pgimbal, -mahony_atti.roll);
+  gimbal_yaw_gyro_update(pgimbal, -mahony_atti.yaw);
   gimbal_rate_update(pgimbal, mpu_sensor.wz * RAD_TO_DEG, -mpu_sensor.wx * RAD_TO_DEG);
+  // TODO: adapt coordinates to our own design
   return 0;
 }
 
@@ -204,7 +207,7 @@ static void auto_gimbal_adjust(gimbal_t pgimbal)
     pid_struct_init(&pid_pit_spd, 30000, 3000, 60, 0.2, 0);
     while (1)
     {
-      gimbal_imu_updata(pgimbal);
+      gimbal_imu_update(pgimbal);
 
       pid_calculate(&pid_pit, pgimbal->sensor.gyro_angle.pitch, 0);
       pid_calculate(&pid_pit_spd, pid_pit.out, pgimbal->sensor.rate.pitch_rate);

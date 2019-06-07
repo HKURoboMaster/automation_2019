@@ -32,7 +32,6 @@
 #define YAW_OFFLINE_EVENT    EVENT_5BIT
 #define PITCH_OFFLINE_EVENT  EVENT_6BIT
 #define TURN_OFFLINE_EVENT   EVENT_7BIT
-#define GYRO_OFFLINE_EVENT   EVENT_8BIT
 
 void offline_init(void);
 struct detect_device *get_offline_dev(void);

@@ -23,7 +23,6 @@
 #include "chassis.h"
 #include "gimbal.h"
 #include "shoot.h"
-#include "single_gyro.h"
 #include "init.h"
 #include "communicate.h"
 #include "timer_task.h"
@@ -36,37 +35,6 @@ int32_t can1_motor_msg_rec(CAN_RxHeaderTypeDef *header, uint8_t *data)
   return 0;
 }
 
-int32_t can2_single_gyro_rec(CAN_RxHeaderTypeDef *header, uint8_t *data)
-{
-  struct single_gyro gyro = {0x401, 0, 0};
-  int32_t err;
-
-  chassis_t pchassis;
-  pchassis = chassis_find("chassis");
-
-  gimbal_t pgimbal;
-  pgimbal = gimbal_find("gimbal");
-
-  err = single_gyro_update(&(gyro), header->StdId, data);
-
-  if(err != RM_OK)
-  goto end;
-  
-  if ((pchassis != NULL) && (err == RM_OK))
-  {
-    chassis_gyro_updata(pchassis, gyro.yaw_gyro_angle, gyro.yaw_gyro_rate);
-  }
-
-  if ((pgimbal != NULL) && (err == RM_OK))
-  {
-    gimbal_yaw_gyro_update(pgimbal, gyro.yaw_gyro_angle + pgimbal->ecd_angle.yaw);
-  }
-
-  return RM_OK;
-end:
-  return err;
-}
-
 int32_t motor_canstd_send(enum device_can can, struct can_msg msg)
 {
   if (can == DEVICE_CAN1)
@@ -74,12 +42,6 @@ int32_t motor_canstd_send(enum device_can can, struct can_msg msg)
   else if (can == DEVICE_CAN2)
     can_msg_bytes_send(&hcan2, msg.data, 8, msg.id);
   return 0;
-}
-
-int32_t gyro_can_std_send(uint32_t std_id, uint8_t *can_rx_data)
-{
-  can_msg_bytes_send(&hcan1, can_rx_data, 8, std_id);
-  return RM_OK;
 }
 
 int32_t dr16_rx_data_by_uart(uint8_t *buff, uint16_t len)
@@ -160,8 +122,6 @@ void board_config(void)
   soft_timer_register(led_toggle_300ms, NULL, 1); 
 
   motor_device_can_send_register(motor_canstd_send);
-  single_gyro_can_send_register(gyro_can_std_send);
 
   can_fifo0_rx_callback_register(&can1_manage, can1_motor_msg_rec);
-  can_fifo0_rx_callback_register(&can2_manage, can2_single_gyro_rec);
 }
