@@ -20,6 +20,7 @@
 #include "timer_task.h"
 #include "infantry_cmd.h"
 #include "ahrs.h"
+#include "drv_imu.h"
 
 static float vx, vy, wz;
 
