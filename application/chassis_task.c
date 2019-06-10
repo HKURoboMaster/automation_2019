@@ -100,7 +100,6 @@ static void chassis_imu_update(void *argc)
   // TODO: adapt coordinates to our own design
   chassis_gyro_update(pchassis, -mahony_atti.yaw, mpu_sensor.wz * RAD_TO_DEG);
   // TODO: adapt coordinates to our own design
-  return 0;
 }
 
 int32_t chassis_set_relative_angle(float angle)
