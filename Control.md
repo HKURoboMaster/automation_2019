@@ -66,7 +66,41 @@ chassis_task, gimbal_task, shoot_task
 
 * 所有遥控信号均储存在`prc_dev`结构体当中；所有上位机控制信号均储存在 **_TODO_** 结构体当中
 
+#### 射击模式切换
+
+* 位于shoot_task.c中，利用RC的S1开关，*拨轮*实现控制
+
+* 启动/关闭摩擦轮       `shoot_firction_toggle(pshoot)`
+* 射击若干发子弹        `shoot_set_cmd(pshoot, CMD, num_of_bullet)`
+* 向射击执行机构发送命令 `shoot_execute(pshoot)`
+
+* 使用`rc_device_get_state(rc_dev, state)`函数对遥控器拨杆值进行判别：
+    与底盘相同
+
+* 使用 **_TODO_** 函数对键盘和鼠标的输入进行判别
+    1. **_TODO_**
+
+* 所有下行控制指令和底盘硬件反馈值均在`pshoot`结构体当中
+
+* 被调用的命令均储存在shoot.c之中，包括：
+    - 外部调用：`shoot_set_fric_speed`   设定摩擦轮转速
+    - 外部调用：`shoot_set_cmd`          设置射击指令
+    - 外部调用：`shoot_execute`，其调用了：
+        - `shoot_fric_ctrl`，其调用了：
+            - `shoot_get_fric_speed`    获取左右摩擦轮转速
+            - `fric_set_output`         设定摩擦轮电机电流
+            - 并：平衡两侧转速
+        - `shoot_block_check`           利用电流检查是否卡弹
+        - `shoot_cmd_ctrl`，其调用了：
+            - `shoot_state_update`      利用~~触动开关~~ **_trigger motor_** 返回值检查是否有一发子弹射出，
+            并进行射击保险
+            - 并：检查射出子弹数、进行state transfer
+    - 外部调用：`shoot_enable`
+    - 外部调用：`shoot_disable`
+
+
 ---
+
 
 ## 操作指南
 ### 模式
