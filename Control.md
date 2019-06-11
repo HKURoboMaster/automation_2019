@@ -98,7 +98,37 @@ chassis_task, gimbal_task, shoot_task
     - 外部调用：`shoot_enable`
     - 外部调用：`shoot_disable`
 
+### 控制信号流向
 
+#### 接收器
+采用DMA方式，值将保存在buff中，供下一步处理
+
+#### 信号处理
+
+基本原理：
+* 初始化过程中将rc device注册，绑定实现相应的update过程的成员方法
+* 执行过程中：调用`rc_device_data_update`函数以获取遥控信息
+* 执行过程中：调用`rc_device_get_state`函数以获取提取出遥控信息中的状态
+* 执行过程中：调用`rc_device_data_info`函数以获取提取出遥控信息中的数据
+
+init.c中调用 `rc_device_register(rc_dev, name, flags)` ———— 初始化
+board.c或communicate.c中调用（取决于gimbal还是chassis）
+            `rc_device_data_update(rc_dev, buff)` ———— 更新数据，其调用了
+                `rc_dev->get_data(rc_dev, buff)` -> `get_dr16_data(rc_dev, buff)` ———— 更新数据
+                `rc_dev->get_state(rc_dev)`      -> `get_dr16_state(rc_dev)`      ———— 从更新的数据中提取flag信息
+相应task调用 `rc_device_get_state(rc_dev, state)` ———— 判定对应标志位是否值为真
+相应task调用 `rc_device_get_info(rc_dev)`         ———— rc_info的getter
+
+**【注意】**
+* rc结构体包含：
+    - rc_info       各信道、键位的值
+    - last_rc_info  各信道、键位的先前值
+    - state         flags，仅限于S1和S2的当前，和变化（例如，S2从Mid至Down——RC_S2_MID2DOWN）
+* 由于采用了oop的编程思想，info和state的两个成员经由对应的getter获取
+
+#### 控制解算
+在chassis或者gimbal的task中实现，参见上一节
+###
 ---
 
 
