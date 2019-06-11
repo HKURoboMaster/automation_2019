@@ -66,7 +66,71 @@ chassis_task, gimbal_task, shoot_task
 
 * 所有遥控信号均储存在`prc_dev`结构体当中；所有上位机控制信号均储存在 **_TODO_** 结构体当中
 
+#### 射击模式切换
+
+* 位于shoot_task.c中，利用RC的S1开关，*拨轮*实现控制
+
+* 启动/关闭摩擦轮       `shoot_firction_toggle(pshoot)`
+* 射击若干发子弹        `shoot_set_cmd(pshoot, CMD, num_of_bullet)`
+* 向射击执行机构发送命令 `shoot_execute(pshoot)`
+
+* 使用`rc_device_get_state(rc_dev, state)`函数对遥控器拨杆值进行判别：
+    与底盘相同
+
+* 使用 **_TODO_** 函数对键盘和鼠标的输入进行判别
+    1. **_TODO_**
+
+* 所有下行控制指令和底盘硬件反馈值均在`pshoot`结构体当中
+
+* 被调用的命令均储存在shoot.c之中，包括：
+    - 外部调用：`shoot_set_fric_speed`   设定摩擦轮转速
+    - 外部调用：`shoot_set_cmd`          设置射击指令
+    - 外部调用：`shoot_execute`，其调用了：
+        - `shoot_fric_ctrl`，其调用了：
+            - `shoot_get_fric_speed`    获取左右摩擦轮转速
+            - `fric_set_output`         设定摩擦轮电机电流
+            - 并：平衡两侧转速
+        - `shoot_block_check`           利用电流检查是否卡弹
+        - `shoot_cmd_ctrl`，其调用了：
+            - `shoot_state_update`      利用~~触动开关~~ **_trigger motor_** 返回值检查是否有一发子弹射出，
+            并进行射击保险
+            - 并：检查射出子弹数、进行state transfer
+    - 外部调用：`shoot_enable`
+    - 外部调用：`shoot_disable`
+
+### 控制信号流向
+
+#### 接收器
+采用DMA方式，值将保存在buff中，供下一步处理
+
+#### 信号处理
+
+基本原理：
+* 初始化过程中将rc device注册，绑定实现相应的update过程的成员方法
+* 执行过程中：调用`rc_device_data_update`函数以获取遥控信息
+* 执行过程中：调用`rc_device_get_state`函数以获取提取出遥控信息中的状态
+* 执行过程中：调用`rc_device_data_info`函数以获取提取出遥控信息中的数据
+
+init.c中调用 `rc_device_register(rc_dev, name, flags)` ———— 初始化
+board.c或communicate.c中调用（取决于gimbal还是chassis）
+            `rc_device_data_update(rc_dev, buff)` ———— 更新数据，其调用了
+                `rc_dev->get_data(rc_dev, buff)` -> `get_dr16_data(rc_dev, buff)` ———— 更新数据
+                `rc_dev->get_state(rc_dev)`      -> `get_dr16_state(rc_dev)`      ———— 从更新的数据中提取flag信息
+相应task调用 `rc_device_get_state(rc_dev, state)` ———— 判定对应标志位是否值为真
+相应task调用 `rc_device_get_info(rc_dev)`         ———— rc_info的getter
+
+**【注意】**
+* rc结构体包含：
+    - rc_info       各信道、键位的值
+    - last_rc_info  各信道、键位的先前值
+    - state         flags，仅限于S1和S2的当前，和变化（例如，S2从Mid至Down——RC_S2_MID2DOWN）
+* 由于采用了oop的编程思想，info和state的两个成员经由对应的getter获取
+
+#### 控制解算
+在chassis或者gimbal的task中实现，参见上一节
+###
 ---
+
 
 ## 操作指南
 ### 模式
