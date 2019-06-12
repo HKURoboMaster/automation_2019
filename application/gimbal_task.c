@@ -53,6 +53,11 @@ int32_t pit_angle_fdb_js, pit_angle_ref_js;
 int32_t yaw_spd_fdb_js, yaw_spd_ref_js;
 int32_t pit_spd_fdb_js, pit_spd_ref_js;
 
+/** Edited by Y.H. Liu
+ *  @Jun 12, 2019: modified the mode switch
+ *
+ *  Implement the customized control logic and FSM, details in Control.md
+ */
 void gimbal_task(void const *argument)
 {
   uint32_t period = osKernelSysTick();
@@ -91,6 +96,7 @@ void gimbal_task(void const *argument)
 
   while (1)
   {
+    /*
     if (rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK)
     {
       gimbal_set_yaw_mode(pgimbal, GYRO_MODE);
@@ -120,6 +126,40 @@ void gimbal_task(void const *argument)
     if (rc_device_get_state(prc_dev, RC_S2_DOWN) == RM_OK)
     {
       gimbal_set_yaw_mode(pgimbal, ENCODER_MODE);
+    }
+    */
+    if(rc_device_get_state(prc_dev, RC_S2_DOWN2MID) == RM_OK)
+    {
+      gimbal_pitch_enable(pgimbal);
+      gimbal_yaw_enable(pgimbal);
+    }
+    if(rc_device_get_state(prc_dev, RC_S2_MID2DOWN) == RM_OK)
+    {
+      gimbal_set_yaw_angle(pgimbal, 0, 0);
+    }
+    if (rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK || rc_device_get_state(prc_dev, RC_S2_MID) == RM_OK
+    ||  rc_device_get_state(prc_dev, RC_MID2UP) == RM_OK || rc_device_get_state(prc_dev,RC_S2_UP2MID == RM_OK))
+    {
+      if(prc_info->kb.bit.X != 1)
+      {
+        gimbal_set_yaw_mode(pgimbal, GYRO_MODE);
+        pit_delta = -(float)prc_info->ch4 * 0.0007f;
+        yaw_delta = -(float)prc_info->ch3 * 0.0007f;
+        gimbal_set_pitch_delta(pgimbal, pit_delta);
+        gimbal_set_yaw_delta(pgimbal, yaw_delta);
+      }
+      else
+      {
+        gimbal_set_yaw_mode(pgimbal, ENCODER_MODE);
+        gimbal_set_yaw_angle(pgimbal, 0, 0);
+        //no rotation allowed, gimbal rotate back to the netural position of the encoder
+        //reserved for get rid of the uncontrollable dodging when necessary
+      }
+    }
+    if(rc_device_get_state(prc_dev, RC_S2_DOWN) == RM_OK)
+    {
+      gimbal_pitch_disable(pgmibal);
+      gimbal_yaw_disable(pgimbal);
     }
 
     if (get_offline_state() == 0)

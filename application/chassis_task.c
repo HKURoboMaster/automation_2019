@@ -21,12 +21,24 @@
 #include "infantry_cmd.h"
 #include "ahrs.h"
 
+#include <math.h>
+#define PI 3.142f
+
 static float vx, vy, wz;
 
 float follow_relative_angle;
 struct pid pid_follow = {0}; //angle control
 static void chassis_imu_update(void *argc);
 
+/** Edited by Y.H. Liu
+  * @Jun 12, 2019: modified the mode switch
+  *
+  * Implement the customized control logic and FSM, details in Control.md
+*/
+#define km_dodge          prc_info->kb.bit.C == 1
+#define back_to_netural   follow_relative_angle < 10 && follow_relative_angle >= -10
+
+uint8_t dodging = 0;
 void chassis_task(void const *argument)
 {
   uint32_t period = osKernelSysTick();
@@ -50,6 +62,36 @@ void chassis_task(void const *argument)
 
   while (1)
   {
+    if (rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK || rc_device_get_state(prc_dev, RC_S2_MID) == RM_OK)
+    { //not disabled
+
+      float temp_vx = (float)prc_info->ch2 / 660 * MAX_CHASSIS_VX_SPEED;
+      float temp_vy = -(float)prc_info->ch1 / 660 * MAX_CHASSIS_VY_SPEED;
+      vx = temp_vx * cos(PI * follow_relative_angle / 180) - temp_vy * sin(PI * follow_relative_angle / 180);
+      vy = temp_vx * sin(PI * follow_relative_angle / 180) + temp_vy * cos(PI * follow_relative_angle / 180);
+
+      if(km_dodge || (dodging && !back_to_netural))
+      {
+        wz = 3 * MAX_CHASSIS_VW_SPEED / 5;
+        dodging |= 1;
+      }
+      else
+      {
+        wz  = pid_calculate(&pid_follow, follow_relative_angle, 0);
+        dodging &= 0;
+      }
+
+      chassis_set_offset(pchassis, ROTATE_X_OFFSET, ROTATE_Y_OFFSET);
+      chassis_set_speed(pchassis, vx, vy, wz);
+    }
+    else
+    {
+      chassis_set_speed(pchassis, 0, 0, 0);
+    }
+
+    chassis_set_acc(pchassis, 0, 0, 0);
+
+    /*
     if (rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK)
     {
       if (rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK)
@@ -82,6 +124,7 @@ void chassis_task(void const *argument)
 
       chassis_set_acc(pchassis, 0, 0, 0);
     }
+  */
 
     chassis_imu_update(pchassis);
     chassis_execute(pchassis);
