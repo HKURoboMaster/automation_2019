@@ -19,7 +19,7 @@
 #define __GIMBAL_H__
 
 #ifdef GIMBAL_H_GLOBAL
-  #define GIMBAL_H_EXTERN 
+  #define GIMBAL_H_EXTERN
 #else
   #define GIMBAL_H_EXTERN extern
 #endif
@@ -29,12 +29,13 @@
 #define PITCH_ANGLE_MIN      -20.0f
 #define YAW_ANGLE_MAX      70.0f
 #define YAW_ANGLE_MIN      -70.0f
+#define YAW_KB_SPEED        0.7f
 
 /************************** gimbal parameter *****************************/
 /* the ratio of motor encoder value translate to degree */
 #ifndef ENCODER_ANGLE_RATIO
   #define ENCODER_ANGLE_RATIO    (8192.0f/360.0f)
-#endif 
+#endif
 
 #define RAD_TO_DEG 57.3f
 
@@ -76,14 +77,14 @@ struct gimbal_p_y
 {
   /* unit: degree */
   float yaw;
-  float pitch;  
+  float pitch;
 };
 
 struct gimbal_rate
 {
   /* unit: degree/s */
   float yaw_rate;
-  float pitch_rate;  
+  float pitch_rate;
 };
 
 struct gimbal_sensor
@@ -106,9 +107,9 @@ struct gimbal
     } bit;
   } mode;
 
-  struct gimbal_sensor sensor;  
+  struct gimbal_sensor sensor;
   struct gimbal_p_y ecd_angle;
-  
+
   struct gimbal_p_y gyro_target_angle;
   struct gimbal_p_y ecd_target_angle;
 

@@ -64,9 +64,23 @@ void chassis_task(void const *argument)
   {
     if (rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK || rc_device_get_state(prc_dev, RC_S2_MID) == RM_OK)
     { //not disabled
+      int32_t key_x_speed = 2*MAX_CHASSIS_VX_SPEED/3;
+      int32_t key_y_speed = 2*MAX_CHASSIS_VY_SPEED/3;
+      if(prc_info->kb.bit.SHIFT)
+      {
+        key_x_speed = MAX_CHASSIS_VX_SPEED;
+        key_y_speed = MAX_CHASSIS_VY_SPEED;
+      }
+      else if (prc_info->kb.bit.CTRL)
+      {
+        key_x_speed /= 2;
+        key_y_speed /= 2;
+      }
 
       float temp_vx = (float)prc_info->ch2 / 660 * MAX_CHASSIS_VX_SPEED;
+      temp_vx += (prc_info.kb.bit.W - prc_info.kb.info.S)* key_x_speed;
       float temp_vy = -(float)prc_info->ch1 / 660 * MAX_CHASSIS_VY_SPEED;
+      temp_vy += (prc_info.kb.bit.D - prc_info.kb.info.A)* key_y_speed;
       vx = temp_vx * cos(PI * follow_relative_angle / 180) - temp_vy * sin(PI * follow_relative_angle / 180);
       vy = temp_vx * sin(PI * follow_relative_angle / 180) + temp_vy * cos(PI * follow_relative_angle / 180);
 
