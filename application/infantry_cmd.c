@@ -143,7 +143,7 @@ void infantry_cmd_task(void const *argument)
         {
           struct cmd_gimbal_angle *pangle;
           pangle = &manifold_cmd.gimbal_angle;
-          if(prc_dev->mouse.r)
+          if(prc_dev->rc_info.mouse.r)
           {
             if (pangle->ctrl.bit.pitch_mode == 0)
             {

@@ -142,7 +142,7 @@ void gimbal_task(void const *argument)
       gimbal_set_yaw_angle(pgimbal, 0, 0);
     }
     if (rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK || rc_device_get_state(prc_dev, RC_S2_MID) == RM_OK
-    ||  rc_device_get_state(prc_dev, RC_MID2UP) == RM_OK || rc_device_get_state(prc_dev,RC_S2_UP2MID == RM_OK))
+    ||  rc_device_get_state(prc_dev, RC_S2_MID2UP) == RM_OK || rc_device_get_state(prc_dev,RC_S2_UP2MID == RM_OK))
     {
       //manual control mode i.e. chassis follow gimbal
       if(prc_info->kb.bit.X != 1)
@@ -166,7 +166,7 @@ void gimbal_task(void const *argument)
     if(rc_device_get_state(prc_dev, RC_S2_DOWN) == RM_OK)
     {
       //disbaled
-      gimbal_pitch_disable(pgmibal);
+      gimbal_pitch_disable(pgimbal);
       gimbal_yaw_disable(pgimbal);
     }
 

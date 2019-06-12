@@ -78,9 +78,9 @@ void chassis_task(void const *argument)
       }
 
       float temp_vx = (float)prc_info->ch2 / 660 * MAX_CHASSIS_VX_SPEED;
-      temp_vx += (prc_info.kb.bit.W - prc_info.kb.info.S)* key_x_speed;
+      temp_vx += (prc_info->kb.bit.W - prc_info->kb.bit.S)* key_x_speed;
       float temp_vy = -(float)prc_info->ch1 / 660 * MAX_CHASSIS_VY_SPEED;
-      temp_vy += (prc_info.kb.bit.D - prc_info.kb.info.A)* key_y_speed;
+      temp_vy += (prc_info->kb.bit.D - prc_info->kb.bit.A)* key_y_speed;
       vx = temp_vx * cos(PI * follow_relative_angle / 180) - temp_vy * sin(PI * follow_relative_angle / 180);
       vy = temp_vx * sin(PI * follow_relative_angle / 180) + temp_vy * cos(PI * follow_relative_angle / 180);
 
