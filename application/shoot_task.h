@@ -24,6 +24,8 @@
   #define SHOOT_TASK_H_EXTERN extern
 #endif
 
+#define CONTIN_BULLET_NUM 50
+
 void shoot_task(void const * argument);
 
 #endif // __SHOOT_TASK_H__

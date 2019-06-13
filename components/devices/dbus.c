@@ -156,6 +156,11 @@ static void get_dr16_data(rc_device_t rc_dev, uint8_t *buff)
   rc->wheel = (buff[16] | buff[17] << 8) - 1024;
 }
 
+/** Edited by Y.H. Liu
+ *  @Jun 13, 2019: Update the controlling wheel states
+ * 
+ *  For retrieving the necessary data from the RC input
+ */
 static void get_dr16_state(rc_device_t rc_dev)
 {
 
@@ -228,4 +233,24 @@ static void get_dr16_state(rc_device_t rc_dev)
       rc_dev->state |= RC_S2_MID2DOWN;
     }
   }
+
+  /*------ For the RC wheel ------*/
+  if(rc_dev->rc_info.wheel>300)
+  {
+    rc_dev->state |= RC_WHEEL_UP;
+    rc_dev->state &= ~RC_WHEEL_DOWN;
+    //single shooting flag = 1
+  }
+  else if(rc_dev->rc_info.wheel<-300)
+  {
+    rc_dev->state |= RC_WHEEL_DOWN;
+    rc_dev->state &= ~RC_WHEEL_UP;
+    //continue shooting flag = 1
+  }
+  else
+  {
+    rc_dev->state &= ~RC_WHEEL_DOWN;
+    rc_dev->state &= ~RC_WHEEL_UP;
+  }
+  
 }
