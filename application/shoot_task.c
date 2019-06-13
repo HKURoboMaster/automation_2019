@@ -108,7 +108,7 @@ void shoot_task(void const *argument)
       else if (rc_device_get_state(prc_dev, RC_WHEEL_UP) == RM_OK
             || mouse_shoot_control(prc_dev)==click)
       {
-        shoot_set_cmd(pshoot, SHOOT_ONCE_CMD, 0);
+        shoot_set_cmd(pshoot, SHOOT_ONCE_CMD, 1);
       }
       else
       {
