@@ -22,7 +22,7 @@
 #include "ahrs.h"
 
 #include <math.h>
-#define PI 3.142f
+#define RAD_TO_DEG 57.296f // 180/PI
 
 static float vx, vy, wz;
 
@@ -36,7 +36,7 @@ static void chassis_imu_update(void *argc);
   * Implement the customized control logic and FSM, details in Control.md
 */
 #define km_dodge          prc_info->kb.bit.C == 1
-#define back_to_netural   follow_relative_angle < 10 && follow_relative_angle >= -10
+#define back_to_netural   follow_relative_angle < CHASSIS_NETURAL_TH && follow_relative_angle >= -CHASSIS_NETURAL_TH
 
 uint8_t dodging = 0;
 void chassis_task(void const *argument)
@@ -77,12 +77,12 @@ void chassis_task(void const *argument)
         key_y_speed /= 2;
       }
 
-      float temp_vx = (float)prc_info->ch2 / 660 * MAX_CHASSIS_VX_SPEED;
+      float temp_vx = (float)prc_info->ch2 / RC_CH_SCALE * MAX_CHASSIS_VX_SPEED;
       temp_vx += (prc_info->kb.bit.W - prc_info->kb.bit.S)* key_x_speed;
-      float temp_vy = -(float)prc_info->ch1 / 660 * MAX_CHASSIS_VY_SPEED;
+      float temp_vy = -(float)prc_info->ch1 / RC_CH_SCALE * MAX_CHASSIS_VY_SPEED;
       temp_vy += (prc_info->kb.bit.D - prc_info->kb.bit.A)* key_y_speed;
-      vx = temp_vx * cos(PI * follow_relative_angle / 180) - temp_vy * sin(PI * follow_relative_angle / 180);
-      vy = temp_vx * sin(PI * follow_relative_angle / 180) + temp_vy * cos(PI * follow_relative_angle / 180);
+      vx = temp_vx * cos(follow_relative_angle / RAD_TO_DEG) - temp_vy * sin(follow_relative_angle / RAD_TO_DEG);
+      vy = temp_vx * sin(follow_relative_angle / RAD_TO_DEG) + temp_vy * cos(follow_relative_angle / RAD_TO_DEG);
 
       if(km_dodge || (dodging && !back_to_netural))
       {
@@ -146,7 +146,7 @@ void chassis_task(void const *argument)
   }
 }
 
-#define RAD_TO_DEG 57.3f
+
 static void chassis_imu_update(void *argc)
 {
   struct ahrs_sensor mpu_sensor;

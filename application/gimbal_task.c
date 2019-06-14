@@ -148,8 +148,8 @@ void gimbal_task(void const *argument)
       if(prc_info->kb.bit.X != 1)
       {
         gimbal_set_yaw_mode(pgimbal, GYRO_MODE);
-        pit_delta = -(float)prc_info->ch4 * 0.0007f + (float)prc_info->mouse.y * 0.0010f;
-        yaw_delta = -(float)prc_info->ch3 * 0.0007f + (float)prc_info->mouse.x * 0.0008f;
+        pit_delta = -(float)prc_info->ch4 * GIMBAL_RC_PITCH + (float)prc_info->mouse.y * GIMBAL_MOUSE_PITCH;
+        yaw_delta = -(float)prc_info->ch3 * GIMBAL_RC_YAW   + (float)prc_info->mouse.x * GIMBAL_MOUSE_YAW;
         yaw_delta += prc_info->kb.bit.E ? YAW_KB_SPEED : 0;
         yaw_delta -= prc_info->kb.bit.Q ? YAW_KB_SPEED : 0;
         gimbal_set_pitch_delta(pgimbal, pit_delta);
@@ -280,7 +280,7 @@ static void auto_gimbal_adjust(gimbal_t pgimbal)
 
     yaw_ecd_c = pgimbal->motor[YAW_MOTOR_INDEX].data.ecd;
     //using the current yaw direction for initialization
-    
+
     /*{
       yaw_time = get_time_ms();
       while (get_time_ms() - yaw_time <= 2000)

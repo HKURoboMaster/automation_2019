@@ -29,4 +29,7 @@
 void chassis_task(void const * argument);
 int32_t chassis_set_relative_angle(float angle);
 
+#define RC_CH_SCALE 660
+#define CHASSIS_NETURAL_TH 10
+
 #endif // __CHASSIS_TASK_H__
