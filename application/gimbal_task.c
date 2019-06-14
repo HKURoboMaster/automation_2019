@@ -58,8 +58,8 @@ int32_t pit_spd_fdb_js, pit_spd_ref_js;
  *
  *  Implement the customized control logic and FSM, details in Control.md
  */
- extern int32_t auto_aiming_pitch;
- extern int32_t auto_aiming_yaw;
+extern int32_t auto_aiming_pitch;
+extern int32_t auto_aiming_yaw;
 void gimbal_task(void const *argument)
 {
   uint32_t period = osKernelSysTick();
@@ -253,7 +253,7 @@ static void auto_gimbal_adjust(gimbal_t pgimbal)
   {
     pid_struct_init(&pid_pit, 2000, 0, 60, 0, 0);
     pid_struct_init(&pid_pit_spd, 30000, 3000, 60, 0.2, 0);
-    while (1)
+    while (1) //automatically detect the pitch netrual poistion
     {
       gimbal_imu_update(pgimbal);
 
@@ -278,6 +278,9 @@ static void auto_gimbal_adjust(gimbal_t pgimbal)
       }
     }
 
+    yaw_ecd_c = pgimbal->motor[YAW_MOTOR_INDEX].data.ecd;
+    //using the current yaw direction for initialization
+    
     /*{
       yaw_time = get_time_ms();
       while (get_time_ms() - yaw_time <= 2000)

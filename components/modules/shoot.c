@@ -256,7 +256,9 @@ static int32_t shoot_cmd_ctrl(struct shoot *shoot)
 {
   if (shoot == NULL)
     return -RM_INVAL;
-
+  
+  shoot_state_update(shoot);
+  
   if (shoot->state == SHOOT_INIT) //start to shoot, trigger motor running
   {
     shoot->target.motor_speed = shoot->param.turn_speed;
@@ -358,7 +360,11 @@ static int32_t shoot_pid_input_convert(struct controller *ctrl, void *input)
 
   return RM_OK;
 }
-
+/**Added by Y.H. Liu
+ * @Jun 13, 2019: Define the function
+ * 
+ * Replace the trigger switch by the total angle of the trigger motor
+ */
 static uint8_t tigger_motor_status(struct shoot * shoot)
 {
   static float trigger_motor_rotation = 0.0f;

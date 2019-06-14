@@ -159,7 +159,7 @@ mouse_cmd_e mouse_shoot_control(rc_device_t rc_dev)
 {
   static mouse_cmd_e ret_val = non;
   static int32_t pressed_count = 0;
-  uint8_t lKey= rc_dev->rc_info.mouse.l;
+  uint8_t lKey = rc_dev->rc_info.mouse.l;
 
   if(lKey)
   {
@@ -171,7 +171,7 @@ mouse_cmd_e mouse_shoot_control(rc_device_t rc_dev)
         break;
       case click:
         pressed_count += 1;
-        ret_val = pressed_count>300 ? press : click;
+        ret_val = pressed_count>CONTINUE_SHOOT_TH ? press : click;
         break;
       default:
         break;
