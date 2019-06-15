@@ -126,16 +126,20 @@ void shoot_task(void const *argument)
  * @Jun 13, 2019: to support the control by keyboards
  * 
  * Switch on/off the friction wheel
+ * @param toggled 0----not turned on yet, so turn the devices on
+ *                1----turned on already, so turn off them now
  */
 int32_t shoot_firction_toggle(shoot_t pshoot, uint8_t toggled)
 {
   if (toggled)
   {
     shoot_set_fric_speed(pshoot, 1000, 1000);
+    turn_off_laser();
   }
   else
   {
     shoot_set_fric_speed(pshoot, 1250, 1250);
+    turn_on_laser();
   }
   return 0;
 }
@@ -144,10 +148,20 @@ int32_t shoot_firction_toggle(shoot_t pshoot, uint8_t toggled)
  * @Jun 13, 2019: Declare the funtion, while leaving the defination empty
  * 
  * Send signals to the servo via interfaces to open/close the magazine lid
+ * @param toggled 0----not turned on yet, so turn the devices on
+ *                1----turned on already, so turn off them now
  */
 int32_t shoot_lid_toggle(shoot_t pshoot, uint8_t toggled)
 {
-  //TODO
+  if(toggled)
+  {
+    close_lid();
+  }
+  else
+  {
+    open_lid();
+  }
+  
 }
 
 /**Added by Y.H. Liu

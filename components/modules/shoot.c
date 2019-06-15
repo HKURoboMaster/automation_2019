@@ -380,3 +380,35 @@ static uint8_t tigger_motor_status(struct shoot * shoot)
   else 
     return TRIG_PRESS_DOWN;
 }
+
+/**Edited by Y.H Liu
+ * @Jun 15, 2019: declare the functions
+ * 
+ * Control the laser. 
+ * @param cmd 0----laser off
+ *            1----laser on
+ */
+int32_t laser_cmd(uint8_t cmd)
+{
+  if(cmd)
+    WRITE_HIGH_LASER();
+  else
+    WRITE_LOW_LASER();
+  return 0;
+}
+
+/**Edited by Y.H Liu
+ * @Jun 15, 2019: declare the functions
+ * 
+ * Control the laser. 
+ * @param cmd 0----laser off
+ *            1----laser on
+ */
+int32_t magazine_lid_cmd(uint8_t cmd)
+{
+  if(cmd)
+    MAGA_SERVO = 60;
+  else
+    MAGA_SERVO = 202;
+  return 0;
+}
