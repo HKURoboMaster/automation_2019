@@ -434,8 +434,10 @@ void ref_append_crc16(uint8_t* p_msg, uint32_t len)
 
 /** Added by Y.H. Liu
  * @Jun 16, 2019: retrive the struct storing the power & heat data
+ * 
+ * @ Ret: address of the struct powerHeatData
  */
-extPowerHeatData_t get_heat_power(void)
+extPowerHeatData_t * get_heat_power(void)
 {
-  //TODO
+  return &referee_data.powerHeatData;
 }
