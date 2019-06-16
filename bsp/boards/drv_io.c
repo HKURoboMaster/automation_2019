@@ -25,6 +25,7 @@ void pwm_device_init(void)
   HAL_TIM_PWM_Start(&htim12, TIM_CHANNEL_1); // beep
   HAL_TIM_PWM_Start(&htim1,  TIM_CHANNEL_1); // friction wheel
   HAL_TIM_PWM_Start(&htim1,  TIM_CHANNEL_4);
+  HAL_TIM_PWM_Start(&htim4,  TIM_CHANNEL_1); // servo for magazine lid
 }
 
 void fric_set_output(uint16_t  fric_spd1, uint16_t  fric_spd2)

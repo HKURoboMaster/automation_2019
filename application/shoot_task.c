@@ -45,7 +45,7 @@ void shoot_task(void const *argument)
   {
   }
 
-  uint32_t shoot_time;
+  //uint32_t shoot_time;
 
   static uint8_t fric_on = 0; //0x00 for off, 0xFF for on
   static uint8_t lid_open = 0; //0x00 for closed, 0xFF for opened
@@ -155,13 +155,12 @@ int32_t shoot_lid_toggle(shoot_t pshoot, uint8_t toggled)
 {
   if(toggled)
   {
-    close_lid();
+    return close_lid();
   }
   else
   {
-    open_lid();
+		return open_lid();
   }
-  
 }
 
 /**Added by Y.H. Liu
