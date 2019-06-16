@@ -74,6 +74,98 @@ typedef struct
   uint16_t       index;
 } unpack_data_t;
 
+/**Defined by Y.H. Liu
+ * @Jun 16, 2019: declare the structs for referee system data
+ * 
+ * Each refered to one type of data following HAEDER & CmdID
+ * Distinguished by their CmdID
+ */
+//for bullet type (ID=0x0003)
+#define BULLET_17MM 1u
+#define BULLET_42MM 2u
+//for buff_state (ID=0x0007)
+#define BLOOD_RECOVERY        (1 << 0u)
+#define ENGINEER_RECOVERING   (1 << 1u)
+#define CURING_CARD           (1 << 2u)
+#define RESOURCE_PORTECTION   (1 << 3u)
+#define B_BUFF_INVOKED_US     (1 << 4u)
+#define B_BUFF_INVOKED_ENEMY  (1 << 5u)
+#define S_BUFF_INVOKED_US     (1 << 6u)
+#define S_BUFF_INVOKED_ENEMY  (1 << 7u)
+#define FASTENED_COOLING      (1 << 8u)
+#define CASTLE_PROTECTION     (1 << 9u)
+#define FULL_DEFENSE          (1 << 10u)
+#define DEFENSE_NO_SENTRY     (1 << 11u)
+#define DEFENSE_WITH_SENTRY   (1 << 12u)
+//ID=0x0001
+  typedef __packed struct {
+    uint16_t   stageRemianTime; 
+    uint8_t    gameProgress;
+    uint8_t    robotLevel;
+    uint16_t   remainHP;
+    uint16_t   maxHP;
+  }extGameRobotState_t;
+//ID=0x0002
+  typedef __packed struct {
+    uint8_t   armorType  : 4;
+    uint8_t   hurtType   : 4;
+  } extRobotHurt_t;
+//ID=0x0003
+  typedef __packed struct {
+    uint8_t 	bulletType;
+    uint8_t 	bulletFreq;
+    float  	bulletSpeed;
+  }extShootData_t;
+//ID=0x0004
+  typedef __packed struct {
+    float     chassisVolt;
+    float     chassisCurrent;
+    float     chassisPower;
+    float     chassisPowerBuffer;
+    uint16_t  shooterHeat0;
+    uint16_t  shooterHeat1;
+  }extPowerHeatData_t;
+//ID=0x0005
+  typedef __packed struct {
+    uint8_t   cardType;
+    uint8_t   cardIdx;
+  }extRfidDetect_t;
+//ID=0x0006
+  typedef __packed struct {
+    uint8_t  winner;
+  }extGameResult_t;
+//ID=0x0007
+  typedef __packed struct {
+    uint16_t   buffMusk;
+  } extBuffMusk_t;
+//ID=0x0008
+  typedef __packed struct {
+    float    x;
+    float    y;
+    float    z;
+    float    yaw;
+  }extGameRobotPos_t;
+//ID=0x0100
+  //self-defined info
+
+typedef struct 
+{
+  extGameRobotState_t gameRobotState;
+  extRobotHurt_t      robotHurt;
+  extShootData_t      shootData;
+  extPowerHeatData_t  powerHeatData;
+  extRfidDetect_t     rfidDetect;
+  extGameResult_t     result;
+  extBuffMusk_t       buffMusk;
+  extGameRobotPos_t   robotPos;
+} referee_data_t;
+
+typedef enum
+{
+  gameRobotState=0, robotHurt, shootData, powerHeatData, rfidDetect, result, buffMusk, robotPos, 
+  selfDefined=0x0100, icra_upstream, icra_downstream
+}cmdID_t;
+
 void referee_param_init(void);
 void referee_unpack_fifo_data(void);
 uint32_t referee_uart_rx_data_handle(uint8_t *data, uint32_t len);
