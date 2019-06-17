@@ -76,10 +76,12 @@ void chassis_task(void const *argument)
         key_x_speed /= 2;
         key_y_speed /= 2;
       }
+      float square_ch2 = ((float)prc_info->ch2 * fabsf(prc_info->ch2) / RC_CH_SCALE) / RC_CH_SCALE;
+      float square_ch1 = ((float)prc_info->ch1 * fabsf(prc_info->ch1) / RC_CH_SCALE) / RC_CH_SCALE;
 
-      float temp_vx = (float)prc_info->ch2 / RC_CH_SCALE * MAX_CHASSIS_VX_SPEED;
+      float temp_vx = square_ch2 * MAX_CHASSIS_VX_SPEED;
       temp_vx += (prc_info->kb.bit.W - prc_info->kb.bit.S)* key_x_speed;
-      float temp_vy = -(float)prc_info->ch1 / RC_CH_SCALE * MAX_CHASSIS_VY_SPEED;
+      float temp_vy = -square_ch1 * MAX_CHASSIS_VY_SPEED;
       temp_vy += (prc_info->kb.bit.D - prc_info->kb.bit.A)* key_y_speed;
       vx = temp_vx * cos(follow_relative_angle / RAD_TO_DEG) - temp_vy * sin(follow_relative_angle / RAD_TO_DEG);
       vy = temp_vx * sin(follow_relative_angle / RAD_TO_DEG) + temp_vy * cos(follow_relative_angle / RAD_TO_DEG);
