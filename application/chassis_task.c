@@ -32,9 +32,17 @@ static void chassis_imu_update(void *argc);
 
 /** Edited by Y.H. Liu
   * @Jun 12, 2019: modified the mode switch
+  * @Jun 18, 2019: chassis current control
   *
   * Implement the customized control logic and FSM, details in Control.md
 */
+#ifdef CHASSIS_POWER_CTRL
+  #include "referee_system.h"
+  static uint8_t reset_chassis_speed(chassis_t pchassis);
+  static uint8_t detect_chassis_power(chassis_t, uint8_t *, uint8_t sprint_cmd, uint16_t sc_v);
+  typedef enum {NORMAL, SPRINT, BUFF_RECOVER}chassis_power_t;
+#endif
+
 #define km_dodge          prc_info->kb.bit.C == 1
 #define back_to_netural   follow_relative_angle < CHASSIS_NETURAL_TH && follow_relative_angle >= -CHASSIS_NETURAL_TH
 
@@ -141,10 +149,29 @@ void chassis_task(void const *argument)
       chassis_set_acc(pchassis, 0, 0, 0);
     }
   */
-
-    chassis_imu_update(pchassis);
-    chassis_execute(pchassis);
-    osDelayUntil(&period, 2);
+    #ifdef CHASSIS_POWER_CTRL
+      uint8_t superCapacitor_V = 22; // TODO: retrive from function
+      uint8_t superCapacitor_Ctrl = 0;
+      uint8_t power_excess = 0;
+      do
+      {
+        if(power_excess)
+          power_excess = reset_chassis_speed(pchassis);
+        chassis_imu_update(pchassis);
+        chassis_execute(pchassis);
+        osDelayUntil(&period, 2);
+        power_excess = detect_chassis_power(pchassis, 
+                                            &superCapacitor_Ctrl, 
+                                            prc_info->kb.bit.SHIFT || prc_info->ch2>600,
+                                            superCapacitor_V );
+        //set_cmd_to_sc(superCapacitor_V)
+      }while(power_excess);
+    #else
+      chassis_imu_update(pchassis);
+      chassis_execute(pchassis);
+    
+      osDelayUntil(&period, 2);
+    #endif
   }
 }
 
@@ -160,6 +187,84 @@ static void chassis_imu_update(void *argc)
   chassis_gyro_update(pchassis, -mahony_atti.yaw, mpu_sensor.wz * RAD_TO_DEG);
   // TODO: adapt coordinates to our own design
 }
+
+#ifdef CHASSIS_POWER_CTRL
+/**Added by Y.H. Liu
+ * @Jun 18, 2019: implement the function
+ * 
+ * Reset the chassis moving speed ref in case too much power consumed
+ */
+static uint8_t reset_chassis_speed(chassis_t pchassis)
+{
+  extPowerHeatData_t * power = get_heat_power();
+  float portion = sqrtf(power->chassisPower / CHASSIS_POWER_TH);
+  pchassis->mecanum.speed.vx *= portion;
+  pchassis->mecanum.speed.vy *= portion;
+
+  return 0;
+}
+/**Added by Y.H. Liu
+ * @Jun 18, 2019: implement the function
+ * 
+ * state update and detect whether the chassis is consuming too much power
+ */
+static uint8_t detect_chassis_power(chassis_t pchassis, uint8_t * supercap_ctrl, uint8_t sprint_cmd, uint16_t sc_v)
+{
+  static chassis_power_t st = NORMAL;
+  static uint32_t no_buffer_time = 0;
+  static uint32_t last_click = 0;
+  int16_t power_limit = CHASSIS_POWER_TH;
+  extPowerHeatData_t * power = get_heat_power();
+
+  if(power->chassisPowerBuffer<=0)
+  {
+    no_buffer_time = no_buffer_time==0 ? 1 : no_buffer_time+(HAL_GetTick()-last_click);
+    last_click = HAL_GetTick();
+  }
+  else
+  {
+    no_buffer_time = 0;
+    last_click = 0;
+  }
+  
+  switch (st)
+  {
+  case NORMAL:
+    *supercap_ctrl = 0;
+    if(power->chassisPowerBuffer <= LOW_BUFFER)
+      st = BUFF_RECOVER;
+    else if(sprint_cmd)
+      st = SPRINT;
+    else
+      st = NORMAL;
+    break;
+  case SPRINT:
+    *supercap_ctrl = 1;
+    power_limit = 32767; // positive infinity
+    if(!sprint_cmd || sc_v <= LOW_VOLTAGE)
+      st = NORMAL;
+    else if(no_buffer_time > 3000)
+      st = BUFF_RECOVER;
+    else 
+      st = NORMAL;
+    break;
+  case BUFF_RECOVER:
+    *supercap_ctrl = 0;
+    power_limit *= 0.8;
+    if(power->chassisPowerBuffer > 2*LOW_BUFFER)
+      st = NORMAL;
+    else
+      st = BUFF_RECOVER;
+    break;
+  default:
+    *supercap_ctrl = 0;
+    st = NORMAL;
+    break;
+  }
+
+  return power->chassisPower>power_limit;
+}
+#endif
 
 int32_t chassis_set_relative_angle(float angle)
 {
