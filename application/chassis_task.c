@@ -91,20 +91,30 @@ void chassis_task(void const *argument)
 }
 
 #define RAD_TO_DEG 57.3f
+/**Modified by Y.H. Liu
+ * @Jun 18, 2019: bypass the chassis mpu
+ * 
+ * Update the chassis positional information
+ */
+float gimbal_gyro_angle = 0;
 static void chassis_imu_update(void *argc)
 {
-  struct ahrs_sensor mpu_sensor;
-  struct attitude mahony_atti;
+  // struct ahrs_sensor mpu_sensor;
+  // struct attitude mahony_atti;
   chassis_t pchassis = (chassis_t)argc;
-  mpu_get_data(&mpu_sensor);
-  mahony_ahrs_updateIMU(&mpu_sensor, &mahony_atti);
-  // TODO: adapt coordinates to our own design
-  chassis_gyro_update(pchassis, -mahony_atti.yaw, mpu_sensor.wz * RAD_TO_DEG);
-  // TODO: adapt coordinates to our own design
+  // mpu_get_data(&mpu_sensor);
+  // mahony_ahrs_updateIMU(&mpu_sensor, &mahony_atti);
+  // chassis_gyro_update(pchassis, -mahony_atti.yaw, mpu_sensor.wz * RAD_TO_DEG);
+  static float last_relative_angle = 0.0f;
+  float delta_angle = follow_relative_angle - last_relative_angle;
+  chassis_gyro_update(pchassis, gimbal_gyro_angle+follow_relative_angle, delta_angle*0.001f);
+  //TODO: check the sign
+  last_relative_angle = follow_relative_angle;
 }
 
-int32_t chassis_set_relative_angle(float angle)
+int32_t chassis_set_yaw_angle(float ecd_angle, float gim_angle)
 {
-  follow_relative_angle = angle;
+  follow_relative_angle = ecd_angle;
+  gimbal_gyro_angle = gim_angle;
   return 0;
 }
