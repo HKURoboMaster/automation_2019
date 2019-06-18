@@ -38,9 +38,9 @@ static void chassis_imu_update(void *argc);
 */
 #ifdef CHASSIS_POWER_CTRL
   #include "referee_system.h"
-  static uint8_t reset_chassis_speed(chassis_t pchassis);
+  static uint8_t reset_chassis_speed(chassis_t pchassis, uint8_t flag);
   static uint8_t detect_chassis_power(chassis_t, uint8_t *, uint8_t sprint_cmd, uint16_t sc_v);
-  typedef enum {NORMAL, SPRINT, BUFF_RECOVER}chassis_power_t;
+  typedef enum {NORMAL=0, SPRINT, BUFF_RECOVER}chassis_power_t;
 #endif
 
 #define km_dodge          prc_info->kb.bit.C == 1
@@ -156,7 +156,7 @@ void chassis_task(void const *argument)
       do
       {
         if(power_excess)
-          power_excess = reset_chassis_speed(pchassis);
+          power_excess = reset_chassis_speed(pchassis, power_excess);
         chassis_imu_update(pchassis);
         chassis_execute(pchassis);
         osDelayUntil(&period, 2);
@@ -194,12 +194,24 @@ static void chassis_imu_update(void *argc)
  * 
  * Reset the chassis moving speed ref in case too much power consumed
  */
-static uint8_t reset_chassis_speed(chassis_t pchassis)
+static uint8_t reset_chassis_speed(chassis_t pchassis, uint8_t flag)
 {
   extPowerHeatData_t * power = get_heat_power();
-  float portion = sqrtf(power->chassisPower / CHASSIS_POWER_TH);
-  pchassis->mecanum.speed.vx *= portion;
-  pchassis->mecanum.speed.vy *= portion;
+  float portion; 
+  switch (flag)
+  {
+  case 1:
+    portion = sqrtf(power->chassisPower / CHASSIS_POWER_TH);
+    break;
+  case 4:
+    portion = sqrtf(power->chassisPower / (0.8f * CHASSIS_POWER_TH));
+  default:
+    portion = 1;
+    break;
+  }
+
+  pchassis->mecanum.speed.vx /= portion;
+  pchassis->mecanum.speed.vy /= portion;
 
   return 0;
 }
@@ -262,7 +274,11 @@ static uint8_t detect_chassis_power(chassis_t pchassis, uint8_t * supercap_ctrl,
     break;
   }
 
-  return power->chassisPower>power_limit;
+  return power->chassisPower>power_limit ? 1<<(uint8_t)st : 0;
+  //thus, return 0 <=> No excessing
+  //             1 <=> NORMAL, exceeded
+  //             2 <=> SRPINT, exceeded
+  //             4 <=> RECOVERY, exceeded
 }
 #endif
 
