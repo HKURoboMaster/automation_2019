@@ -22,6 +22,7 @@
 #include "ahrs.h"
 
 #include <math.h>
+#define PI 3.142f
 #define RAD_TO_DEG 57.296f // 180/PI
 
 static float vx, vy, wz;
@@ -33,6 +34,7 @@ static void chassis_imu_update(void *argc);
 /** Edited by Y.H. Liu
   * @Jun 12, 2019: modified the mode switch
   * @Jun 18, 2019: chassis current control
+  * @Jun 20, 2019: adaption for hero
   *
   * Implement the customized control logic and FSM, details in Control.md
 */
@@ -68,6 +70,12 @@ void chassis_task(void const *argument)
 
   pid_struct_init(&pid_follow, MAX_CHASSIS_VW_SPEED, 50, 8.0f, 0.0f, 2.0f);
 
+  #ifdef HERO_ROBOT
+  static uint32_t now_tick;
+  static int32_t twist_count;
+  static int8_t   twist_sign = 1;
+  static uint32_t last_tick = 0;
+  #endif
   while (1)
   {
     if (rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK || rc_device_get_state(prc_dev, RC_S2_MID) == RM_OK)
@@ -96,13 +104,29 @@ void chassis_task(void const *argument)
 
       if(km_dodge || (dodging && !back_to_netural))
       {
+        #ifndef HERO_ROBOT
         wz = 3 * MAX_CHASSIS_VW_SPEED / 5;
         dodging |= 1;
+        #else
+          //time-based twist with a sin function
+          now_tick = HAL_GetTick();
+          twist_count += last_tick==0 ? twist_sign : twist_sign * (now_tick-last_tick);
+          last_tick = now_tick;
+          if(twist_count >= 500 || twist_count <= -500)
+          {
+		        twist_count = twist_count>0?500:-500;
+            twist_sign *= -1;
+          }
+          vw = twist_sign * sin(PI * twist_count / 500) * CHASSIS_RC_MAX_SPEED_R;
+        #endif
       }
       else
       {
         wz  = pid_calculate(&pid_follow, follow_relative_angle, 0);
         dodging &= 0;
+        #ifdef HERO_ROBOT
+        last_tick = 0;
+        #endif
       }
 
       chassis_set_offset(pchassis, ROTATE_X_OFFSET, ROTATE_Y_OFFSET);
@@ -148,7 +172,8 @@ void chassis_task(void const *argument)
 
       chassis_set_acc(pchassis, 0, 0, 0);
     }
-  */
+    */
+   
     #ifdef CHASSIS_POWER_CTRL
       uint8_t superCapacitor_V = 22; // TODO: retrive from function
       uint8_t superCapacitor_Ctrl = 0;

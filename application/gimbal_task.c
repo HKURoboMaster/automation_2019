@@ -249,6 +249,11 @@ void send_gimbal_current(int16_t iq1, int16_t iq2, int16_t iq3)
 struct pid pid_pit = {0};
 struct pid pid_pit_spd = {0};
 
+/**Modified by Y.H. Liu
+ * @Jun 20, 2019: adaption for hero
+ * 
+ * Automatically adjust the netural position for gimbal
+ */
 static void auto_gimbal_adjust(gimbal_t pgimbal)
 {
   if (auto_adjust_f)
@@ -279,11 +284,11 @@ static void auto_gimbal_adjust(gimbal_t pgimbal)
         break;
       }
     }
-
+    #ifndef HERO_ROBOT
     yaw_ecd_c = pgimbal->motor[YAW_MOTOR_INDEX].data.ecd;
     //using the current yaw direction for initialization
-
-    /*{
+    #else
+    {
       yaw_time = get_time_ms();
       while (get_time_ms() - yaw_time <= 2000)
       {
@@ -315,7 +320,8 @@ static void auto_gimbal_adjust(gimbal_t pgimbal)
           yaw_ecd_c = (yaw_ecd_l + yaw_ecd_r) / 2 + 4096;
         }
       }
-    }*/
+    }
+    #endif
     yaw_ecd_c = pgimbal->motor[YAW_MOTOR_INDEX].data.ecd;
     gimbal_save_data(yaw_ecd_c, pit_ecd_c);
     gimbal_set_offset(pgimbal, yaw_ecd_c, pit_ecd_c);

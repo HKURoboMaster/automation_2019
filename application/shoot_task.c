@@ -25,6 +25,7 @@ int32_t shoot_lid_toggle(shoot_t pshoot, uint8_t toggled);
 
 /**Edited by Y.H. Liu
  * @Jun 13, 2019: change the FSM for shooting
+ * @Jun 20, 2019: adaption for hero
  * 
  * Implement the control logic described in Control.md
  */
@@ -49,6 +50,8 @@ void shoot_task(void const *argument)
 
   static uint8_t fric_on = 0; //0x00 for off, 0xFF for on
   static uint8_t lid_open = 0; //0x00 for closed, 0xFF for opened
+  shoot_firction_toggle(pshoot, 1);
+  shoot_lid_toggle(pshoot,1);
   while (1)
   {
     if (rc_device_get_state(prc_dev, RC_S1_MID2UP) == RM_OK)
@@ -56,7 +59,7 @@ void shoot_task(void const *argument)
       shoot_firction_toggle(pshoot, fric_on);
       fric_on = ~fric_on;
     }
-
+    #ifndef HERO_ROBOT
     if (rc_device_get_state(prc_dev, RC_S1_MID2DOWN) == RM_OK)
     {
       // shoot_set_cmd(pshoot, SHOOT_ONCE_CMD, 1);
@@ -64,32 +67,35 @@ void shoot_task(void const *argument)
       shoot_lid_toggle(pshoot, lid_open);
       lid_open = ~lid_open;
     }
+    if(rc_device_get_state(prc_dev, RC_S1_MID2DOWN) == RM_OK ||
+     (prc_dev->rc_info.kb.bit.R && !prc_dev->last_rc_info.kb.bit.R))
+    {
+      shoot_lid_toggle(pshoot, 0);
+    }
+    if(rc_device_get_state(prc_dev, RC_S1_DOWN2MID) == RM_OK ||
+     !prc_dev->rc_info.kb.bit.R && prc_dev->last_rc_info.kb.bit.R)
+    {
+      shoot_lid_toggle(pshoot, 1);
+    }
+    #else
+    // Reserved for lifting / lowering the liner actuator
+    #endif
 
     /*------ implement the kebboard controlling over shooting ------*/
     if(prc_dev->rc_info.kb.bit.Z ) 
     {
-      if(prc_dev->rc_info.kb.bit.F) //turn off the fric regardless the situation
+      if(prc_dev->rc_info.kb.bit.F && !prc_dev->last_rc_info.kb.bit.F) //turn off the fric regardless the situation
       {
         shoot_firction_toggle(pshoot,1); //assume that currently the fric is on
         fric_on &= ~fric_on; //set fric_on to be 0x00 i.e. off
       }
-      if(prc_dev->rc_info.kb.bit.R) //close the lid regardless the situation
-      {
-        shoot_lid_toggle(pshoot, 1); //same logic as above
-        lid_open &= ~lid_open;
-      }
     }
     else
     {
-      if(prc_dev->rc_info.kb.bit.F) //turn on the fric regardless the situation
+      if(prc_dev->rc_info.kb.bit.F && !prc_dev->last_rc_info.kb.bit.F) //turn on the fric regardless the situation
       {
         shoot_firction_toggle(pshoot,0); //assume that currently the fric is off
         fric_on |= ~fric_on; //set fric_on to be 0xFF i.e. on
-      }
-      if(prc_dev->rc_info.kb.bit.R) //open the lid regardless the situation
-      {
-        shoot_lid_toggle(pshoot, 0); //same logic as above
-        lid_open |= ~lid_open;
       }
     }
     
