@@ -60,13 +60,11 @@ void shoot_task(void const *argument)
       fric_on = ~fric_on;
     }
     #ifndef HERO_ROBOT
-    if (rc_device_get_state(prc_dev, RC_S1_MID2DOWN) == RM_OK)
-    {
-      // shoot_set_cmd(pshoot, SHOOT_ONCE_CMD, 1);
-      // shoot_time = get_time_ms();
-      shoot_lid_toggle(pshoot, lid_open);
-      lid_open = ~lid_open;
-    }
+    // if (rc_device_get_state(prc_dev, RC_S1_MID2DOWN) == RM_OK)
+    // {
+    //   shoot_set_cmd(pshoot, SHOOT_ONCE_CMD, 1);
+    //   shoot_time = get_time_ms();
+    // }
     if(rc_device_get_state(prc_dev, RC_S1_MID2DOWN) == RM_OK ||
      (prc_dev->rc_info.kb.bit.R && !prc_dev->last_rc_info.kb.bit.R))
     {
