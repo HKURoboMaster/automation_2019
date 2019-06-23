@@ -101,7 +101,8 @@
 /* #define USE_FULL_ASSERT    1U */
 
 /* USER CODE BEGIN Private defines */
-
+#define LASER_PIN GPIO_PIN_13
+#define LASER_GPIO_PORT GPIOG
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
