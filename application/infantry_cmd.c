@@ -143,7 +143,7 @@ void infantry_cmd_task(void const *argument)
         {
           struct cmd_gimbal_angle *pangle;
           pangle = &manifold_cmd.gimbal_angle;
-          if(prc_dev->rc_info.mouse.r)
+          if(prc_dev->rc_info.mouse.r || rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK)
           {
             if (pangle->ctrl.bit.pitch_mode == 0)
             {
@@ -151,7 +151,7 @@ void infantry_cmd_task(void const *argument)
             }
             else
             {
-              gimbal_set_pitch_speed(pgimbal, pangle->pitch / 10.0f);
+              // gimbal_set_pitch_speed(pgimbal, pangle->pitch / 10.0f);
               auto_aiming_pitch = pangle->pitch / 10.0f;
             }
             if (pangle->ctrl.bit.yaw_mode == 0)
@@ -160,7 +160,7 @@ void infantry_cmd_task(void const *argument)
             }
             else
             {
-              gimbal_set_yaw_speed(pgimbal, pangle->yaw / 10.0f);
+              // gimbal_set_yaw_speed(pgimbal, pangle->yaw / 10.0f);
               auto_aiming_yaw = pangle->yaw / 10.0f;
             }
           }

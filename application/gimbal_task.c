@@ -147,6 +147,10 @@ void gimbal_task(void const *argument)
       //manual control mode i.e. chassis follow gimbal
       if(prc_info->kb.bit.X != 1)
       {
+        //auto_aimming
+        gimbal_set_pitch_speed(pgimbal, auto_aiming_pitch);
+        gimbal_set_yaw_speed(pgimbal, auto_aiming_yaw);
+
         float square_ch3 = (float)prc_info->ch4 * fabsf(prc_info->ch3) / RC_CH_SCALE;
 
         gimbal_set_yaw_mode(pgimbal, GYRO_MODE);
