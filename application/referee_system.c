@@ -31,6 +31,13 @@ static uint8_t   referee_rxdata_buf[REFEREE_FIFO_BUFLEN];
 static ref_send_handler_t ref_protocol_send;
 static uint8_t ref_seq_num;
 
+/**Added by Y.H. Liu
+ * @Jun 16, 2019: define static variable for referee system data
+ * 
+ * Instance of struct which stores the referee system data, exposed by relevant functions
+ */
+static referee_data_t referee_data = {};
+
 void referee_param_init(void)
 {
   fifo_s_init(&referee_rxdata_fifo, referee_rxdata_buf, REFEREE_FIFO_BUFLEN);
@@ -93,6 +100,11 @@ uint32_t referee_uart_rx_data_handle(uint8_t *data, uint32_t len)
 	return 0;
 }
 
+/**Modified by Y.H. Liu
+ * @Jun 16, 2019: unpack the data from packages
+ * 
+ * Unpack data and re-send them to mainfold
+ */
 void referee_data_handler(uint8_t *p_frame)
 {
   frame_header_t *p_header = (frame_header_t*)p_frame;
@@ -103,6 +115,54 @@ void referee_data_handler(uint8_t *p_frame)
   uint8_t *data_addr   = p_frame + REF_PROTOCOL_HEADER_SIZE + REF_PROTOCOL_CMD_SIZE;
   
   protocol_send(MANIFOLD2_ADDRESS, cmd_id + 0x4000, data_addr, data_length);
+
+  /*------ Unpack the data ------*/
+  cmdID_t unpack_cmd = (cmdID_t) cmd_id;
+  switch (unpack_cmd)
+  {
+    case gameRobotState: // 8bytes 
+      referee_data.gameRobotState.stageRemianTime = *(uint16_t *)(data_addr);
+      referee_data.gameRobotState.gameProgress = *(uint8_t *)(data_addr+2);
+      referee_data.gameRobotState.robotLevel = *(uint8_t *)(data_addr+3);
+      referee_data.gameRobotState.remainHP = *(uint16_t *)(data_addr+4);
+      referee_data.gameRobotState.maxHP = *(uint16_t *)(data_addr+6);
+      break;
+    case robotHurt:
+      referee_data.robotHurt.armorType = *(uint8_t *)(data_addr) & 15;
+      referee_data.robotHurt.hurtType = *(uint8_t *)(data_addr) >> 4;
+      break;
+    case shootData:
+      referee_data.shootData.bulletType = *(uint8_t *)(data_addr);
+      referee_data.shootData.bulletFreq = *(uint8_t *)(data_addr+1);
+      referee_data.shootData.bulletSpeed = *(float *)(data_addr+2);
+      break;
+    case powerHeatData:
+      referee_data.powerHeatData.chassisVolt = *(float *)(data_addr);
+      referee_data.powerHeatData.chassisCurrent = *(float *)(data_addr+4);
+      referee_data.powerHeatData.chassisPower = *(float *)(data_addr+8);
+      referee_data.powerHeatData.chassisPowerBuffer = *(float *)(data_addr+12);
+      referee_data.powerHeatData.shooterHeat0 = *(uint16_t *)(data_addr+16);
+      referee_data.powerHeatData.shooterHeat1 = *(uint16_t *)(data_addr+18);
+      break;
+    case rfidDetect: 
+      referee_data.rfidDetect.cardType = *(data_addr);
+      referee_data.rfidDetect.cardIdx = *(data_addr+1);
+      break;
+    case result:
+      referee_data.result.winner = *data_addr;
+      break;
+    case buffMusk:
+      referee_data.buffMusk.buffMusk = *(uint16_t *)(data_addr);
+      break;
+    case robotPos:
+      referee_data.robotPos.x = *(float *)(data_addr+0);
+      referee_data.robotPos.y = *(float *)(data_addr+4);
+      referee_data.robotPos.z = *(float *)(data_addr+8);
+      referee_data.robotPos.yaw = *(float *)(data_addr+12);
+      break;
+    default:
+      break;
+  }
 }
 
 void referee_unpack_fifo_data(void)
@@ -370,4 +430,14 @@ void ref_append_crc16(uint8_t* p_msg, uint32_t len)
 
     p_msg[len-2] = (uint8_t)(crc16 & 0x00ff);
     p_msg[len-1] = (uint8_t)((crc16 >> 8)& 0x00ff);
+}
+
+/** Added by Y.H. Liu
+ * @Jun 16, 2019: retrieve the struct storing the power & heat data
+ * 
+ * @ Ret: address of the struct powerHeatData
+ */
+extPowerHeatData_t * get_heat_power(void)
+{
+  return &referee_data.powerHeatData;
 }
