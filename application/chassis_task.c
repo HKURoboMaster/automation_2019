@@ -46,7 +46,7 @@ static void chassis_imu_update(void *argc);
   typedef enum {NORMAL=0, SPRINT, BUFF_RECOVER}chassis_power_t;
 #endif
 
-#define km_dodge          prc_info->kb.bit.C == 1
+#define km_dodge          prc_info->kb.bit.V == 1
 #define back_to_netural   follow_relative_angle < CHASSIS_NETURAL_TH && follow_relative_angle >= -CHASSIS_NETURAL_TH
 
 uint8_t dodging = 0;
