@@ -36,7 +36,7 @@ static uint8_t ref_seq_num;
  * 
  * Instance of struct which stores the referee system data, exposed by relevant functions
  */
-static referee_data_t referee_data = {};
+static referee_data_t referee_data = {0};
 
 void referee_param_init(void)
 {
@@ -117,7 +117,7 @@ void referee_data_handler(uint8_t *p_frame)
   protocol_send(MANIFOLD2_ADDRESS, cmd_id + 0x4000, data_addr, data_length);
 
   /*------ Unpack the data ------*/
-  cmdID_t unpack_cmd = (cmdID_t) cmd_id;
+  cmdID_t unpack_cmd = (cmdID_t) (cmd_id-0x0200);
   switch (unpack_cmd)
   {
     case gameRobotState: // 8bytes 
