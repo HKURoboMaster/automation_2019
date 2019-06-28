@@ -27,6 +27,6 @@
 #include "chassis.h"
 
 void chassis_task(void const * argument);
-int32_t chassis_set_yaw_angle(float ecd_angle, float gim_angle); // for bypassing the chassis gyro
+int32_t chassis_set_relative_angle(float angle);
 
 #endif // __CHASSIS_TASK_H__

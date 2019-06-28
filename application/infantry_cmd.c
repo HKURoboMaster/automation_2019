@@ -239,8 +239,7 @@ int32_t gimbal_info_rcv(uint8_t *buff, uint16_t len)
 {
   struct cmd_gimbal_info *info;
   info = (struct cmd_gimbal_info *)buff;
-  chassis_set_yaw_angle(info->yaw_ecd_angle / 10.0f, info->yaw_gyro_angle / 10.0f);
-  // for bypassing the chassis gyro
+  chassis_set_relative_angle(info->yaw_ecd_angle / 10.0f);
   return 0;
 }
 
