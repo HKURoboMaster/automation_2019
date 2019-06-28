@@ -66,8 +66,6 @@ int32_t gimbal_adjust_cmd(uint8_t *buff, uint16_t len)
   return 0;
 }
 
-/*-------- Added by Y.H. Liu @ 25 Jun, 2019 --------*/
-float referee_system_powerBuffer_js = 0.0f;
 void infantry_cmd_task(void const *argument)
 {
   uint8_t app;
@@ -178,9 +176,6 @@ void infantry_cmd_task(void const *argument)
       }
     }
   }
-  extPowerHeatData_t * temp_PH_retirved;
-  temp_PH_retirved = get_heat_power();
-  referee_system_powerBuffer_js = temp_PH_retirved->chassisPowerBuffer;
 }
 
 int32_t student_data_transmit(uint8_t *buff, uint16_t len)
