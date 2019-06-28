@@ -97,8 +97,11 @@ typedef struct
 #define FULL_DEFENSE          (1 << 10u)
 #define DEFENSE_NO_SENTRY     (1 << 11u)
 #define DEFENSE_WITH_SENTRY   (1 << 12u)
+
+#pragma pack(push,2)
 //ID=0x0001
-  typedef __packed struct {
+  typedef struct
+  {
     uint16_t   stageRemianTime; 
     uint8_t    gameProgress;
     uint8_t    robotLevel;
@@ -106,18 +109,21 @@ typedef struct
     uint16_t   maxHP;
   }extGameRobotState_t;
 //ID=0x0002
-  typedef __packed struct {
+  typedef struct
+  {
     uint8_t   armorType  : 4;
     uint8_t   hurtType   : 4;
   } extRobotHurt_t;
 //ID=0x0003
-  typedef __packed struct {
+  typedef struct
+  {
     uint8_t 	bulletType;
     uint8_t 	bulletFreq;
     float  	bulletSpeed;
   }extShootData_t;
 //ID=0x0004
-  typedef __packed struct {
+  typedef struct
+  {
     float     chassisVolt;
     float     chassisCurrent;
     float     chassisPower;
@@ -126,20 +132,24 @@ typedef struct
     uint16_t  shooterHeat1;
   }extPowerHeatData_t;
 //ID=0x0005
-  typedef __packed struct {
+  typedef struct
+  {
     uint8_t   cardType;
     uint8_t   cardIdx;
   }extRfidDetect_t;
 //ID=0x0006
-  typedef __packed struct {
+  typedef struct
+  {
     uint8_t  winner;
   }extGameResult_t;
 //ID=0x0007
-  typedef __packed struct {
+  typedef struct
+  {
     uint16_t   buffMusk;
   } extBuffMusk_t;
 //ID=0x0008
-  typedef __packed struct {
+  typedef struct
+  {
     float    x;
     float    y;
     float    z;
@@ -159,6 +169,8 @@ typedef struct
   extBuffMusk_t       buffMusk;
   extGameRobotPos_t   robotPos;
 } referee_data_t;
+
+#pragma pack(pop)
 
 typedef enum
 {
