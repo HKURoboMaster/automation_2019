@@ -57,8 +57,8 @@ int32_t beep_set_times(uint8_t times);
 int32_t beep_ctrl_times(void *argc);
 int32_t led_toggle_300ms(void *argc);
 
-#define WRITE_HIGH_LASER()  HAL_GPIO_WritePin(GPIOG, GPIO_PIN_13, GPIO_PIN_SET)
-#define WRITE_LOW_LASER()   HAL_GPIO_WritePin(GPIOG, GPIO_PIN_13, GPIO_PIN_RESET)
+#define WRITE_HIGH_LASER()  HAL_GPIO_WritePin(GPIOG, GPIO_PIN_13, GPIO_PIN_RESET)
+#define WRITE_LOW_LASER()   HAL_GPIO_WritePin(GPIOG, GPIO_PIN_13, GPIO_PIN_SET)
 #define MAGA_SERVO          TIM4->CCR1
 
 #endif // __DRV_IO_H__
