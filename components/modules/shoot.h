@@ -105,5 +105,12 @@ int32_t shoot_state_update(struct shoot *shoot);
 int32_t shoot_enable(struct shoot *shoot);
 int32_t shoot_disable(struct shoot *shoot);
 int32_t shoot_set_turn_speed(struct shoot *shoot, uint16_t speed);
+int32_t laser_cmd(uint8_t cmd);
+int32_t magazine_lid_cmd(uint8_t cmd);
+
+#define open_lid()        magazine_lid_cmd(1u)
+#define close_lid()       magazine_lid_cmd(0u)
+#define turn_on_laser()   laser_cmd(1u)
+#define turn_off_laser()  laser_cmd(0u)
 
 #endif // __SHOOT_H__

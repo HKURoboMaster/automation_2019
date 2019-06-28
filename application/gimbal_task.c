@@ -53,6 +53,13 @@ int32_t pit_angle_fdb_js, pit_angle_ref_js;
 int32_t yaw_spd_fdb_js, yaw_spd_ref_js;
 int32_t pit_spd_fdb_js, pit_spd_ref_js;
 
+/** Edited by Y.H. Liu
+ *  @Jun 12, 2019: modified the mode switch
+ *
+ *  Implement the customized control logic and FSM, details in Control.md
+ */
+extern int32_t auto_aiming_pitch;
+extern int32_t auto_aiming_yaw;
 void gimbal_task(void const *argument)
 {
   uint32_t period = osKernelSysTick();
@@ -91,6 +98,7 @@ void gimbal_task(void const *argument)
 
   while (1)
   {
+    /*
     if (rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK)
     {
       gimbal_set_yaw_mode(pgimbal, GYRO_MODE);
@@ -120,6 +128,52 @@ void gimbal_task(void const *argument)
     if (rc_device_get_state(prc_dev, RC_S2_DOWN) == RM_OK)
     {
       gimbal_set_yaw_mode(pgimbal, ENCODER_MODE);
+    }
+    */
+    if(rc_device_get_state(prc_dev, RC_S2_DOWN2MID) == RM_OK)
+    {
+      //switched out disabled mode
+      gimbal_pitch_enable(pgimbal);
+      gimbal_yaw_enable(pgimbal);
+    }
+    if(rc_device_get_state(prc_dev, RC_S2_MID2DOWN) == RM_OK)
+    {
+      //switch to the disabled mode
+      gimbal_set_yaw_angle(pgimbal, 0, 0);
+    }
+    if (rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK || rc_device_get_state(prc_dev, RC_S2_MID) == RM_OK
+    ||  rc_device_get_state(prc_dev, RC_S2_MID2UP) == RM_OK || rc_device_get_state(prc_dev,RC_S2_UP2MID == RM_OK))
+    {
+      //manual control mode i.e. chassis follow gimbal
+      if(prc_info->kb.bit.X != 1)
+      {
+        //auto_aimming
+        gimbal_set_pitch_speed(pgimbal, auto_aiming_pitch);
+        gimbal_set_yaw_speed(pgimbal, auto_aiming_yaw);
+
+        float square_ch3 = (float)prc_info->ch4 * fabsf(prc_info->ch3) / RC_CH_SCALE;
+
+        gimbal_set_yaw_mode(pgimbal, GYRO_MODE);
+        pit_delta = -(float)prc_info->ch4 * GIMBAL_RC_PITCH + (float)prc_info->mouse.y * GIMBAL_MOUSE_PITCH;
+        yaw_delta =     -square_ch3       * GIMBAL_RC_YAW   + (float)prc_info->mouse.x * GIMBAL_MOUSE_YAW;
+        yaw_delta += prc_info->kb.bit.E ? YAW_KB_SPEED : 0;
+        yaw_delta -= prc_info->kb.bit.Q ? YAW_KB_SPEED : 0;
+        gimbal_set_pitch_delta(pgimbal, pit_delta);
+        gimbal_set_yaw_delta(pgimbal, yaw_delta);
+      }
+      else
+      {
+        gimbal_set_yaw_mode(pgimbal, ENCODER_MODE);
+        gimbal_set_yaw_angle(pgimbal, 0, 0);
+        //no rotation allowed, gimbal rotate back to the netural position of the encoder
+        //reserved for get rid of the uncontrollable dodging when necessary
+      }
+    }
+    if(rc_device_get_state(prc_dev, RC_S2_DOWN) == RM_OK)
+    {
+      //disbaled
+      gimbal_pitch_disable(pgimbal);
+      gimbal_yaw_disable(pgimbal);
     }
 
     if (get_offline_state() == 0)
@@ -199,13 +253,18 @@ void send_gimbal_current(int16_t iq1, int16_t iq2, int16_t iq3)
 struct pid pid_pit = {0};
 struct pid pid_pit_spd = {0};
 
+/**Modified by Y.H. Liu
+ * @Jun 20, 2019: adaption for hero
+ * 
+ * Automatically adjust the netural position for gimbal
+ */
 static void auto_gimbal_adjust(gimbal_t pgimbal)
 {
   if (auto_adjust_f)
   {
     pid_struct_init(&pid_pit, 2000, 0, 60, 0, 0);
     pid_struct_init(&pid_pit_spd, 30000, 3000, 60, 0.2, 0);
-    while (1)
+    while (1) //automatically detect the pitch netrual poistion
     {
       gimbal_imu_update(pgimbal);
 
@@ -229,8 +288,11 @@ static void auto_gimbal_adjust(gimbal_t pgimbal)
         break;
       }
     }
-
-    /*{
+    #ifndef HERO_ROBOT
+    yaw_ecd_c = pgimbal->motor[YAW_MOTOR_INDEX].data.ecd;
+    //using the current yaw direction for initialization
+    #else
+    {
       yaw_time = get_time_ms();
       while (get_time_ms() - yaw_time <= 2000)
       {
@@ -262,7 +324,8 @@ static void auto_gimbal_adjust(gimbal_t pgimbal)
           yaw_ecd_c = (yaw_ecd_l + yaw_ecd_r) / 2 + 4096;
         }
       }
-    }*/
+    }
+    #endif
     yaw_ecd_c = pgimbal->motor[YAW_MOTOR_INDEX].data.ecd;
     gimbal_save_data(yaw_ecd_c, pit_ecd_c);
     gimbal_set_offset(pgimbal, yaw_ecd_c, pit_ecd_c);

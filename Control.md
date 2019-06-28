@@ -18,8 +18,10 @@ chassis_task, gimbal_task, shoot_task
     2. param-2：`state`是要侦测的值，例如`RC_S2_DOWN`
     3. returned value：一个int32_t值，若为`RM_OK`则表示相应开关已经触发
 
-* 使用 **_TODO_** 函数对键盘和鼠标输入值进行判别
-    1. **_TODO_**
+* 从prc_info中获取对键盘输入值
+    1. 根据是否按下SHIFT或CTRL设置底盘速度
+    1. 根据 W A S D 向vx vy上叠加底盘速度
+    1. 根据是否按下 V 和底盘-云台夹角决定vw
 
 * 当处在**底盘跟随云台**模式时，利用`pid_calculate`计算底盘转角
 
@@ -31,7 +33,7 @@ chassis_task, gimbal_task, shoot_task
 
 * 所有下行控制指令和底盘硬件反馈值均在`pchassis`结构体当中，其中反馈值被`chassis_imu_update`更新
 
-* 所有遥控信号均储存在`prc_dev`结构体当中；所有上位机控制信号均储存在 **_TODO_** 结构体当中
+* 所有遥控信号均储存在`prc_dev`结构体当中；所有上位机控制信号均储存在infantry_cmd.c中的mainfold_cmd结构体当中。上位机控制的实现位于infantry_cmd.c当中。
 
 #### 云台模式切换
 
@@ -40,8 +42,10 @@ chassis_task, gimbal_task, shoot_task
 * 使用`rc_device_get_state(rc_dev, state)`函数对遥控器拨杆值进行判别：
     与底盘相同
 
-* 使用 **_TODO_** 函数对键盘和鼠标的输入进行判别
-    1. **_TODO_**
+* 从prc_info中获取对键盘、鼠标输入值
+    1. 鼠标和键盘E、Q键决定yaw参数变化量
+    1. 鼠标决定pitch参数变化量
+    1. 按下X键时，短暂进入云台跟随底盘模式，此时云台转动值与底盘同向，yaw、pitch轴归中，不接受控制
 
 * 当处在**底盘跟随云台**模式时，利用`gimbal_set_pitch_delta`输出俯仰（pitch）控制指令（此处为变化值，即delta）
 
@@ -64,7 +68,7 @@ chassis_task, gimbal_task, shoot_task
 
 * 所有下行控制指令和底盘硬件反馈值均在`pchassis`结构体当中，其中反馈值被`chassis_imu_update`更新
 
-* 所有遥控信号均储存在`prc_dev`结构体当中；所有上位机控制信号均储存在 **_TODO_** 结构体当中
+* 所有遥控信号均储存在`prc_dev`结构体当中；所有上位机控制信号均储存在infantry_cmd.c中的mainfold_cmd结构体当中。上位机控制的实现位于infantry_cmd.c当中。
 
 #### 射击模式切换
 
@@ -77,8 +81,9 @@ chassis_task, gimbal_task, shoot_task
 * 使用`rc_device_get_state(rc_dev, state)`函数对遥控器拨杆值进行判别：
     与底盘相同
 
-* 使用 **_TODO_** 函数对键盘和鼠标的输入进行判别
-    1. **_TODO_**
+* 使用 `mouse_shoot_control(rc_dev)` 函数对键盘和鼠标的输入进行判别
+    1. 单击：单发
+    1. 长按超过0.3秒：连发
 
 * 所有下行控制指令和底盘硬件反馈值均在`pshoot`结构体当中
 
@@ -136,9 +141,9 @@ board.c或communicate.c中调用（取决于gimbal还是chassis）
 ### 模式
 
 模式由右拨杆控制：
-1. 右拨杆【上】底盘跟随云台
-2. 右拨杆【中】失能
-3. 右拨杆【下】云台跟随底盘
+1. 右拨杆【上】辅助瞄准
+2. 右拨杆【中】底盘跟随云台
+3. 右拨杆【下】失能
 
 ### 控制
 
@@ -146,7 +151,8 @@ board.c或communicate.c中调用（取决于gimbal还是chassis）
 
 * 由左拨杆触发：
 1. 左拨杆【由中至上】开启/关闭摩擦轮
-2. 左拨杆【由中至下】开启/关闭弹仓盖，或伸出/缩回直线电机
+2. 左拨杆【由中至下】开启弹仓盖
+3. 左拨杆【由下归中】关闭弹仓盖
 
 - 触发指令后，请将左拨杆归中
 - 摩擦轮和激光同步开启关闭，不打开摩擦轮不能射击
@@ -155,8 +161,8 @@ board.c或communicate.c中调用（取决于gimbal还是chassis）
 1. 按下 `F` 键，开启摩擦轮
 2. 按下 `F+Z` 键，关闭摩擦轮
 
-3. 按下 `R` 键，打开弹仓盖/伸出直线电机
-4. 按下 `R+Z` 键，关闭弹仓盖/缩回直线电机
+3. 按下 `R` 键，打开弹仓盖
+4. 松开 `R` 键，关闭弹仓盖
 
 #### 射击
 
@@ -173,8 +179,8 @@ board.c或communicate.c中调用（取决于gimbal还是chassis）
 
 按住`V`键
 
-- 步兵采用自旋避弹
-- 英雄采用扭腰避弹
+- 步兵采用自旋避弹（随机转动）
+- 英雄采用扭腰避弹（余弦函数转动）
 
 #### 驾驶
 
