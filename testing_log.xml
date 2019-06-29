@@ -1,73 +1,73 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <All_LOGS>
-<LOG_1>
-    <Date>2019/06/29</Date>
-    <Author> Y. H. Liu </Author>
-    <Modifications>
-        <M1 fileName="offline_check.c">
-            <Comment>
-                disable shooting regardless the results of offline checking
-            </Comment>
-            <Tag>
-                TEMP
-            </Tag>
-        </M1>
-        <M2 fileName="offline_check.c">
-            <Comment>
-                disable the components according to the results of offline checking
-            </Comment>
-            <Tag>
-                PERM
-            </Tag>
-        </M2>
-        <M3 fileName="gimbal.c">
-            <Comment>
-                limit the pid values
-            </Comment>
-            <Tag>
-                FURT
-            </Tag>
-        </M3>
-        <M4 fileName="chassis.c">
-            <Comment>
-                limit the pid values
-            </Comment>
-            <Tag>
-                FURT
-            </Tag>
-        </M4>
-        <M5 fileName="gimbal_task.c">
-            <Comment>
-                bypass the auto_cali
-            </Comment>
-            <Tag>
-                PERM
-            </Tag>
-        </M5>
-    </Modifications>
-</LOG_1>
-<LOG_2>
-    <Date> 2019/06/30 </Date>
-    <Author> Y. H. Liu </Author>
-    <Modifications>
-        <M1 fileName="chassis.c">
-            <Comment>
-                recover the pid values
-            </Comment>
-            <Tag>
-                PERM
-            </Tag>
-        </M1>
-        <M2 fileName="stm32_hal_conf.h">
-            <Comment>
-                include the ADC
-            </Comment>
-            <Tag>
-                PERM
-            </Tag>
-        </M2>
-    </Modifications>
-</LOG_2>
+    <LOG_1>
+        <Date>2019/06/29</Date>
+        <Author> Y. H. Liu </Author>
+        <Modifications>
+            <M1 fileName="offline_check.c">
+                <Comment>
+                    disable shooting regardless the results of offline checking
+                </Comment>
+                <Tag>
+                    TEMP
+                </Tag>
+            </M1>
+            <M2 fileName="offline_check.c">
+                <Comment>
+                    disable the components according to the results of offline checking
+                </Comment>
+                <Tag>
+                    PERM
+                </Tag>
+            </M2>
+            <M3 fileName="gimbal.c">
+                <Comment>
+                    limit the pid values
+                </Comment>
+                <Tag>
+                    FURT
+                </Tag>
+            </M3>
+            <M4 fileName="chassis.c">
+                <Comment>
+                    limit the pid values
+                </Comment>
+                <Tag>
+                    FURT
+                </Tag>
+            </M4>
+            <M5 fileName="gimbal_task.c">
+                <Comment>
+                    bypass the auto_cali
+                </Comment>
+                <Tag>
+                    PERM
+                </Tag>
+            </M5>
+        </Modifications>
+    </LOG_1>
+    <LOG_2>
+        <Date> 2019/06/30 </Date>
+        <Author> Y. H. Liu </Author>
+        <Modifications>
+            <M1 fileName="chassis.c">
+                <Comment>
+                    recover the pid values
+                </Comment>
+                <Tag>
+                    PERM
+                </Tag>
+            </M1>
+            <M2 fileName="stm32_hal_conf.h">
+                <Comment>
+                    include the ADC
+                </Comment>
+                <Tag>
+                    PERM
+                </Tag>
+            </M2>
+        </Modifications>
+    </LOG_2>
 </All_LOGS>
 
 
