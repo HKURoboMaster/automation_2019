@@ -262,71 +262,9 @@ static void auto_gimbal_adjust(gimbal_t pgimbal)
 {
   if (auto_adjust_f)
   {
-    pid_struct_init(&pid_pit, 2000, 0, 60, 0, 0);
-    pid_struct_init(&pid_pit_spd, 30000, 3000, 60, 0.2, 0);
-    while (1) //automatically detect the pitch netrual poistion
-    {
-      gimbal_imu_update(pgimbal);
-
-      pid_calculate(&pid_pit, pgimbal->sensor.gyro_angle.pitch, 0);
-      pid_calculate(&pid_pit_spd, pid_pit.out, pgimbal->sensor.rate.pitch_rate);
-
-      send_gimbal_current(0, -pid_pit_spd.out, 0);
-      HAL_Delay(2);
-
-      if ((fabs(pgimbal->sensor.gyro_angle.pitch) < 0.1))
-      {
-        pit_cnt++;
-      }
-      else
-      {
-        pit_cnt = 0;
-      }
-      if (pit_cnt > 1000)
-      {
-        pit_ecd_c = pgimbal->motor[PITCH_MOTOR_INDEX].data.ecd;
-        break;
-      }
-    }
-    #ifndef HERO_ROBOT
+    pit_ecd_c = pgimbal->motor[PITCH_MOTOR_INDEX].data.ecd;
     yaw_ecd_c = pgimbal->motor[YAW_MOTOR_INDEX].data.ecd;
-    //using the current yaw direction for initialization
-    #else
-    {
-      yaw_time = get_time_ms();
-      while (get_time_ms() - yaw_time <= 2000)
-      {
-        send_gimbal_current(6000, 0, 0);
-        yaw_ecd_l = pgimbal->motor[YAW_MOTOR_INDEX].data.ecd;
-        HAL_Delay(2);
-      }
 
-      yaw_time = HAL_GetTick();
-      while (HAL_GetTick() - yaw_time <= 2000)
-      {
-        send_gimbal_current(-6000, 0, 0);
-        yaw_ecd_r = pgimbal->motor[YAW_MOTOR_INDEX].data.ecd;
-        HAL_Delay(2);
-      }
-
-      if (yaw_ecd_l > yaw_ecd_r)
-      {
-        yaw_ecd_c = (yaw_ecd_l + yaw_ecd_r) / 2;
-      }
-      else
-      {
-        if ((yaw_ecd_l + yaw_ecd_r) / 2 > 4096)
-        {
-          yaw_ecd_c = (yaw_ecd_l + yaw_ecd_r) / 2 - 4096;
-        }
-        else
-        {
-          yaw_ecd_c = (yaw_ecd_l + yaw_ecd_r) / 2 + 4096;
-        }
-      }
-    }
-    #endif
-    yaw_ecd_c = pgimbal->motor[YAW_MOTOR_INDEX].data.ecd;
     gimbal_save_data(yaw_ecd_c, pit_ecd_c);
     gimbal_set_offset(pgimbal, yaw_ecd_c, pit_ecd_c);
     auto_adjust_f = 0;
