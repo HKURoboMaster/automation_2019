@@ -23,7 +23,6 @@
 #include "drv_imu.h"
 
 #include <math.h>
-#define PI 3.142f
 #define RAD_TO_DEG 57.296f // 180/PI
 
 static float vx, vy, wz;

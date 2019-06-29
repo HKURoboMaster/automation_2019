@@ -103,13 +103,13 @@ int32_t offline_check(void *argc)
       gimbal_yaw_enable(pgimbal);
 
     detect_device_check(&offline_dev, PITCH_OFFLINE_EVENT);
-    if(detect_device_get_event(offline_dev) != 0)
+    if(detect_device_get_event(&offline_dev) != 0)
       gimbal_pitch_disable(pgimbal);
     else
       gimbal_pitch_enable(pgimbal);
     
     detect_device_check(&offline_dev, MOTOR1_OFFLINE_EVENT | MOTOR2_OFFLINE_EVENT | MOTOR3_OFFLINE_EVENT | MOTOR4_OFFLINE_EVENT);
-    if(detect_device_get_event(offline_dev) != 0)
+    if(detect_device_get_event(&offline_dev) != 0)
       chassis_disable(pchassis);
     else
       chassis_enable(pchassis);
