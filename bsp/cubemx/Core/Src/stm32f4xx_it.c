@@ -55,7 +55,12 @@ extern DMA_HandleTypeDef hdma_usart6_tx;
 extern UART_HandleTypeDef huart1;
 extern UART_HandleTypeDef huart6;
 extern UART_HandleTypeDef huart3;
-
+extern DMA_HandleTypeDef hdma_adc1;
+extern DMA_HandleTypeDef hdma_adc2;
+extern ADC_HandleTypeDef hadc1;
+extern ADC_HandleTypeDef hadc2;
+extern uint32_t Trans_Data1;
+extern uint32_t Trans_Data2;
 extern TIM_HandleTypeDef htim5;
 
 /******************************************************************************/
@@ -422,6 +427,23 @@ void USART6_IRQHandler(void)
 }
 
 /* USER CODE BEGIN 1 */
+//These are interrupts configured to get dma data from adc
+void DMA2_Stream4_IRQHandler(void)
+{
+	HAL_ADC_Stop_DMA(&hadc2);
+  HAL_ADC_Stop_DMA(&hadc1);
+  HAL_DMA_IRQHandler(&hdma_adc1);
+  HAL_ADC_Start_DMA(&hadc1,(uint32_t*) &Trans_Data1,1);
+	HAL_ADC_Start_DMA(&hadc2,(uint32_t*)&Trans_Data2,1);
+}
 
+void DMA2_Stream2_IRQHandler(void)
+{
+	HAL_ADC_Stop_DMA(&hadc1);
+	HAL_ADC_Stop_DMA(&hadc2); //To be defined
+	HAL_DMA_IRQHandler(&hdma_adc2);
+	HAL_ADC_Start_DMA(&hadc2,(uint32_t*)&Trans_Data2,1);
+	HAL_ADC_Start_DMA(&hadc1,(uint32_t*) &Trans_Data1,1);
+}
 /* USER CODE END 1 */
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
