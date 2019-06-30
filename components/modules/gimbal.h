@@ -70,6 +70,9 @@
 #define YAW_CLOCKWISE (1u)
 #define YAW_ANTICLOCKWISE (2u)
 
+#define PITCH_DIRECTI -1
+#define YAW_DIRECT 0
+
 typedef struct gimbal *gimbal_t;
 
 struct gimbal_param

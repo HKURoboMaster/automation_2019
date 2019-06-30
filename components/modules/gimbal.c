@@ -24,6 +24,9 @@ static int32_t pitch_ecd_input_convert(struct controller *ctrl, void *input);
 static int32_t gimbal_set_yaw_gyro_angle(struct gimbal *gimbal, float yaw, uint8_t mode);
 static int16_t gimbal_get_ecd_angle(int16_t raw_ecd, int16_t center_offset);
 
+int32_t yaw_target_watch;
+int32_t pit_target_watch;
+
 int32_t gimbal_cascade_register(struct gimbal *gimbal, const char *name, enum device_can can)
 {
   char motor_name[2][OBJECT_NAME_MAX_LEN] = {0};
@@ -66,10 +69,10 @@ int32_t gimbal_cascade_register(struct gimbal *gimbal, const char *name, enum de
 
   gimbal->mode.bit.yaw_mode = ENCODER_MODE;
   gimbal->ctrl[YAW_MOTOR_INDEX].convert_feedback = yaw_ecd_input_convert;
-  // pid_struct_init(&(gimbal->cascade[YAW_MOTOR_INDEX].outer), 2000, 0, 50, 0, 0);
-  // pid_struct_init(&(gimbal->cascade[YAW_MOTOR_INDEX].inter), 30000, 3000, 70, 0.2, 0);
-  pid_struct_init(&(gimbal->cascade[YAW_MOTOR_INDEX].outer), 100, 0, 0.5f, 0, 0);
-  pid_struct_init(&(gimbal->cascade[YAW_MOTOR_INDEX].inter), 1500, 3000, 3.5f, 0.125f, 0);
+  pid_struct_init(&(gimbal->cascade[YAW_MOTOR_INDEX].outer), 2000, 0, 0, 0, 0);
+  pid_struct_init(&(gimbal->cascade[YAW_MOTOR_INDEX].inter), 30000, 3000, 257.3f, 0.2, 0);
+  // pid_struct_init(&(gimbal->cascade[YAW_MOTOR_INDEX].outer), 100, 0, 0.5f, 0, 0);
+  // pid_struct_init(&(gimbal->cascade[YAW_MOTOR_INDEX].inter), 1500, 3000, 3.5f, 0.125f, 0);
 
   gimbal->mode.bit.pitch_mode = ENCODER_MODE;
   gimbal->ctrl[PITCH_MOTOR_INDEX].convert_feedback = pitch_ecd_input_convert;
@@ -365,6 +368,7 @@ int32_t gimbal_execute(struct gimbal *gimbal)
   controller_get_output(&(gimbal->ctrl[PITCH_MOTOR_INDEX]), &motor_out);
   motor_device_set_current(&(gimbal->motor[PITCH_MOTOR_INDEX]), (int16_t)PITCH_MOTOR_POSITIVE_DIR * motor_out);
 
+  pit_target_watch = gimbal->gyro_target_angle.pitch;
   return RM_OK;
 }
 
@@ -492,6 +496,8 @@ static int32_t gimbal_set_yaw_gyro_angle(struct gimbal *gimbal, float yaw, uint8
   }
 
   gimbal->gyro_target_angle.yaw = gimbal->sensor.gyro_angle.yaw + yaw_offset;
+  
+  yaw_target_watch = gimbal->gyro_target_angle.yaw;
 
   return RM_OK;
 }

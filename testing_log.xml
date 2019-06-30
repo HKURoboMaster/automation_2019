@@ -68,6 +68,66 @@
             </M2>
         </Modifications>
     </LOG_2>
+    <LOG_3>
+        <Date> 2019/06/30 </Date>
+        <Author> Eric Chen </Author>
+        <Modifications>
+            <M1 fileName="TODO">
+                <Comment>
+		    TODO
+                </Comment>
+                <Tag>
+                    TODO
+                </Tag>
+            </M1>
+        </Modifications>
+    </LOG_3>
+    <LOG_4>
+        <Date> 2019/06/30 </Date>
+        <Author> Y. H. Liu </Author>
+        <Modifications>
+            <M1 fileName="gimbal.c">
+                <Comment>
+                    set the gimbal pid
+                </Comment>
+                <Tag>
+                    FURT
+                </Tag>
+            </M1>
+            <M2 fileName="gimbal_task.c">
+		<Comment>
+                    Correct the prc_info bug
+                </Comment>
+                <Tag>
+                    PERM
+	       </Tag>
+           </M2>
+           <M3 fileName="gimbal.c">
+		   <Comment>
+			   Add watch variable
+		   </Comment>
+		   <Tag>
+			   TEMP
+		   </Tag>
+	   </M3>
+	   <M4 fileName="gimbal_task.c">
+		   <Comment>
+			   Add watch variable for mpu
+		   </Comment>
+		   <Tag>
+			   TEMP
+		   </Tag>
+	   </M4>
+	   <M5 fileName="gimbal_task.v">
+		   <Comment>
+			   Gimbal inter PID, set p
+		   </Comment>
+		   <Tag>
+			   FURT
+		   </Tag>
+	   </M5>
+        </Modifications>
+    </LOG_4>
 </All_LOGS>
 
 
