@@ -28,6 +28,27 @@ float follow_relative_angle;
 struct pid pid_follow = {0}; //angle control
 static void chassis_imu_update(void *argc);
 
+int left_blocked = 0, right_blocked = 0;
+int left_ir_js = 0, right_ir_js = 0;
+
+float direction_control(float v) {
+  float res_v;
+  if (left_blocked) {
+    res_v = (v < 0 ? 0 : v);
+  }
+  if (right_blocked) {
+    res_v = (v > 0 ? 0 : v);
+  }
+  return res_v;
+}
+
+void check_ir_signal() {
+    left_blocked = (HAL_GPIO_ReadPin(IR_LEFT_Port, IR_LEFT_Pin) == GPIO_PIN_RESET);
+    right_blocked = (HAL_GPIO_ReadPin(IR_RIGHT_Port, IR_RIGHT_Pin) == GPIO_PIN_RESET);
+    left_ir_js = left_blocked ? 5000 : 0;
+    right_ir_js = right_blocked ? -5000 : 0;
+}
+
 void chassis_task(void const *argument)
 {
   uint32_t period = osKernelSysTick();
@@ -51,6 +72,7 @@ void chassis_task(void const *argument)
 
   while (1)
   {
+    check_ir_signal();
     if (rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK)
     {
       if (rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK)
@@ -59,7 +81,8 @@ void chassis_task(void const *argument)
         vy = -(float)prc_info->ch1 / 660 * MAX_CHASSIS_VY_SPEED;
         wz = -pid_calculate(&pid_follow, follow_relative_angle, 0);
         chassis_set_offset(pchassis, ROTATE_X_OFFSET, ROTATE_Y_OFFSET);
-        chassis_set_speed(pchassis, vx, vy, wz);
+        vy = direction_control(vy);
+        chassis_set_speed(pchassis, 0, vy, 0);
       }
 
       if (rc_device_get_state(prc_dev, RC_S2_MID) == RM_OK)
@@ -68,7 +91,8 @@ void chassis_task(void const *argument)
         vy = -(float)prc_info->ch1 / 660 * MAX_CHASSIS_VY_SPEED;
         wz = -(float)prc_info->ch3 / 660 * MAX_CHASSIS_VW_SPEED;
         chassis_set_offset(pchassis, 0, 0);
-        chassis_set_speed(pchassis, vx, vy, wz);
+        vy = direction_control(vy);
+        chassis_set_speed(pchassis, 0, vy, 0);
       }
 
       if (rc_device_get_state(prc_dev, RC_S2_MID2DOWN) == RM_OK)

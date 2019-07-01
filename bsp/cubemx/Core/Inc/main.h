@@ -92,6 +92,12 @@
 #define IO_PROBE_GPIO_Port GPIOD
 #define KEY_Pin GPIO_PIN_2
 #define KEY_GPIO_Port GPIOB
+#define IR_LEFT_Pin GPIO_PIN_11
+#define IR_LEFT_Port GPIOH
+#define IR_RIGHT_Pin GPIO_PIN_15
+#define IR_RIGHT_Port GPIOD
+#define IR_OUTPUT_Pin GPIO_PIN_13
+#define IR_OUTPUT_Port GPIOD
 
 /* ########################## Assert Selection ############################## */
 /**

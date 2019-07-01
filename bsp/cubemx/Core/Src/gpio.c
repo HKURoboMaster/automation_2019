@@ -98,6 +98,8 @@ void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(LED_G_GPIO_Port, LED_G_Pin, GPIO_PIN_RESET);
 
+  HAL_GPIO_WritePin(IR_OUTPUT_Port, IR_OUTPUT_Pin, GPIO_PIN_SET);
+
   /*Configure GPIO pins : PEPin PEPin */
   GPIO_InitStruct.Pin = IST_RESET_Pin|LED_R_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -138,6 +140,27 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(SYS_CFG_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : IR LEFT Pin */
+  GPIO_InitStruct.Pin = IR_LEFT_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(IR_LEFT_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : IR RIGHT Pin */
+  GPIO_InitStruct.Pin = IR_RIGHT_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(IR_RIGHT_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : IR OUT Pin */
+  GPIO_InitStruct.Pin = IR_OUTPUT_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(IR_OUTPUT_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PtPin */
   GPIO_InitStruct.Pin = SPI5_NSS_Pin|LED_G_Pin;
