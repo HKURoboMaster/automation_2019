@@ -142,7 +142,7 @@ int32_t shoot_firction_toggle(shoot_t pshoot, uint8_t toggled)
   }
   else
   {
-    shoot_set_fric_speed(pshoot, 1250, 1250);
+    shoot_set_fric_speed(pshoot, 1130, 1130);
     turn_on_laser();
   }
   return 0;
