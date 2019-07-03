@@ -44,7 +44,8 @@ static void gimbal_state_init(gimbal_t pgimbal);
 uint8_t auto_adjust_f;
 uint8_t auto_init_f;
 
-int32_t mpu_pit_watch, mpu_yaw_watch, mpu_rol_watch;
+int32_t mpu_pit, mpu_yaw, mpu_rol;
+int32_t mpu_wx, mpu_wy, mpu_wz;
 
 /* control ramp parameter */
 static ramp_t yaw_ramp = RAMP_GEN_DAFAULT;
@@ -214,9 +215,12 @@ static int32_t gimbal_imu_update(void *argc)
   gimbal_rate_update(pgimbal, mpu_sensor.wz * RAD_TO_DEG, -mpu_sensor.wx * RAD_TO_DEG);
   // TODO: adapt coordinates to our own design
   
-  mpu_pit_watch = mahony_atti.pitch;
-  mpu_yaw_watch = mahony_atti.yaw;
-  mpu_rol_watch = mahony_atti.roll;
+  mpu_pit = mahony_atti.pitch;
+  mpu_yaw = mahony_atti.yaw;
+  mpu_rol = mahony_atti.roll;
+	mpu_wz = mpu_sensor.wz;
+	mpu_wy = mpu_sensor.wy;
+	mpu_wx = mpu_sensor.wx;
   
   return 0;
 }

@@ -95,67 +95,120 @@
                 </Tag>
             </M1>
             <M2 fileName="gimbal_task.c">
-		<Comment>
+				<Comment>
                     Correct the prc_info bug
                 </Comment>
                 <Tag>
                     PERM
-	       </Tag>
-           </M2>
-           <M3 fileName="gimbal.c">
-		   <Comment>
-			   Add watch variable
-		   </Comment>
-		   <Tag>
-			   TEMP
-		   </Tag>
-	   </M3>
-	   <M4 fileName="gimbal_task.c">
-		   <Comment>
-			   Add watch variable for mpu
-		   </Comment>
-		   <Tag>
-			   TEMP
-		   </Tag>
-	   </M4>
-	   <M5 fileName="gimbal_task.v">
-		   <Comment>
-			   Gimbal inter PID, set p
-		   </Comment>
-		   <Tag>
-			   FURT
-		   </Tag>
-	   </M5>
+	       		</Tag>
+           	</M2>
+           	<M3 fileName="gimbal.c">
+		   		<Comment>
+			   		Add watch variable
+		   		</Comment>
+		   		<Tag>
+			  		 TEMP
+		  	 	</Tag>
+	   		</M3>
+	   		<M4 fileName="gimbal_task.c">
+		   		<Comment>
+			   		Add watch variable for mpu
+		   		</Comment>
+		   		<Tag>
+			  		 TEMP
+		   		</Tag>
+	   		</M4>
+	   		<M5 fileName="gimbal_task.v">
+		   		<Comment>
+			  		 Gimbal inter PID, set p
+		   		</Comment>
+		   		<Tag>
+			   		FURT
+		   		</Tag>
+	   		</M5>
         </Modifications>
     </LOG_4>
     <LOG_5>
+		<Date> 2019/7/2 </Date>
+		<Author> Y. H. Liu </Author>
         <Modifications>
-        <M1 fileName = "gimbal_task.c">
-            <Comment>
-                Change the orientation
-            </Comment>
-            <Tag>
-                PERM
-            </Tag>
-        </M1>
-        <M2 fileName = "drv_io.h">
-            <Comment>
-                Change the laser pin
-            </Comment>
-            <Tag>
-                PERM
-            </Tag>
-        </M2>
-        <M3 fileName = "gpio.c">
-            <Comment>
-                Change the laser mode
-            </Comment>
-            <Tag>
-                FURT
-            </Tag>
-        </M3>
+        	<M1 fileName = "gimbal_task.c">
+            	<Comment>
+                	Change the orientation
+            	</Comment>
+            	<Tag>
+                	PERM
+            	</Tag>
+        	</M1>
+        	<M2 fileName = "drv_io.h">
+            	<Comment>
+                	Change the laser pin
+           		 </Comment>
+           		 <Tag>
+                	PERM
+            	</Tag>
+        	</M2>
+        	<M3 fileName = "gpio.c">
+            	<Comment>
+                	Change the laser mode
+            	</Comment>
+            	<Tag>
+                	FURT
+            	</Tag>
+        	</M3>
         </Modifications>
-    </LOG_5>
+	</LOG_5>
+	<LOG_6>
+		<Date> 2019/7/2 </Date>
+		<Author> Y. C. Liu </Author>
+		<Modifications>
+			<M1 filename="shoot_task.c">
+				<Comment>
+					Change the friction wheel speed
+				</Comment>
+				<Tag>
+					PERM
+				</Tag>
+			</M1>
+			<M2 filename = "shoot.c">
+				<Comment>
+					Gradually increase the friction wheel speed
+				</Comment>
+				<Tag>
+					PERM
+				</Tag>
+			</M2>
+			<M3 filename = "tim.c">
+				<Comment>
+					Setup TIM1 for friction wheel motors
+				</Comment>
+				<Tag>
+					PERM
+				</Tag>
+			</M3>
+		</Modifications>
+	<LOG_6>
+		<Date> 2019/7/3 </Date>
+		<Author> Eric Chen </Author>
+		<Modifications>
+			<M1 filename = "adc.c, dma.c, main.c, smooth_filter.c, smooth_filter.h">
+				<Comment>
+					Setting up ADC
+				</Comment>
+				<Tag>
+					PERM
+				</Tag>
+			</M1>
+			<M2 fileName = "chassis_task.c, chassis_task.h">
+				<Comment>
+					Read the current and voltage
+				</Comment>
+				<Tag>
+					PERM
+				</Tag>
+			</M2>
+		</Modifications>
+	</LOG_6>
 </All_LOGS>
 
 
