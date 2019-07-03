@@ -86,6 +86,8 @@ int32_t shoot_set_fric_speed(struct shoot *shoot, uint16_t fric_spd1, uint16_t f
   if (shoot == NULL)
     return -RM_INVAL;
 	static int slope = 1000;
+	while(slope/10!=fric_spd1)
+	{
 	if(fric_spd1>100)
 	{
 		if(slope<=1800)
@@ -100,8 +102,8 @@ int32_t shoot_set_fric_speed(struct shoot *shoot, uint16_t fric_spd1, uint16_t f
   fric_spd2= slope/10;
   shoot->target.fric_spd[0] = fric_spd1;
   shoot->target.fric_spd[1] = fric_spd2;
-
-  return RM_OK;
+  }
+	return RM_OK;
 }
 
 int32_t shoot_get_fric_speed(struct shoot *shoot, uint16_t *fric_spd1, uint16_t *fric_spd2)
