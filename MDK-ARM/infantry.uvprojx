@@ -582,6 +582,11 @@
               <FileType>1</FileType>
               <FilePath>..\components\algorithm\ramp.c</FilePath>
             </File>
+            <File>
+              <FileName>smooth_filter.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\components\algorithm\smooth_filter.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
