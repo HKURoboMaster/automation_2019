@@ -90,11 +90,12 @@ void MX_DMA_Init(void)
 	/* Edited By Eric Chen Add Voltage and Current Read Feature */
 	
   /* DMA2_Stream4_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA2_Stream4_IRQn, 5, 0);
-  HAL_NVIC_EnableIRQ(DMA2_Stream4_IRQn);
+  //HAL_NVIC_SetPriority(DMA2_Stream4_IRQn, 5, 0);
+  //HAL_NVIC_EnableIRQ(DMA2_Stream4_IRQn);
   /* DMA2_Stream0_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA2_Stream2_IRQn, 5, 0);
-  HAL_NVIC_EnableIRQ(DMA2_Stream2_IRQn);
+  //HAL_NVIC_SetPriority(DMA2_Stream2_IRQn, 5, 0);
+  //HAL_NVIC_EnableIRQ(DMA2_Stream2_IRQn);
+  //Use direct method to get the data from ADC
 	
 	/* Edited By Eric Chen Add Current Read and Voltage Read Feature */
 }

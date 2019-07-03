@@ -210,8 +210,8 @@ static int32_t gimbal_imu_update(void *argc)
   mahony_ahrs_updateIMU(&mpu_sensor, &mahony_atti);
   // TODO: adapt coordinates to our own design
   gimbal_pitch_gyro_update(pgimbal, -mahony_atti.roll);
-  gimbal_yaw_gyro_update(pgimbal, -mahony_atti.yaw);
-  gimbal_rate_update(pgimbal, -mpu_sensor.wz * RAD_TO_DEG, -mpu_sensor.wx * RAD_TO_DEG);
+  gimbal_yaw_gyro_update(pgimbal, -mahony_atti.pitch);
+  gimbal_rate_update(pgimbal, mpu_sensor.wz * RAD_TO_DEG, -mpu_sensor.wx * RAD_TO_DEG);
   // TODO: adapt coordinates to our own design
   
   mpu_pit_watch = mahony_atti.pitch;
