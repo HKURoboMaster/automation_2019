@@ -102,10 +102,17 @@ void shoot_task(void const *argument)
     
     /*------ implement the function of a trigger ------*/
     static extPowerHeatData_t * heatPowerData;
-    static uint16_t heatLimit = 80;
-    if (rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK && !fric_on) //not in disabled mode
+    static uint16_t heatLimit;
+
+    heatPowerData = get_heat_power();
+    heatLimit = get_heat_limit();
+
+    #ifndef HERO_ROBOT
+    if (heatPowerData->shooterHeat0 < heatLimit && rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK && !fric_on) //not in disabled mode
+    #else
+    if (heatPowerData->shooterHeat1 < heatLimit && rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK && !fric_on) //not in disabled mode
+    #endif
     {
-      heatPowerData = get_heat_power();
       if (rc_device_get_state(prc_dev, RC_WHEEL_DOWN) == RM_OK
         || mouse_shoot_control(prc_dev)==press)
       {
@@ -113,8 +120,7 @@ void shoot_task(void const *argument)
         // {
         //   shoot_set_cmd(pshoot, SHOOT_CONTINUOUS_CMD, 0);
         // }
-        if(heatPowerData->shooterHeat0 < heatLimit)
-          shoot_set_cmd(pshoot, SHOOT_CONTINUOUS_CMD, CONTIN_BULLET_NUM);
+        shoot_set_cmd(pshoot, SHOOT_CONTINUOUS_CMD, CONTIN_BULLET_NUM);
       }
       else if (rc_device_get_state(prc_dev, RC_WHEEL_UP) == RM_OK
             || mouse_shoot_control(prc_dev)==click)
@@ -125,9 +131,8 @@ void shoot_task(void const *argument)
       {
         shoot_set_cmd(pshoot, SHOOT_STOP_CMD, 0);
       }
-      
     }
-
+    
     shoot_execute(pshoot);
     osDelayUntil(&period, 5);
   }
@@ -216,7 +221,40 @@ mouse_cmd_e mouse_shoot_control(rc_device_t rc_dev)
  */
 static uint16_t get_heat_limit(void)
 {
-  static extGameRobotPos_t * robotState;
-  static extRfidDetect_t * rfidDetect;
-  //TODO: MAPPING FUNCTION / LIST
+  extGameRobotState_t * robotState = get_robot_state();
+  uint16_t limit = 0;
+  #ifndef HERO_ROBOT
+    switch (robotState->robotLevel)
+    {
+      case 1:
+        limit = 240;
+        break; 
+      case 2:
+        limit = 360;
+        break; 
+      case 3:
+        limit = 480;
+        break; 
+      default: 
+        limit = 4096;
+        break;
+    }
+  #else
+    switch (robotState->robotLevel)
+    {
+      case 1:
+        limit = 200;
+        break; 
+      case 2:
+        limit = 300;
+        break; 
+      case 3:
+        limit = 400;
+        break; 
+      default: 
+        limit = 4096;
+        break;
+    } 
+  #endif
+  return limit; 
 }
