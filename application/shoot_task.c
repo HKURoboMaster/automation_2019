@@ -19,6 +19,7 @@
 #include "shoot.h"
 #include "dbus.h"
 #include "shoot_task.h"
+#include "referee_system.c"
 
 int32_t shoot_firction_toggle(shoot_t pshoot, uint8_t toggled);
 int32_t shoot_lid_toggle(shoot_t pshoot, uint8_t toggled);
@@ -26,12 +27,14 @@ int32_t shoot_lid_toggle(shoot_t pshoot, uint8_t toggled);
 /**Edited by Y.H. Liu
  * @Jun 13, 2019: change the FSM for shooting
  * @Jun 20, 2019: adaption for hero
+ * @Jul 3, 2019: retrieve the heat data from refree system
  * 
  * Implement the control logic described in Control.md
  */
 enum mouse_cmd{non, click, press};
 typedef enum mouse_cmd mouse_cmd_e;
 mouse_cmd_e mouse_shoot_control(rc_device_t rc_dev);
+static uint16_t get_heat_limit();
 
 void shoot_task(void const *argument)
 {
@@ -98,8 +101,11 @@ void shoot_task(void const *argument)
     }
     
     /*------ implement the function of a trigger ------*/
+    static extPowerHeatData_t * heatPowerData;
+    static uint16_t heatLimit = 80;
     if (rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK && !fric_on) //not in disabled mode
     {
+      heatPowerData = get_heat_power();
       if (rc_device_get_state(prc_dev, RC_WHEEL_DOWN) == RM_OK
         || mouse_shoot_control(prc_dev)==press)
       {
@@ -107,7 +113,8 @@ void shoot_task(void const *argument)
         // {
         //   shoot_set_cmd(pshoot, SHOOT_CONTINUOUS_CMD, 0);
         // }
-        shoot_set_cmd(pshoot, SHOOT_CONTINUOUS_CMD, CONTIN_BULLET_NUM);
+        if(heatPowerData->shooterHeat0 < heatLimit)
+          shoot_set_cmd(pshoot, SHOOT_CONTINUOUS_CMD, CONTIN_BULLET_NUM);
       }
       else if (rc_device_get_state(prc_dev, RC_WHEEL_UP) == RM_OK
             || mouse_shoot_control(prc_dev)==click)
@@ -201,3 +208,15 @@ mouse_cmd_e mouse_shoot_control(rc_device_t rc_dev)
   }
   return ret_val;
 } 
+
+/**Addd by Y. H. Liu
+ * @Jul 3, 2019: declare the function and create the defination framework
+ * 
+ * Calculate the heat limit
+ */
+static uint16_t get_heat_limit(void)
+{
+  static extGameRobotPos_t * robotState;
+  static extRfidDetect_t * rfidDetect;
+  //TODO: MAPPING FUNCTION / LIST
+}
