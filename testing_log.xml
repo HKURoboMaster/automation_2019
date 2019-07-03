@@ -209,6 +209,20 @@
 			</M2>
 		</Modifications>
 	</LOG_6>
+	<LOG_7>
+		<Date> 2019/7/3 </Data>
+		<Author> Y. H. Liu </Author>
+		<Modifications>
+			<M1 fileName = "offline_check.c">
+				<Comment>
+					Enable shoot task when trigger motor is not offline
+				</Comment>
+				<Tag>
+					PERM
+				</Tag>
+			</M1>
+		</Modifications>
+	</LOG_7>
 </All_LOGS>
 
 
