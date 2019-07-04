@@ -39,6 +39,7 @@ extern ADC_HandleTypeDef hadc1,hadc2;
 struct chassis_power chassis_power; // Using a struct to store related dara from chassis
 float weight[] = {0.05,0.05,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.2};
 int power_js;
+int power_pidout_js;
 
 
 /** Edited by Y.H. Liu
@@ -207,6 +208,10 @@ void chassis_task(void const *argument)
       chassis_execute(pchassis);
     
       osDelayUntil(&period, 2);
+      power_pidout_js = pchassis->motor[0].current +
+                        pchassis->motor[1].current + 
+                        pchassis->motor[2].current + 
+                        pchassis->motor[3].current;
     #endif
   }
 }
@@ -337,7 +342,8 @@ int get_chassis_power(struct chassis_power *chassis_power)
 	
 	chassis_power->current = smooth_filter(10,((float)chassis_power->current_debug) * MAPPING_INDEX_CRT,weight);
 	chassis_power->voltage = smooth_filter(10,((float)chassis_power->voltage_debug) * MAPPING_INDEX_VTG,weight);
-	chassis_power->power = chassis_power->current * chassis_power->voltage;
+	// chassis_power->power = chassis_power->current * chassis_power->voltage;
+  chassis_power->power = chassis_power->current * 24u;
 	power_js = (int) chassis_power->power;
 }
 
