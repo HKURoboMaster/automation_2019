@@ -16,6 +16,7 @@
  ***************************************************************************/
 
 #include "gimbal.h"
+#include "smooth_filter.h"
 
 static int32_t yaw_gyro_input_convert(struct controller *ctrl, void *input);
 static int32_t pitch_gyro_input_convert(struct controller *ctrl, void *input);
@@ -26,7 +27,7 @@ static int16_t gimbal_get_ecd_angle(int16_t raw_ecd, int16_t center_offset);
 
 int32_t yaw_target_watch;
 int32_t pit_target_watch;
-
+float gim_weight[] = {0.1,0.1,0.2,0.2,0.4},gim_fdb_weight[] ={0.1,0.2,0.7} ; 
 int32_t gimbal_cascade_register(struct gimbal *gimbal, const char *name, enum device_can can)
 {
   char motor_name[2][OBJECT_NAME_MAX_LEN] = {0};
@@ -69,17 +70,19 @@ int32_t gimbal_cascade_register(struct gimbal *gimbal, const char *name, enum de
 
   gimbal->mode.bit.yaw_mode = ENCODER_MODE;
   gimbal->ctrl[YAW_MOTOR_INDEX].convert_feedback = yaw_ecd_input_convert;
-  pid_struct_init(&(gimbal->cascade[YAW_MOTOR_INDEX].outer), 2000, 0, 0, 0, 0);
-  pid_struct_init(&(gimbal->cascade[YAW_MOTOR_INDEX].inter), 30000, 3000, 257.3f, 0.2, 0);
+  pid_struct_init(&(gimbal->cascade[YAW_MOTOR_INDEX].outer), 500, 600, -20, -0.02, -2);
+	//pid_struct_init(&(gimbal->cascade[YAW_MOTOR_INDEX].outer), 500, 600, 0, 0, 0);
+  pid_struct_init(&(gimbal->cascade[YAW_MOTOR_INDEX].inter), 30000, 3000, 70, 0, 0);
+	//pid_struct_init(&(gimbal->cascade[YAW_MOTOR_INDEX].inter), 30000, 3000, 0, 0, 0);
   // pid_struct_init(&(gimbal->cascade[YAW_MOTOR_INDEX].outer), 100, 0, 0.5f, 0, 0);
-  // pid_struct_init(&(gimbal->cascade[YAW_MOTOR_INDEX].inter), 1500, 3000, 3.5f, 0.125f, 0);
+  //pid_struct_init(&(gimbal->cascade[YAW_MOTOR_INDEX].inter), 1500, 3000, 3.5f, 0.125f, 0);
 
   gimbal->mode.bit.pitch_mode = ENCODER_MODE;
   gimbal->ctrl[PITCH_MOTOR_INDEX].convert_feedback = pitch_ecd_input_convert;
-  // pid_struct_init(&(gimbal->cascade[PITCH_MOTOR_INDEX].outer), 2000, 0, 30, 0, 0);
-  // pid_struct_init(&(gimbal->cascade[PITCH_MOTOR_INDEX].inter), 30000, 3000, 60, 0.2, 0);
-  pid_struct_init(&(gimbal->cascade[PITCH_MOTOR_INDEX].outer), 100, 0, 0.25f, 0, 0);
-  pid_struct_init(&(gimbal->cascade[PITCH_MOTOR_INDEX].inter), 1500, 3000, 2.5f, 0.125f, 0);
+  pid_struct_init(&(gimbal->cascade[PITCH_MOTOR_INDEX].outer), 2000, 0, -15, -0.01, 0);
+  pid_struct_init(&(gimbal->cascade[PITCH_MOTOR_INDEX].inter), 3000, 800, -30, -0.15, 0);
+  //pid_struct_init(&(gimbal->cascade[PITCH_MOTOR_INDEX].outer), 2000, 600, 0, 0, 0);
+  //pid_struct_init(&(gimbal->cascade[PITCH_MOTOR_INDEX].inter), 1500, 3000, 0, 0, 0);//15
 
   for (int i = 0; i < 2; i++)
   {
@@ -506,7 +509,7 @@ static int32_t yaw_gyro_input_convert(struct controller *ctrl, void *input)
 {
   cascade_feedback_t cascade_fdb = (cascade_feedback_t)(ctrl->feedback);
   gimbal_t data = (gimbal_t)input;
-  cascade_fdb->outer_fdb = data->sensor.gyro_angle.yaw;
+  cascade_fdb->outer_fdb = -data->sensor.gyro_angle.yaw;
   cascade_fdb->inter_fdb = data->sensor.rate.yaw_rate;
   return RM_OK;
 }
@@ -524,8 +527,8 @@ static int32_t pitch_gyro_input_convert(struct controller *ctrl, void *input)
 {
   cascade_feedback_t cascade_fdb = (cascade_feedback_t)(ctrl->feedback);
   gimbal_t data = (gimbal_t)input;
-  cascade_fdb->outer_fdb = data->sensor.gyro_angle.pitch;
-  cascade_fdb->inter_fdb = data->sensor.rate.pitch_rate;
+  cascade_fdb->outer_fdb = -data->sensor.gyro_angle.pitch;
+  cascade_fdb->inter_fdb = -data->sensor.rate.pitch_rate;
   return RM_OK;
 }
 
@@ -533,7 +536,7 @@ static int32_t pitch_ecd_input_convert(struct controller *ctrl, void *input)
 {
   cascade_feedback_t cascade_fdb = (cascade_feedback_t)(ctrl->feedback);
   gimbal_t data = (gimbal_t)input;
-  cascade_fdb->outer_fdb = data->ecd_angle.pitch;
-  cascade_fdb->inter_fdb = data->sensor.rate.pitch_rate;
+  cascade_fdb->outer_fdb = -data->ecd_angle.pitch;
+  cascade_fdb->inter_fdb = -data->sensor.rate.pitch_rate;
   return RM_OK;
 }
