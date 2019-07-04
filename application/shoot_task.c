@@ -101,11 +101,8 @@ void shoot_task(void const *argument)
     }
     
     /*------ implement the function of a trigger ------*/
-    static extPowerHeatData_t * heatPowerData;
-    static uint16_t heatLimit;
-
-    heatPowerData = get_heat_power();
-    heatLimit = get_heat_limit();
+    extPowerHeatData_t * heatPowerData = get_heat_power();
+    uint16_t heatLimit = get_heat_limit();
 
     #ifndef HERO_ROBOT
     if (heatPowerData->shooterHeat0 < heatLimit && rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK && !fric_on) //not in disabled mode
@@ -222,39 +219,14 @@ mouse_cmd_e mouse_shoot_control(rc_device_t rc_dev)
 static uint16_t get_heat_limit(void)
 {
   extGameRobotState_t * robotState = get_robot_state();
-  uint16_t limit = 0;
-  #ifndef HERO_ROBOT
-    switch (robotState->robotLevel)
-    {
-      case 1:
-        limit = 240;
-        break; 
-      case 2:
-        limit = 360;
-        break; 
-      case 3:
-        limit = 480;
-        break; 
-      default: 
-        limit = 4096;
-        break;
-    }
-  #else
-    switch (robotState->robotLevel)
-    {
-      case 1:
-        limit = 200;
-        break; 
-      case 2:
-        limit = 300;
-        break; 
-      case 3:
-        limit = 400;
-        break; 
-      default: 
-        limit = 4096;
-        break;
-    } 
-  #endif
+  uint16_t limit = 4096;
+  if(robotState->robotLevel != 0)
+  {
+    #ifndef HERO_ROBOT
+    limit = robotState->robotLevel * 120 + 120;
+    #else
+    limit = robotState->robotLevel * 100 + 100;
+    #endif
+  }
   return limit; 
 }
