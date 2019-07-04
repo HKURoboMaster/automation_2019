@@ -82,20 +82,6 @@ void offline_init(void)
 
 int32_t offline_check(void *argc)
 {
-  detect_device_check(&offline_dev, 0xffffffff);
-  if (detect_device_get_event(&offline_dev) == 0)
-  {
-    offline_beep_set_times(&offline_beep_times[0]);
-
-    gimbal_yaw_enable(pgimbal);
-    gimbal_pitch_enable(pgimbal);
-    // shoot_enable(pshoot);
-    // chassis_enable(pchassis);
-		
-		LED_R_OFF();
-  }
-  else
-  {
     detect_device_check(&offline_dev, YAW_OFFLINE_EVENT);
     if(detect_device_get_event(&offline_dev) != 0)
       gimbal_yaw_disable(pgimbal);
@@ -107,15 +93,23 @@ int32_t offline_check(void *argc)
       gimbal_pitch_disable(pgimbal);
     else
       gimbal_pitch_enable(pgimbal);
-    
-    // detect_device_check(&offline_dev, MOTOR1_OFFLINE_EVENT | MOTOR2_OFFLINE_EVENT | MOTOR3_OFFLINE_EVENT | MOTOR4_OFFLINE_EVENT);
-    // if(detect_device_get_event(&offline_dev) != 0)
-      // chassis_disable(pchassis);
-    // else
-      // chassis_enable(pchassis);
-  }
-  shoot_disable(pshoot);
+
+    detect_device_check(&offline_dev, TURN_OFFLINE_EVENT);
+    if(detect_device_get_event(&offline_dev) != 0)
+      shoot_disable(pshoot);
+    else
+      shoot_enable(pshoot);
+
+  // detect_device_check(&offline_dev, MOTOR1_OFFLINE_EVENT | MOTOR2_OFFLINE_EVENT | MOTOR3_OFFLINE_EVENT | MOTOR4_OFFLINE_EVENT);
+  // if(detect_device_get_event(&offline_dev) != 0)
+    // chassis_disable(pchassis);
+  // else
+    // chassis_enable(pchassis);
   chassis_disable(pchassis);
+
+  detect_device_check(&offline_dev, 0xffffffff);
+  if(detect_device_get_event(&offline_dev) != 0)
+	  LED_R_OFF();
   return 0;
 }
 
