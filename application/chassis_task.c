@@ -38,7 +38,9 @@ static void chassis_imu_update(void *argc);
 extern ADC_HandleTypeDef hadc1,hadc2;
 struct chassis_power chassis_power; // Using a struct to store related dara from chassis
 float weight[] = {0.05f,0.05f,0.1f,0.1f,0.1f,0.1f,0.1f,0.1f,0.1f,0.2f};
-int power_js;
+int32_t power_js;
+
+int32_t chassis_pit, chassis_rol, chassis_yaw, chassis_wx, chassis_wy, chassis_wz;
 
 
 /** Edited by Y.H. Liu
@@ -220,8 +222,14 @@ static void chassis_imu_update(void *argc)
   mpu_get_data(&mpu_sensor);
   mahony_ahrs_updateIMU(&mpu_sensor, &mahony_atti);
   // TODO: adapt coordinates to our own design
-  chassis_gyro_update(pchassis, -mahony_atti.yaw, mpu_sensor.wz * RAD_TO_DEG);
+  chassis_gyro_update(pchassis, -mahony_atti.yaw, -mpu_sensor.wz * RAD_TO_DEG);
   // TODO: adapt coordinates to our own design
+  chassis_yaw = mahony_atti.yaw;
+  chassis_pit = mahony_atti.pitch;
+  chassis_rol = mahony_atti.roll;
+  chassis_wx = mpu_sensor.wx;
+  chassis_wy = mpu_sensor.wy;
+  chassis_wz = mpu_sensor.wz;
 }
 
 #ifdef CHASSIS_POWER_CTRL
