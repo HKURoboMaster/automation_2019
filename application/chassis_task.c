@@ -24,8 +24,8 @@
 #include "smooth_filter.h"
 #include <math.h>
 #define RAD_TO_DEG 57.296f // 180/PI
-#define MAPPING_INDEX_CRT 0.005
-#define MAPPING_INDEX_VTG 0.005
+#define MAPPING_INDEX_CRT 0.005f
+#define MAPPING_INDEX_VTG 0.005f
 static float vx, vy, wz;
 
 float follow_relative_angle;
@@ -37,7 +37,7 @@ static void chassis_imu_update(void *argc);
 */
 extern ADC_HandleTypeDef hadc1,hadc2;
 struct chassis_power chassis_power; // Using a struct to store related dara from chassis
-float weight[] = {0.05,0.05,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.2};
+float weight[] = {0.05f,0.05f,0.1f,0.1f,0.1f,0.1f,0.1f,0.1f,0.1f,0.2f};
 int power_js;
 
 
@@ -339,5 +339,7 @@ int get_chassis_power(struct chassis_power *chassis_power)
 	chassis_power->voltage = smooth_filter(10,((float)chassis_power->voltage_debug) * MAPPING_INDEX_VTG,weight);
 	chassis_power->power = chassis_power->current * chassis_power->voltage;
 	power_js = (int) chassis_power->power;
+	
+	return chassis_power->power;
 }
 

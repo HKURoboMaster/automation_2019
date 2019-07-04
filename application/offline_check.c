@@ -94,7 +94,7 @@ int32_t offline_check(void *argc)
     else
       gimbal_pitch_enable(pgimbal);
 
-    detect_device_check(&offline_dev, TURN_OFFLINE_EVENT)
+    detect_device_check(&offline_dev, TURN_OFFLINE_EVENT);
     if(detect_device_get_event(&offline_dev) != 0)
       shoot_disable(pshoot);
     else
@@ -108,7 +108,7 @@ int32_t offline_check(void *argc)
   chassis_disable(pchassis);
 
   detect_device_check(&offline_dev, 0xffffffff);
-  if(detect_device_check(&offline_dev) != 0)
+  if(detect_device_get_event(&offline_dev) != 0)
 	  LED_R_OFF();
   return 0;
 }
