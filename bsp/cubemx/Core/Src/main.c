@@ -59,6 +59,7 @@
 #include "spi.h"
 
 /* USER CODE BEGIN Includes */
+#include "i2c.h"
 #include "init.h"
 /* USER CODE END Includes */
 
@@ -123,6 +124,7 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM12_Init();
   /* USER CODE BEGIN 2 */
+	MX_I2C2_Init();
   hw_init();
   task_init();
   /* USER CODE END 2 */

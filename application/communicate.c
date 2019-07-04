@@ -59,12 +59,6 @@ int32_t dr16_rx_data_by_can(uint8_t *buff, uint16_t len)
   return 0;
 }
 
-int32_t gimbal_adjust(void)
-{
-  protocol_send(GIMBAL_ADDRESS, CMD_GIMBAL_ADJUST, 0, 0);
-  return 0;
-}
-
 int32_t manifold2_heart_package(uint8_t *buff, uint16_t len)
 {
   return 0;

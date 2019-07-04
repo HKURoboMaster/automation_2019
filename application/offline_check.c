@@ -19,11 +19,8 @@
 #include "board.h"
 #include "detect.h"
 #include "chassis.h"
-#include "gimbal.h"
-#include "shoot.h"
 #include "init.h"
 #include "offline_check.h"
-#include "gimbal_task.h"
 #include "timer_task.h"
 #include "infantry_cmd.h"
 
@@ -39,9 +36,7 @@ struct detect_device *get_offline_dev(void)
   return &offline_dev;
 }
 
-static gimbal_t pgimbal = NULL;
 static chassis_t pchassis = NULL;
-static shoot_t pshoot = NULL;
 
 void offline_init(void)
 {
@@ -53,8 +48,6 @@ void offline_init(void)
     offline_beep_times[i] = i;
   }
 
-  pshoot = shoot_find("shoot");
-  pgimbal = gimbal_find("gimbal");
   pchassis = chassis_find("chassis");
 
   detect_device_register(&offline_dev, "detect", 0, 0);
@@ -70,8 +63,6 @@ void offline_init(void)
   }
   else
   {
-    detect_device_add_event(&offline_dev, YAW_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[5]);
-    detect_device_add_event(&offline_dev, PITCH_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[6]);
     detect_device_add_event(&offline_dev, TURN_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[7]);
   }
 
@@ -87,18 +78,12 @@ int32_t offline_check(void *argc)
   {
     offline_beep_set_times(&offline_beep_times[0]);
 
-    gimbal_yaw_enable(pgimbal);
-    gimbal_pitch_enable(pgimbal);
-    shoot_enable(pshoot);
     chassis_enable(pchassis);
 		
 		LED_R_OFF();
   }
   else
   {
-    gimbal_yaw_disable(pgimbal);
-    gimbal_pitch_disable(pgimbal);
-    shoot_disable(pshoot);
     chassis_disable(pchassis);
   }
   return 0;
@@ -113,7 +98,6 @@ int32_t rc_offline_callback(void *argc)
 {
   beep_set_times(0);
 	LED_R_ON();
-  gimbal_init_state_reset();
   return 0;
 }
 
@@ -139,10 +123,8 @@ int32_t can1_detect_update(CAN_RxHeaderTypeDef *header, uint8_t *rx_data)
     detect_device_update(&offline_dev, MOTOR4_OFFLINE_EVENT);
     break;
   case 0x205:
-    detect_device_update(&offline_dev, YAW_OFFLINE_EVENT);
     break;
   case 0x206:
-    detect_device_update(&offline_dev, PITCH_OFFLINE_EVENT);
     break;
   case 0x207:
     detect_device_update(&offline_dev, TURN_OFFLINE_EVENT);

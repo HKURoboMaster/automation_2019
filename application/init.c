@@ -23,13 +23,9 @@
 #include "detect.h"
 #include "test.h"
 #include "chassis.h"
-#include "gimbal.h"
-#include "shoot.h"
 
 #include "chassis_task.h"
-#include "gimbal_task.h"
 #include "timer_task.h"
-#include "shoot_task.h"
 #include "communicate.h"
 #include "infantry_cmd.h"
 #include "init.h"
@@ -41,8 +37,6 @@
 #include "referee_system.h"
 
 struct chassis chassis;
-struct gimbal gimbal;
-struct shoot shoot;
 static struct rc_device rc_dev;
 
 static uint8_t glb_sys_cfg;
@@ -82,13 +76,6 @@ void hw_init(void)
   else
   {
     rc_device_register(&rc_dev, "can_rc", 0);
-    gimbal_cascade_register(&gimbal, "gimbal", DEVICE_CAN1);
-
-    shoot_pid_register(&shoot, "shoot", DEVICE_CAN1);
-
-    gimbal_yaw_disable(&gimbal);
-    gimbal_pitch_disable(&gimbal);
-    shoot_disable(&shoot);
   }
 
   offline_init();
@@ -96,10 +83,8 @@ void hw_init(void)
 
 osThreadId timer_task_t;
 osThreadId chassis_task_t;
-osThreadId gimbal_task_t;
 osThreadId communicate_task_t;
 osThreadId cmd_task_t;
-osThreadId shoot_task_t;
 
 void task_init(void)
 {
@@ -122,10 +107,6 @@ void task_init(void)
   }
   else
   {
-    osThreadDef(GIMBAL_TASK, gimbal_task, osPriorityRealtime, 0, 512);
-    gimbal_task_t = osThreadCreate(osThread(GIMBAL_TASK), NULL);
-
-    osThreadDef(SHOOT_TASK, shoot_task, osPriorityNormal, 0, 512);
-    shoot_task_t = osThreadCreate(osThread(SHOOT_TASK), NULL);
+		
   }
 }

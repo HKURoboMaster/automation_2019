@@ -21,12 +21,9 @@
 #include "detect.h"
 #include "board.h"
 #include "chassis.h"
-#include "gimbal.h"
-#include "shoot.h"
 #include "init.h"
 #include "communicate.h"
 #include "timer_task.h"
-#include "gimbal_task.h"
 #include "offline_check.h"
 
 int32_t can1_motor_msg_rec(CAN_RxHeaderTypeDef *header, uint8_t *data)
@@ -60,12 +57,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
   if(GPIO_Pin == GPIO_PIN_10)
   {
-    shoot_t pshoot;
-    pshoot = shoot_find("shoot");
-    if (pshoot != NULL)
-    {
-      shoot_state_update(pshoot);
-    }
+
   }
   if (GPIO_Pin == GPIO_PIN_2)
   {
@@ -74,11 +66,11 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 
     if (app == CHASSIS_APP)
     {
-      gimbal_adjust();
+			
     }
     else
     {
-      gimbal_auto_adjust_start();
+			
     }
   }
 }

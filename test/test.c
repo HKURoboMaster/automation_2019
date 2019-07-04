@@ -28,8 +28,6 @@
 #include "board.h"
 #include "init.h"
 #include "chassis.h"
-#include "gimbal.h"
-#include "shoot.h"
 #include "log_test.h"
 
 //#define TEST_SELF_ENABLE
@@ -53,8 +51,6 @@ struct rc_device test_rc;
 struct detect_device test_detect;
 
 struct chassis test_chassis;
-struct gimbal test_gimbal;
-struct shoot test_shoot;
 
 struct motor_device test_motor = TEST_MOTOR_DEFAULT;
 struct controller test_motor_ctrl;
@@ -66,10 +62,7 @@ void ahrs_test(void *argc);
 void motor_test(void *argc);
 void chassis_test(void *argc);
 void rc_test(void *argc);
-void gimbal_test(void *argc);
-void gimbal_pid_test(void *argc);
 void limit_test(void *argc);
-void shoot_test(void *argc);
 void detect_test(void *argc);
 
 void test_call_fnuc1(void *argc);
@@ -248,17 +241,6 @@ void chassis_test(void *argc)
   motor_device_can_output(DEVICE_CAN1);
 }
 
-void gimbal_test(void *argc)
-{
-  test_gimbal.param.yaw_ecd_center = 5126;
-  test_gimbal.param.pitch_ecd_center = 6100;
-  gimbal_pitch_gyro_update(&test_gimbal, test_mahony_atti.roll);
-  gimbal_rate_update(&test_gimbal, test_sensor.wz*RAD_TO_DEG, test_sensor.wx*RAD_TO_DEG);
-  gimbal_set_yaw_mode(&test_gimbal, GYRO_MODE);
-  gimbal_execute(&test_gimbal);
-  motor_device_can_output(DEVICE_CAN1);
-}
-
 int32_t yaw_angle_fdb_js, yaw_angle_ref_js;
 int32_t pit_angle_fdb_js, pit_angle_ref_js;
 int32_t yaw_spd_fdb_js, yaw_spd_ref_js;
@@ -270,84 +252,6 @@ float test_delta_pitch;
 float test_delta_yaw;
 uint8_t test_yaw_mode;
 uint8_t test_gim_flag;
-
-void gimbal_set_inter_test(void *argc)
-{
-  if(test_gim_flag == 1)
-  {
-    gimbal_set_pitch_angle(&test_gimbal, test_angle_pitch);
-    gimbal_set_yaw_angle(&test_gimbal, test_angle_yaw, test_yaw_mode);
-    test_gim_flag = 0;
-  }
-
-  if(test_gim_flag == 2)
-  {
-    gimbal_set_pitch_delta(&test_gimbal, test_delta_pitch);
-    gimbal_set_yaw_delta(&test_gimbal, test_delta_yaw);
-    test_gim_flag = 0;
-  }
-  
-  if(test_gim_flag == 3)
-  {
-    gimbal_pitch_disable(&test_gimbal);
-    gimbal_yaw_disable(&test_gimbal);
-  }
-  
-  if(test_gim_flag == 4)
-  {
-    gimbal_pitch_enable(&test_gimbal);
-    gimbal_yaw_enable(&test_gimbal);
-  }
-  
-  yaw_angle_fdb_js = test_gimbal.cascade[0].outer.get * 1000;
-  yaw_angle_ref_js = test_gimbal.cascade[0].outer.set * 1000;
-  pit_angle_fdb_js = test_gimbal.cascade[1].outer.get * 1000;
-  pit_angle_ref_js = test_gimbal.cascade[1].outer.set * 1000;
-
-  yaw_spd_fdb_js = test_gimbal.cascade[0].inter.get * 1000;
-  yaw_spd_ref_js = test_gimbal.cascade[0].inter.set * 1000;
-  pit_spd_fdb_js = test_gimbal.cascade[1].inter.get * 1000;
-  pit_spd_ref_js = test_gimbal.cascade[1].inter.set * 1000; 
-
-}
-
-uint8_t test_shoot_flag; 
-uint16_t test_fric_spd1, test_fric_spd2;
-uint16_t test_get_spd1, test_get_spd2;
-uint8_t test_cmd;
-uint32_t test_shoot_num;
-
-void shoot_test(void *argc)
-{
-  shoot_execute(&test_shoot);
-
-  if(test_shoot_flag ==1)
-  {
-    shoot_set_fric_speed(&test_shoot, test_fric_spd1, test_fric_spd2);
-    test_shoot_flag = 0; 
-  }
-  if(test_shoot_flag ==2)
-  {
-     shoot_get_fric_speed(&test_shoot, &test_get_spd1, &test_get_spd2);
-    test_shoot_flag = 0; 
-  }
-  if(test_shoot_flag ==3)
-  {
-    shoot_set_cmd(&test_shoot, test_cmd, test_shoot_num);
-    test_shoot_flag = 0; 
-  }
-  if(test_shoot_flag ==4)
-  {
-    shoot_enable(&test_shoot);
-    test_shoot_flag = 0; 
-  }
-  if(test_shoot_flag ==5)
-  {
-    shoot_disable(&test_shoot);
-    test_shoot_flag = 0; 
-  }
-  motor_device_can_output(DEVICE_CAN1);
-}
 
 void ahrs_test(void *argc)
 {
