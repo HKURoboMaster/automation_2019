@@ -151,8 +151,8 @@ void gimbal_task(void const *argument)
       if(prc_info->kb.bit.X != 1)
       {
         //auto_aimming
-        gimbal_set_pitch_speed(pgimbal, auto_aiming_pitch);
-        gimbal_set_yaw_speed(pgimbal, auto_aiming_yaw);
+        //gimbal_set_pitch_speed(pgimbal, auto_aiming_pitch);
+        //gimbal_set_yaw_speed(pgimbal, auto_aiming_yaw);
 
         float square_ch3 = (float)prc_info->ch3 * abs(prc_info->ch3) / RC_CH_SCALE;
 
@@ -210,9 +210,9 @@ static int32_t gimbal_imu_update(void *argc)
   mpu_get_data(&mpu_sensor);
   mahony_ahrs_updateIMU(&mpu_sensor, &mahony_atti);
   // TODO: adapt coordinates to our own design
-  gimbal_pitch_gyro_update(pgimbal, -mahony_atti.roll);
-  gimbal_yaw_gyro_update(pgimbal, -mahony_atti.pitch);
-  gimbal_rate_update(pgimbal, mpu_sensor.wz * RAD_TO_DEG, -mpu_sensor.wx * RAD_TO_DEG);
+  gimbal_pitch_gyro_update(pgimbal, mahony_atti.roll);
+  gimbal_yaw_gyro_update(pgimbal, mahony_atti.yaw);
+  gimbal_rate_update(pgimbal, -mpu_sensor.wy * RAD_TO_DEG, -mpu_sensor.wx * RAD_TO_DEG);
   // TODO: adapt coordinates to our own design
   
   mpu_pit = mahony_atti.pitch;
