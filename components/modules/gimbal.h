@@ -49,9 +49,9 @@
 /* the deceleration ratio of yaw axis motor */
 #define YAW_DECELE_RATIO       1.0f
 /* the positive direction of pitch axis motor */
-#define PITCH_MOTOR_POSITIVE_DIR  1.0f
+#define PITCH_MOTOR_POSITIVE_DIR  -1.0f
 /* the positive direction of yaw axis motor */
-#define YAW_MOTOR_POSITIVE_DIR  1.0f
+#define YAW_MOTOR_POSITIVE_DIR  -1.0f
 
 #include "motor.h"
 #include "pid_controller.h"

@@ -19,7 +19,7 @@
 #include "shoot.h"
 #include "dbus.h"
 #include "shoot_task.h"
-#include "referee_system.c"
+#include "referee_system.h"
 
 int32_t shoot_firction_toggle(shoot_t pshoot, uint8_t toggled);
 int32_t shoot_lid_toggle(shoot_t pshoot, uint8_t toggled);
