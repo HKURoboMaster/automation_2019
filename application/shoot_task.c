@@ -70,8 +70,8 @@ void shoot_task(void const *argument)
     {
       shoot_lid_toggle(pshoot, 0);
     }
-    if(rc_device_get_state(prc_dev, RC_S1_DOWN2MID) == RM_OK ||
-     !prc_dev->rc_info.kb.bit.R && prc_dev->last_rc_info.kb.bit.R)
+    if(rc_device_get_state(prc_dev, RC_S1_DOWN2MID) == RM_OK ||(
+     !prc_dev->rc_info.kb.bit.R && prc_dev->last_rc_info.kb.bit.R))
     {
       shoot_lid_toggle(pshoot, 1);
     }
@@ -79,7 +79,7 @@ void shoot_task(void const *argument)
     // Reserved for lifting / lowering the liner actuator
     #endif
 
-    /*------ implement the kebboard controlling over shooting ------*/
+    /*------ implement the keyboard controlling over shooting ------*/
     if(prc_dev->rc_info.kb.bit.Z ) 
     {
       if(prc_dev->rc_info.kb.bit.F && !prc_dev->last_rc_info.kb.bit.F) //turn off the fric regardless the situation
