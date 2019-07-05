@@ -110,3 +110,4 @@ uint32_t get_ADC_data(ADC_HandleTypeDef *hadc)
 	}
 }
 /* Eric Edited Add Current read and Voltage Read Feature */
+
