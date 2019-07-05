@@ -27,7 +27,11 @@ static int16_t gimbal_get_ecd_angle(int16_t raw_ecd, int16_t center_offset);
 
 int32_t yaw_target_watch;
 int32_t pit_target_watch;
+int32_t yaw_delta_watch;
+int32_t yaw_out_angle_watch;
+int flag = 0;
 float gim_weight[] = {0.1,0.1,0.2,0.2,0.4},gim_fdb_weight[] ={0.1,0.2,0.7} ; 
+float yaw_out_angle;
 int32_t gimbal_cascade_register(struct gimbal *gimbal, const char *name, enum device_can can)
 {
   char motor_name[2][OBJECT_NAME_MAX_LEN] = {0};
@@ -123,9 +127,32 @@ int32_t gimbal_set_yaw_delta(struct gimbal *gimbal, float yaw)
 
   if (gimbal->mode.bit.yaw_mode == GYRO_MODE)
   {
-    gimbal_set_yaw_angle(gimbal, gimbal->gyro_target_angle.yaw + yaw, 0);
+		yaw_out_angle = gimbal->gyro_target_angle.yaw + yaw;
+		VAL_LIMIT(yaw_out_angle,-360,360);
+		if(yaw_out_angle>=180 && (gimbal->cascade[0].outer.get>=0 ||(gimbal->cascade[0].outer.get<0 && gimbal->cascade[0].outer.get >(yaw_out_angle-360))))
+		{
+			VAL_LIMIT(yaw_out_angle,gimbal->cascade[0].outer.get-10,gimbal->cascade[0].outer.get+10);
+			flag = 1;
+		}
+		else if(yaw_out_angle>=180 && gimbal->cascade[0].outer.get<0)
+		{
+			yaw_out_angle = yaw_out_angle - 360;
+			flag = 2;
+		}
+		else if(yaw_out_angle<=-180 && (gimbal->cascade[0].outer.get<=0 ||(gimbal->cascade[0].outer.get>0 && gimbal->cascade[0].outer.get < (yaw_out_angle + 360))))
+		{
+			VAL_LIMIT(yaw_out_angle,gimbal->cascade[0].outer.get-10,gimbal->cascade[0].outer.get+10);
+			flag = 3;
+		}
+		else if(yaw_out_angle<=-180 &&  gimbal->cascade[0].outer.get>0)
+		{
+			yaw_out_angle = yaw_out_angle+360;
+			flag = 4;
+		}
+		yaw_out_angle_watch = (int) gimbal->sensor.gyro_angle.yaw; //Watch th casted yaw_out angle
+    gimbal_set_yaw_angle(gimbal, yaw_out_angle, 0);
   }
-  else
+  else // VAL_LIMIT(gimbal->gyro_target_angle.yaw + yaw, -100,100)
   {
     gimbal_set_yaw_angle(gimbal, gimbal->ecd_target_angle.yaw + yaw, 0);
   }
@@ -323,7 +350,7 @@ int32_t gimbal_execute(struct gimbal *gimbal)
     center_offset = gimbal->sensor.gyro_angle.yaw - gimbal->ecd_angle.yaw;
     ctrl = &(gimbal->ctrl[YAW_MOTOR_INDEX]);
 
-    VAL_LIMIT(yaw, YAW_ANGLE_MIN + center_offset, YAW_ANGLE_MAX + center_offset);
+    //VAL_LIMIT(yaw, YAW_ANGLE_MIN + center_offset, YAW_ANGLE_MAX + center_offset);
     controller_set_input(ctrl, yaw);
   }
   else
@@ -488,14 +515,14 @@ static int32_t gimbal_set_yaw_gyro_angle(struct gimbal *gimbal, float yaw, uint8
   else if (mode == YAW_FASTEST)
   {
     yaw_offset = yaw_target - yaw_now;
-    if (yaw_offset > 180)
-    {
-      yaw_offset = yaw_offset - 360;
-    }
-    else if (yaw_offset < -180)
-    {
-      yaw_offset = yaw_offset + 360;
-    }
+    //if (yaw_offset > 180)
+    //{
+    //  yaw_offset = yaw_offset - 360;
+    //}
+    //else if (yaw_offset < -180)
+    //{
+    //  yaw_offset = yaw_offset + 360;
+    //}
   }
 
   gimbal->gyro_target_angle.yaw = gimbal->sensor.gyro_angle.yaw + yaw_offset;
