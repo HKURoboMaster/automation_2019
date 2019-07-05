@@ -76,7 +76,7 @@ int32_t gimbal_cascade_register(struct gimbal *gimbal, const char *name, enum de
   gimbal->ctrl[YAW_MOTOR_INDEX].convert_feedback = yaw_ecd_input_convert;
   pid_struct_init(&(gimbal->cascade[YAW_MOTOR_INDEX].outer), 500, 600, -20, -0.02, -2);
 	//pid_struct_init(&(gimbal->cascade[YAW_MOTOR_INDEX].outer), 500, 600, 0, 0, 0);
-  pid_struct_init(&(gimbal->cascade[YAW_MOTOR_INDEX].inter), 30000, 3000, 70, 0, 0);
+  pid_struct_init(&(gimbal->cascade[YAW_MOTOR_INDEX].inter), 30000, 3000, 80, 0.01, 0);
 	//pid_struct_init(&(gimbal->cascade[YAW_MOTOR_INDEX].inter), 30000, 3000, 0, 0, 0);
   // pid_struct_init(&(gimbal->cascade[YAW_MOTOR_INDEX].outer), 100, 0, 0.5f, 0, 0);
   //pid_struct_init(&(gimbal->cascade[YAW_MOTOR_INDEX].inter), 1500, 3000, 3.5f, 0.125f, 0);
@@ -129,7 +129,9 @@ int32_t gimbal_set_yaw_delta(struct gimbal *gimbal, float yaw)
   {
 		yaw_out_angle = gimbal->gyro_target_angle.yaw + yaw;
 		VAL_LIMIT(yaw_out_angle,-360,360);
-		if(yaw_out_angle>=180 && (gimbal->cascade[0].outer.get>=0 ||(gimbal->cascade[0].outer.get<0 && gimbal->cascade[0].outer.get >(yaw_out_angle-360))))
+		if((yaw_out_angle == 180 || yaw_out_angle == -180) && fabs(gimbal->cascade[0].outer.get)<1.0f)
+			yaw_out_angle = gimbal->cascade[0].outer.get;
+		else if(yaw_out_angle>=180 && (gimbal->cascade[0].outer.get>=0 ||(gimbal->cascade[0].outer.get<0 && gimbal->cascade[0].outer.get >(yaw_out_angle-360))))
 		{
 			VAL_LIMIT(yaw_out_angle,gimbal->cascade[0].outer.get-10,gimbal->cascade[0].outer.get+10);
 			flag = 1;
