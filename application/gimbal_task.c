@@ -158,7 +158,7 @@ void gimbal_task(void const *argument)
 
         gimbal_set_yaw_mode(pgimbal, GYRO_MODE);
         pit_delta = -(float)prc_info->ch4 * GIMBAL_RC_PITCH + (float)prc_info->mouse.y * GIMBAL_MOUSE_PITCH;
-        yaw_delta =      square_ch3       * GIMBAL_RC_YAW   + (float)prc_info->mouse.x * GIMBAL_MOUSE_YAW;
+        yaw_delta =     -square_ch3       * GIMBAL_RC_YAW   + (float)prc_info->mouse.x * GIMBAL_MOUSE_YAW;
         yaw_delta += prc_info->kb.bit.E ? YAW_KB_SPEED : 0;
         yaw_delta -= prc_info->kb.bit.Q ? YAW_KB_SPEED : 0;
         gimbal_set_pitch_delta(pgimbal, pit_delta);
@@ -210,9 +210,9 @@ static int32_t gimbal_imu_update(void *argc)
   mpu_get_data(&mpu_sensor);
   mahony_ahrs_updateIMU(&mpu_sensor, &mahony_atti);
   // TODO: adapt coordinates to our own design
-  gimbal_pitch_gyro_update(pgimbal, mahony_atti.roll);
-  gimbal_yaw_gyro_update(pgimbal, mahony_atti.yaw);
-  gimbal_rate_update(pgimbal, -mpu_sensor.wy * RAD_TO_DEG, -mpu_sensor.wx * RAD_TO_DEG);
+  gimbal_pitch_gyro_update(pgimbal, -mahony_atti.roll);
+  gimbal_yaw_gyro_update(pgimbal, -mahony_atti.yaw);
+  gimbal_rate_update(pgimbal, -mpu_sensor.wy * RAD_TO_DEG, mpu_sensor.wx * RAD_TO_DEG);
   // TODO: adapt coordinates to our own design
   
   mpu_pit = mahony_atti.pitch;
