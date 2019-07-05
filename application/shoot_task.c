@@ -19,6 +19,7 @@
 #include "shoot.h"
 #include "dbus.h"
 #include "shoot_task.h"
+#include "referee_system.h"
 
 int32_t shoot_firction_toggle(shoot_t pshoot, uint8_t toggled);
 int32_t shoot_lid_toggle(shoot_t pshoot, uint8_t toggled);
@@ -26,12 +27,14 @@ int32_t shoot_lid_toggle(shoot_t pshoot, uint8_t toggled);
 /**Edited by Y.H. Liu
  * @Jun 13, 2019: change the FSM for shooting
  * @Jun 20, 2019: adaption for hero
+ * @Jul 3, 2019: retrieve the heat data from refree system
  * 
  * Implement the control logic described in Control.md
  */
 enum mouse_cmd{non, click, press};
 typedef enum mouse_cmd mouse_cmd_e;
 mouse_cmd_e mouse_shoot_control(rc_device_t rc_dev);
+static uint16_t get_heat_limit();
 
 void shoot_task(void const *argument)
 {
@@ -98,7 +101,14 @@ void shoot_task(void const *argument)
     }
     
     /*------ implement the function of a trigger ------*/
-    if (rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK && !fric_on) //not in disabled mode
+    extPowerHeatData_t * heatPowerData = get_heat_power();
+    uint16_t heatLimit = get_heat_limit();
+
+    #ifndef HERO_ROBOT
+    if (heatPowerData->shooterHeat0 < heatLimit && rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK && !fric_on) //not in disabled mode
+    #else
+    if (heatPowerData->shooterHeat1 < heatLimit && rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK && !fric_on) //not in disabled mode
+    #endif
     {
       if (rc_device_get_state(prc_dev, RC_WHEEL_DOWN) == RM_OK
         || mouse_shoot_control(prc_dev)==press)
@@ -118,9 +128,8 @@ void shoot_task(void const *argument)
       {
         shoot_set_cmd(pshoot, SHOOT_STOP_CMD, 0);
       }
-      
     }
-
+    
     shoot_execute(pshoot);
     osDelayUntil(&period, 5);
   }
@@ -201,3 +210,23 @@ mouse_cmd_e mouse_shoot_control(rc_device_t rc_dev)
   }
   return ret_val;
 } 
+
+/**Addd by Y. H. Liu
+ * @Jul 3, 2019: declare the function and create the defination framework
+ * 
+ * Calculate the heat limit
+ */
+static uint16_t get_heat_limit(void)
+{
+  extGameRobotState_t * robotState = get_robot_state();
+  uint16_t limit = 4096;
+  if(robotState->robotLevel != 0)
+  {
+    #ifndef HERO_ROBOT
+    limit = robotState->robotLevel * 120 + 120;
+    #else
+    limit = robotState->robotLevel * 100 + 100;
+    #endif
+  }
+  return limit; 
+}

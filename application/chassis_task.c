@@ -38,9 +38,8 @@ static void chassis_imu_update(void *argc);
 extern ADC_HandleTypeDef hadc1,hadc2;
 struct chassis_power chassis_power; // Using a struct to store related dara from chassis
 float weight[] = {0.05f,0.05f,0.1f,0.1f,0.1f,0.1f,0.1f,0.1f,0.1f,0.2f};
-int32_t power_js;
-
-int32_t chassis_pit, chassis_rol, chassis_yaw, chassis_wx, chassis_wy, chassis_wz;
+int32_t current_js;
+int32_t power_pidout_js;
 
 
 /** Edited by Y.H. Liu
@@ -52,8 +51,8 @@ int32_t chassis_pit, chassis_rol, chassis_yaw, chassis_wx, chassis_wy, chassis_w
 */
 #ifdef CHASSIS_POWER_CTRL
   #include "referee_system.h"
-  static uint8_t reset_chassis_speed(chassis_t pchassis, uint8_t flag);
-  static uint8_t detect_chassis_power(chassis_t, uint8_t *, uint8_t sprint_cmd, uint16_t sc_v);
+  static uint8_t reset_chassis_speed(chassis_t pchassis, uint8_t flag, float current);
+  static uint8_t detect_chassis_power(chassis_t, uint8_t *, uint8_t sprint_cmd, uint16_t sc_v, float current);
   typedef enum {NORMAL=0, SPRINT, BUFF_RECOVER}chassis_power_t;
 #endif
 
@@ -90,7 +89,6 @@ void chassis_task(void const *argument)
   #endif
   while (1)
   {
-		get_chassis_power(&chassis_power); // Power Value Getter
     if (rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK || rc_device_get_state(prc_dev, RC_S2_MID) == RM_OK)
     { //not disabled
       int32_t key_x_speed = 2*MAX_CHASSIS_VX_SPEED/3;
@@ -188,27 +186,32 @@ void chassis_task(void const *argument)
     */
    
     #ifdef CHASSIS_POWER_CTRL
-      uint8_t superCapacitor_V = 22; // TODO: retrive from function
       uint8_t superCapacitor_Ctrl = 0;
       uint8_t power_excess = 0;
       do
       {
         if(power_excess)
-          power_excess = reset_chassis_speed(pchassis, power_excess);
+          power_excess = reset_chassis_speed(pchassis, power_excess, chassis_power.current);
         chassis_imu_update(pchassis);
         chassis_execute(pchassis);
+        get_chassis_power(&chassis_power); // Power Value Getter
         osDelayUntil(&period, 2);
         power_excess = detect_chassis_power(pchassis, 
                                             &superCapacitor_Ctrl, 
                                             prc_info->kb.bit.SHIFT || prc_info->ch2>600,
-                                            superCapacitor_V );
-        //set_cmd_to_sc(superCapacitor_V)
+                                            chassis_power.voltage,
+                                            chassis_power.current);
+        //set_cmd_to_sc(superCapacitor_Ctrl)
       }while(power_excess);
     #else
       chassis_imu_update(pchassis);
       chassis_execute(pchassis);
-    
+      get_chassis_power(&chassis_power); // Power Value Getter
       osDelayUntil(&period, 2);
+      power_pidout_js = pchassis->motor[0].current +
+                        pchassis->motor[1].current + 
+                        pchassis->motor[2].current + 
+                        pchassis->motor[3].current;
     #endif
   }
 }
@@ -221,15 +224,7 @@ static void chassis_imu_update(void *argc)
   chassis_t pchassis = (chassis_t)argc;
   mpu_get_data(&mpu_sensor);
   mahony_ahrs_updateIMU(&mpu_sensor, &mahony_atti);
-  // TODO: adapt coordinates to our own design
   chassis_gyro_update(pchassis, -mahony_atti.yaw, -mpu_sensor.wz * RAD_TO_DEG);
-  // TODO: adapt coordinates to our own design
-  chassis_yaw = mahony_atti.yaw;
-  chassis_pit = mahony_atti.pitch;
-  chassis_rol = mahony_atti.roll;
-  chassis_wx = mpu_sensor.wx;
-  chassis_wy = mpu_sensor.wy;
-  chassis_wz = mpu_sensor.wz;
 }
 
 #ifdef CHASSIS_POWER_CTRL
@@ -238,17 +233,19 @@ static void chassis_imu_update(void *argc)
  * 
  * Reset the chassis moving speed ref in case too much power consumed
  */
-static uint8_t reset_chassis_speed(chassis_t pchassis, uint8_t flag)
+static uint8_t reset_chassis_speed(chassis_t pchassis, uint8_t flag, float current)
 {
-  extPowerHeatData_t * power = get_heat_power();
   float portion; 
   switch (flag)
   {
   case 1:
-    portion = sqrtf(power->chassisPower / CHASSIS_POWER_TH);
+    portion = sqrtf(current * WORKING_VOLTAGE / CHASSIS_POWER_TH);
+    break;
+  case 2:
+    portion = sqrtf(current * WORKING_VOLTAGE / CHASSIS_POWER_TH);
     break;
   case 4:
-    portion = sqrtf(power->chassisPower / (0.8f * CHASSIS_POWER_TH));
+    portion = sqrtf(current * WORKING_VOLTAGE / (0.8f * CHASSIS_POWER_TH));
   default:
     portion = 1;
     break;
@@ -264,12 +261,12 @@ static uint8_t reset_chassis_speed(chassis_t pchassis, uint8_t flag)
  * 
  * state update and detect whether the chassis is consuming too much power
  */
-static uint8_t detect_chassis_power(chassis_t pchassis, uint8_t * supercap_ctrl, uint8_t sprint_cmd, uint16_t sc_v)
+static uint8_t detect_chassis_power(chassis_t pchassis, uint8_t * supercap_ctrl, uint8_t sprint_cmd, uint16_t sc_v, float current)
 {
   static chassis_power_t st = NORMAL;
   static uint32_t no_buffer_time = 0;
   static uint32_t last_click = 0;
-  int16_t power_limit = CHASSIS_POWER_TH;
+  int16_t current_limit = CHASSIS_POWER_TH/WORKING_VOLTAGE;
   extPowerHeatData_t * power = get_heat_power();
 
   if(power->chassisPowerBuffer<=0)
@@ -296,17 +293,16 @@ static uint8_t detect_chassis_power(chassis_t pchassis, uint8_t * supercap_ctrl,
     break;
   case SPRINT:
     *supercap_ctrl = 1;
-    power_limit = 32767; // positive infinity
     if(!sprint_cmd || sc_v <= LOW_VOLTAGE)
       st = NORMAL;
-    else if(no_buffer_time > 3000)
+    else if(no_buffer_time > NO_BUFFER_TIME_TH)
       st = BUFF_RECOVER;
     else 
       st = NORMAL;
     break;
   case BUFF_RECOVER:
     *supercap_ctrl = 0;
-    power_limit *= 0.8;
+    current_limit *= 0.8; // limit the current below the allowed value
     if(power->chassisPowerBuffer > 2*LOW_BUFFER)
       st = NORMAL;
     else
@@ -318,7 +314,7 @@ static uint8_t detect_chassis_power(chassis_t pchassis, uint8_t * supercap_ctrl,
     break;
   }
 
-  return power->chassisPower>power_limit ? 1<<(uint8_t)st : 0;
+  return current>current_limit ? 1<<(uint8_t)st : 0;
   //thus, return 0 <=> No excessing
   //             1 <=> NORMAL, exceeded
   //             2 <=> SRPINT, exceeded
@@ -345,8 +341,9 @@ int get_chassis_power(struct chassis_power *chassis_power)
 	
 	chassis_power->current = smooth_filter(10,((float)chassis_power->current_debug) * MAPPING_INDEX_CRT,weight);
 	chassis_power->voltage = smooth_filter(10,((float)chassis_power->voltage_debug) * MAPPING_INDEX_VTG,weight);
-	chassis_power->power = chassis_power->current * chassis_power->voltage;
-	power_js = (int) chassis_power->power;
+	// chassis_power->power = chassis_power->current * chassis_power->voltage;
+  chassis_power->power = chassis_power->current * 24u;
+	current_js = (int) chassis_power->power;
 	
 	return chassis_power->power;
 }
