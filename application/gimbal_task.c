@@ -55,7 +55,7 @@ int32_t yaw_angle_fdb_js, yaw_angle_ref_js;
 int32_t pit_angle_fdb_js, pit_angle_ref_js;
 int32_t yaw_spd_fdb_js, yaw_spd_ref_js;
 int32_t pit_spd_fdb_js, pit_spd_ref_js;
-
+int32_t yaw_ecd_angle_js, pit_ecd_angle_js;
 /** Edited by Y.H. Liu
  *  @Jun 12, 2019: modified the mode switch
  *
@@ -195,7 +195,13 @@ void gimbal_task(void const *argument)
     yaw_spd_ref_js = pgimbal->cascade[0].inter.set * 1000;
     pit_spd_fdb_js = pgimbal->cascade[1].inter.get * 1000;
     pit_spd_ref_js = pgimbal->cascade[1].inter.set * 1000;
-
+		
+		//Eric Edited Debug the ecd of pitch and yaw
+		yaw_ecd_angle_js = pgimbal->ecd_angle.yaw;
+		pit_ecd_angle_js = pgimbal->ecd_angle.pitch;
+		
+		
+		
     gimbal_imu_update(pgimbal);
     gimbal_execute(pgimbal);
     osDelayUntil(&period, 2);
@@ -317,6 +323,7 @@ static void gimbal_state_init(gimbal_t pgimbal)
       if (fabs(pgimbal->ecd_angle.pitch) < 1.5f)
       {
         gimbal_yaw_enable(pgimbal);
+				// Rotate from current angle to 0 read from ecd
         gimbal_set_yaw_angle(pgimbal, pgimbal->ecd_angle.yaw * (1 - ramp_calculate(&yaw_ramp)), 0);
         if (fabs(pgimbal->ecd_angle.yaw) < 1.5f)
         {
