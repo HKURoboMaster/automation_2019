@@ -125,7 +125,7 @@ int32_t shoot_set_cmd(struct shoot *shoot, uint8_t cmd, uint32_t shoot_num)
   /*------ No matter what command it is, always count the bullets ------*/
   // if (cmd == SHOOT_ONCE_CMD)
   // {
-  // shoot->target.shoot_num = shoot->shoot_num + shoot_num;
+  shoot->target.shoot_num = shoot->shoot_num + shoot_num;
   // }
 
   return RM_OK;
@@ -175,7 +175,7 @@ int32_t shoot_state_update(struct shoot *shoot)
       if(shoot->cmd != SHOOT_STOP_CMD) // One bullet to be shot
         shoot->state = SHOOT_INIT;
       //else, remain in ready
-        break;
+      break;
     case SHOOT_INIT:
       if(shoot->cmd == SHOOT_ONCE_CMD)
         shoot->cmd = SHOOT_STOP_CMD;
@@ -185,7 +185,10 @@ int32_t shoot_state_update(struct shoot *shoot)
       break;
     case SHOOT_RUNNING:
       if(shoot->trigger_key == TRIG_PRESS_DOWN) // One bullet away
+      {
         shoot->state = SHOOT_READY;
+        shoot->shoot_num += 1;
+      }
       //else, remain in RUNNING
       break;
     default: 
@@ -372,9 +375,10 @@ static uint8_t trigger_motor_status(struct shoot * shoot)
   static int32_t total_angle_last = 0;
 
   trigger_motor_rot_last = trigger_motor_rotation;
-  trigger_motor_rotation += fabs(shoot->motor.data.total_angle - total_angle_last)/36.0f;
-  trigger_motor_rotation = fmodf(trigger_motor_rotation, 360);
-  float bullet_passing_offset = fmodf(trigger_motor_rotation, 45);
+  trigger_motor_rotation += abs(shoot->motor.data.total_angle - total_angle_last)/36.0f;
+  total_angle_last = shoot->motor.data.total_angle;
+  trigger_motor_rotation = fmodf(trigger_motor_rotation, 360.0f);
+  float bullet_passing_offset = fmodf(trigger_motor_rotation, 45.0f);
   if(bullet_passing_offset>=5 && bullet_passing_offset<40 && trigger_motor_rot_last!=trigger_motor_rotation)
     return TRIG_BOUNCE_UP;
   else 
@@ -407,8 +411,8 @@ int32_t laser_cmd(uint8_t cmd)
 int32_t magazine_lid_cmd(uint8_t cmd)
 {
   if(cmd)
-    MAGA_SERVO = 60;
+    MAGA_SERVO = 45;
   else
-    MAGA_SERVO = 202;
+    MAGA_SERVO = 170;
   return 0;
 }

@@ -190,7 +190,7 @@ void MX_TIM4_Init(void)
   htim4.Instance = TIM4;
   htim4.Init.Prescaler = 1080-1;
   htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim4.Init.Period = 1660-1; //2499 4000-1 68ms 34.5ms
+  htim4.Init.Period = 1024-1; 
   htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
 
   if (HAL_TIM_PWM_Init(&htim4) != HAL_OK)
@@ -207,7 +207,7 @@ void MX_TIM4_Init(void)
   }
 
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 202;
+  sConfigOC.Pulse = 170;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
 
