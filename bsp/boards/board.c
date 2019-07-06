@@ -58,15 +58,15 @@ int32_t dr16_rx_data_by_uart(uint8_t *buff, uint16_t len)
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-  if(GPIO_Pin == GPIO_PIN_10)
-  {
-    shoot_t pshoot;
-    pshoot = shoot_find("shoot");
-    if (pshoot != NULL)
-    {
-      shoot_state_update(pshoot);
-    }
-  }
+  // if(GPIO_Pin == GPIO_PIN_10)
+  // {
+  //   shoot_t pshoot;
+  //   pshoot = shoot_find("shoot");
+  //   if (pshoot != NULL)
+  //   {
+  //     shoot_state_update(pshoot);
+  //   }
+  // }
   if (GPIO_Pin == GPIO_PIN_2)
   {
     uint8_t app;

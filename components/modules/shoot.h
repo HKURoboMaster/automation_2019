@@ -52,6 +52,7 @@ enum shoot_state
   SHOOT_INIT = 0,
   SHOOT_READY,
   SHOOT_BLOCK,
+  SHOOT_RUNNING
 };
 
 struct shoot_param

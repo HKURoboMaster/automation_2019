@@ -34,7 +34,7 @@ int32_t shoot_lid_toggle(shoot_t pshoot, uint8_t toggled);
 enum mouse_cmd{non, click, press};
 typedef enum mouse_cmd mouse_cmd_e;
 mouse_cmd_e mouse_shoot_control(rc_device_t rc_dev);
-static uint16_t get_heat_limit();
+static uint16_t get_heat_limit(void);
 
 void shoot_task(void const *argument)
 {

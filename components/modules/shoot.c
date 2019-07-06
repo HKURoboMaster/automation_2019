@@ -18,7 +18,7 @@
 #include "shoot.h"
 #include "drv_io.h"
 
-static uint8_t tigger_motor_status(struct shoot * shoot);
+static uint8_t trigger_motor_status(struct shoot * shoot);
 static int32_t shoot_pid_input_convert(struct controller *ctrl, void *input);
 static int32_t shoot_fric_ctrl(struct shoot *shoot);
 static int32_t shoot_cmd_ctrl(struct shoot *shoot);
@@ -112,6 +112,7 @@ int32_t shoot_get_fric_speed(struct shoot *shoot, uint16_t *fric_spd1, uint16_t 
 
 /**Edited by Y.H. Liu
  * @Jun 13, 2019: Count the bullets
+ * @Jul 4, 2019: Not count the bullets
  * 
  * Receive the command from shoot_task.c
  */
@@ -124,7 +125,7 @@ int32_t shoot_set_cmd(struct shoot *shoot, uint8_t cmd, uint32_t shoot_num)
   /*------ No matter what command it is, always count the bullets ------*/
   // if (cmd == SHOOT_ONCE_CMD)
   // {
-  shoot->target.shoot_num = shoot->shoot_num + shoot_num;
+  // shoot->target.shoot_num = shoot->shoot_num + shoot_num;
   // }
 
   return RM_OK;
@@ -139,7 +140,7 @@ int32_t shoot_execute(struct shoot *shoot)
     return -RM_INVAL;
 
   shoot_fric_ctrl(shoot);
-  shoot_block_check(shoot);
+  // shoot_block_check(shoot); Inside the shoot_cmd_ctrl and inside state_update
   shoot_cmd_ctrl(shoot);
 
   pdata = motor_device_get_data(&(shoot->motor));
@@ -156,6 +157,7 @@ int32_t shoot_execute(struct shoot *shoot)
 /**Edited by Y.H. Liu
  * @Jun 13, 2019: Count the bullet
  * @Jun 13, 2019: Bypass the trigger switch
+ * @Jul 4, 2019: Change the FSM
  * 
  * Detect whether a bullet has been shot and then update the state
  */
@@ -165,25 +167,33 @@ int32_t shoot_state_update(struct shoot *shoot)
     return -RM_INVAL;
 
   // shoot->trigger_key = get_trig_status();
+  shoot->trigger_key = trigger_motor_status(shoot);
   /*------ Use the encoder of the trigger motor to bypass the switch ------*/
-  shoot->trigger_key = tigger_motor_status(shoot);
-  
-  if (shoot->trigger_key == TRIG_PRESS_DOWN)
+  switch(shoot->state)
   {
-    shoot->target.motor_speed = 0;
-    shoot->state = SHOOT_READY;
+    case SHOOT_READY: 
+      if(shoot->cmd != SHOOT_STOP_CMD) // One bullet to be shot
+        shoot->state = SHOOT_INIT;
+      //else, remain in ready
+        break;
+    case SHOOT_INIT:
+      if(shoot->cmd == SHOOT_ONCE_CMD)
+        shoot->cmd = SHOOT_STOP_CMD;
+      if(shoot->trigger_key == TRIG_BOUNCE_UP) //One bullet in chamber
+        shoot->state = SHOOT_RUNNING;
+      //else, remain in INIT
+      break;
+    case SHOOT_RUNNING:
+      if(shoot->trigger_key == TRIG_PRESS_DOWN) // One bullet away
+        shoot->state = SHOOT_READY;
+      //else, remain in RUNNING
+      break;
+    default: 
+      shoot->state = SHOOT_READY;
   }
-  else if (shoot->trigger_key == TRIG_BOUNCE_UP)
-  {
-    shoot->target.motor_speed = shoot->param.turn_speed;
-    shoot->state = SHOOT_INIT;
-    
-    shoot->shoot_num++; //always count the bullets
-    if (shoot->cmd == SHOOT_ONCE_CMD)
-    {
-      shoot->cmd = SHOOT_STOP_CMD;
-    }
-  }
+
+  shoot_block_check(shoot);
+
   return RM_OK;
 }
 
@@ -260,6 +270,7 @@ static int32_t shoot_block_check(struct shoot *shoot)
 
 /**Edited by Y.H. Liu
  * @Jun 13, 2019: Count the bullets and if too many are shot, stop shooting
+ * @Jul 4, 2019: Simpify the FSM output
  * 
  * Set the controlling signals for the trigger motor
  */
@@ -268,41 +279,15 @@ static int32_t shoot_cmd_ctrl(struct shoot *shoot)
   if (shoot == NULL)
     return -RM_INVAL;
   
-  shoot_state_update(shoot);
+  shoot_state_update(shoot); //update according to cmd and trigger status
   
-  if (shoot->state == SHOOT_INIT) //start to shoot, trigger motor running
+  if (shoot->state == SHOOT_INIT || shoot->state == SHOOT_RUNNING) //start to shoot, trigger motor running
   {
     shoot->target.motor_speed = shoot->param.turn_speed;
   }
   else if (shoot->state == SHOOT_READY) //ready for the next bullet, tirgger motor stopped
   {
-    if ((shoot->fric_spd[0] >= FRIC_MIN_SPEED) && (shoot->fric_spd[1] >= FRIC_MIN_SPEED))
-    {
-      switch (shoot->cmd)
-      {
-      case SHOOT_ONCE_CMD:
-      case SHOOT_CONTINUOUS_CMD:
-      {
-        if (shoot->shoot_num >= shoot->target.shoot_num)
-        {
-          shoot->cmd = SHOOT_STOP_CMD;
-        }
-        else
-        {
-          shoot->target.motor_speed = shoot->param.turn_speed;
-        }
-        
-      }
-      break;
-      case SHOOT_STOP_CMD:
-        shoot->target.shoot_num = shoot->shoot_num;
-      break;
-      default:
-        break;
-      }
-    }
-    else
-      shoot->cmd = SHOOT_STOP_CMD;
+    shoot->target.motor_speed = 0;
   }
   else if (shoot->state == SHOOT_BLOCK)
   {
@@ -312,6 +297,11 @@ static int32_t shoot_cmd_ctrl(struct shoot *shoot)
       shoot_state_update(shoot);
     }
   }
+  else
+  {
+    return -RM_INVAL;
+  }
+  
  
 	if ((shoot->fric_spd[0] >= FRIC_MIN_SPEED) && (shoot->fric_spd[1] >= FRIC_MIN_SPEED))
 	{
@@ -371,20 +361,21 @@ static int32_t shoot_pid_input_convert(struct controller *ctrl, void *input)
 }
 /**Added by Y.H. Liu
  * @Jun 13, 2019: Define the function
+ * @Jul 4, 2019: Change the threashold and using abs value
  * 
  * Replace the trigger switch by the total angle of the trigger motor
  */
-static uint8_t tigger_motor_status(struct shoot * shoot)
+static uint8_t trigger_motor_status(struct shoot * shoot)
 {
   static float trigger_motor_rotation = 0.0f;
   static float trigger_motor_rot_last = 0.0f;
   static int32_t total_angle_last = 0;
 
   trigger_motor_rot_last = trigger_motor_rotation;
-  trigger_motor_rotation += (shoot->motor.data.total_angle - total_angle_last)/36.0f;
+  trigger_motor_rotation += fabs(shoot->motor.data.total_angle - total_angle_last)/36.0f;
   trigger_motor_rotation = fmodf(trigger_motor_rotation, 360);
   float bullet_passing_offset = fmodf(trigger_motor_rotation, 45);
-  if(bullet_passing_offset>=15 && bullet_passing_offset<30 && trigger_motor_rot_last!=trigger_motor_rotation)
+  if(bullet_passing_offset>=5 && bullet_passing_offset<40 && trigger_motor_rot_last!=trigger_motor_rotation)
     return TRIG_BOUNCE_UP;
   else 
     return TRIG_PRESS_DOWN;
