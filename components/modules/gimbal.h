@@ -34,7 +34,7 @@
 #define YAW_ANGLE_MAX      30.0f
 #define YAW_ANGLE_MIN     -30.0f
 #endif
-#define YAW_KB_SPEED        0.7f
+#define YAW_KB_SPEED        0.07f
 
 /************************** gimbal parameter *****************************/
 /* the ratio of motor encoder value translate to degree */
@@ -49,7 +49,7 @@
 /* the deceleration ratio of yaw axis motor */
 #define YAW_DECELE_RATIO       1.0f
 /* the positive direction of pitch axis motor */
-#define PITCH_MOTOR_POSITIVE_DIR  -1.0f
+#define PITCH_MOTOR_POSITIVE_DIR -1.0f
 /* the positive direction of yaw axis motor */
 #define YAW_MOTOR_POSITIVE_DIR  -1.0f
 

@@ -48,7 +48,7 @@ int32_t chassis_pid_register(struct chassis *chassis, const char *name, enum dev
     chassis->motor[i].init_offset_f = 1;
 
     chassis->ctrl[i].convert_feedback = motor_pid_input_convert;
-    pid_struct_init(&chassis->motor_pid[i], 15000, 500, 6.5f, 0.1, 25);
+    pid_struct_init(&chassis->motor_pid[i], 15000, 500, 6.5f, 0.1, 0);
   }
 
   chassis->mecanum.param.wheel_perimeter = PERIMETER;

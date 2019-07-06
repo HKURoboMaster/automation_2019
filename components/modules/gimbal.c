@@ -538,7 +538,7 @@ static int32_t yaw_gyro_input_convert(struct controller *ctrl, void *input)
 {
   cascade_feedback_t cascade_fdb = (cascade_feedback_t)(ctrl->feedback);
   gimbal_t data = (gimbal_t)input;
-  cascade_fdb->outer_fdb = -data->sensor.gyro_angle.yaw;
+  cascade_fdb->outer_fdb = data->sensor.gyro_angle.yaw;
   cascade_fdb->inter_fdb = data->sensor.rate.yaw_rate;
   return RM_OK;
 }
