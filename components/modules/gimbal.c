@@ -133,7 +133,7 @@ int32_t gimbal_set_yaw_delta(struct gimbal *gimbal, float yaw)
 			yaw_out_angle = gimbal->cascade[0].outer.get;
 		else if(yaw_out_angle>=180 && (gimbal->cascade[0].outer.get>=0 ||(gimbal->cascade[0].outer.get<0 && gimbal->cascade[0].outer.get >(yaw_out_angle-360))))
 		{
-			VAL_LIMIT(yaw_out_angle,gimbal->cascade[0].outer.get-10,gimbal->cascade[0].outer.get+10);
+			VAL_LIMIT(yaw_out_angle,gimbal->cascade[0].outer.get-10,gimbal->cascade[0].outer.get+90);
 			flag = 1;
 		}
 		else if(yaw_out_angle>=180 && gimbal->cascade[0].outer.get<0)
@@ -143,7 +143,7 @@ int32_t gimbal_set_yaw_delta(struct gimbal *gimbal, float yaw)
 		}
 		else if(yaw_out_angle<=-180 && (gimbal->cascade[0].outer.get<=0 ||(gimbal->cascade[0].outer.get>0 && gimbal->cascade[0].outer.get < (yaw_out_angle + 360))))
 		{
-			VAL_LIMIT(yaw_out_angle,gimbal->cascade[0].outer.get-10,gimbal->cascade[0].outer.get+10);
+			VAL_LIMIT(yaw_out_angle,gimbal->cascade[0].outer.get-90,gimbal->cascade[0].outer.get+10);
 			flag = 3;
 		}
 		else if(yaw_out_angle<=-180 &&  gimbal->cascade[0].outer.get>0)
