@@ -556,8 +556,8 @@ static int32_t pitch_gyro_input_convert(struct controller *ctrl, void *input)
 {
   cascade_feedback_t cascade_fdb = (cascade_feedback_t)(ctrl->feedback);
   gimbal_t data = (gimbal_t)input;
-  cascade_fdb->outer_fdb = data->sensor.gyro_angle.pitch;
-  cascade_fdb->inter_fdb = data->sensor.rate.pitch_rate;
+  cascade_fdb->outer_fdb = -data->sensor.gyro_angle.pitch;
+  cascade_fdb->inter_fdb = -data->sensor.rate.pitch_rate;
   return RM_OK;
 }
 
@@ -565,7 +565,7 @@ static int32_t pitch_ecd_input_convert(struct controller *ctrl, void *input)
 {
   cascade_feedback_t cascade_fdb = (cascade_feedback_t)(ctrl->feedback);
   gimbal_t data = (gimbal_t)input;
-  cascade_fdb->outer_fdb = data->ecd_angle.pitch;
+  cascade_fdb->outer_fdb = -data->ecd_angle.pitch;
   cascade_fdb->inter_fdb = -data->sensor.rate.pitch_rate;
   return RM_OK;
 }

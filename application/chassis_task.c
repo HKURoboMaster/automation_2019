@@ -81,8 +81,6 @@ void chassis_task(void const *argument)
 
   pid_struct_init(&pid_follow, MAX_CHASSIS_VW_SPEED, 50, 8.0f, 0.0f, 2.0f);
 
-  chassis_disable(pchassis);
-
   #ifdef HERO_ROBOT
   static uint32_t now_tick;
   static int32_t twist_count;
@@ -148,14 +146,6 @@ void chassis_task(void const *argument)
     else
     {
       chassis_set_speed(pchassis, 0, 0, 0);
-    }
-    if(rc_device_get_state(prc_dev, RC_S2_DOWN2MID))
-    {
-      chassis_enable(pchassis);
-    }
-    if(rc_device_get_state(prc_dev, RC_S2_MID2DOWN))
-    {
-      chassis_disable(pchassis);
     }
 
     chassis_set_acc(pchassis, 0, 0, 0);
