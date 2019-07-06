@@ -57,7 +57,8 @@ int32_t yaw_spd_fdb_js, yaw_spd_ref_js;
 int32_t pit_spd_fdb_js, pit_spd_ref_js;
 int32_t yaw_ecd_angle_js, pit_ecd_angle_js;
 /** Edited by Y.H. Liu
- *  @Jun 12, 2019: modified the mode switch
+ * @Jun 12, 2019: modified the mode switch
+ * @Jul 6, 2019: polar coordinate for mouse movement
  *
  *  Implement the customized control logic and FSM, details in Control.md
  */
@@ -158,10 +159,31 @@ void gimbal_task(void const *argument)
         }
 
         float square_ch3 = (float)prc_info->ch3 * abs(prc_info->ch3) / RC_CH_SCALE;
+        /*-------- Map mouse coordinates into polar coordiantes --------*/
+        int16_t yaw_mouse,pit_mouse;
+        int16_t radius = (int16_t)sqrt(prc_info->mouse.y * prc_info->mouse.y + prc_info->mouse.x * prc_info->mouse.x);
+        int16_t tanTheta = prc_info->mouse.y / prc_info->mouse.x;
+        if(tanTheta<0.8 && tanTheta>-0.8)
+        {
+          yaw_mouse = radius * prc_info->mouse.x / abs(prc_info->mouse.x);
+          pit_mouse = 0;
+        }
+        else if(tanTheta>1.2 || tanTheta<-1.2)
+        {
+          yaw_mouse = 0;
+          pit_mouse = radius * prc_info->mouse.y / abs(prc_info->mouse.y);
+        }
+        else
+        {
+          yaw_mouse = prc_info->mouse.x;
+          pit_mouse = prc_info->mouse.y;
+        }
+        
+        
 
         gimbal_set_yaw_mode(pgimbal, GYRO_MODE);
-        pit_delta = -(float)prc_info->ch4 * GIMBAL_RC_PITCH + (float)prc_info->mouse.y * GIMBAL_MOUSE_PITCH;
-        yaw_delta =      square_ch3       * GIMBAL_RC_YAW   + (float)prc_info->mouse.x * GIMBAL_MOUSE_YAW;
+        pit_delta = -(float)prc_info->ch4 * GIMBAL_RC_PITCH + (float)pit_mouse * GIMBAL_MOUSE_PITCH;
+        yaw_delta =      square_ch3       * GIMBAL_RC_YAW   + (float)yaw_mouse * GIMBAL_MOUSE_YAW;
         yaw_delta += prc_info->kb.bit.E ? YAW_KB_SPEED : 0;
         yaw_delta -= prc_info->kb.bit.Q ? YAW_KB_SPEED : 0;
         gimbal_set_pitch_delta(pgimbal, pit_delta);

@@ -104,9 +104,9 @@ int32_t rc_offline_callback(void *argc)
   beep_set_times(0);
 	LED_R_ON();
   gimbal_init_state_reset();
-  chassis_disable();
-  gimbal_pitch_disable();
-  gimbal_yaw_disable();
+  chassis_disable(pchassis);
+  gimbal_pitch_disable(pgimbal);
+  gimbal_yaw_disable(pgimbal);
   return 0;
 }
 
