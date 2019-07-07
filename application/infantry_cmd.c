@@ -123,8 +123,8 @@ void infantry_cmd_task(void const *argument)
       {
         if (event.value.signals & MANIFOLD2_CHASSIS_SIGNAL)
         {
-          struct cmd_chassis_speed *pspeed;
-          pspeed = &manifold_cmd.chassis_speed;
+          //struct cmd_chassis_speed *pspeed;
+          //pspeed = &manifold_cmd.chassis_speed;
           //chassis_set_offset(pchassis, pspeed->rotate_x_offset, pspeed->rotate_x_offset);
           //chassis_set_acc(pchassis, 0, 0, 0);
           //chassis_set_speed(pchassis, pspeed->vx, pspeed->vy, pspeed->vw / 10.0f);
@@ -132,8 +132,8 @@ void infantry_cmd_task(void const *argument)
 
         if (event.value.signals & MANIFOLD2_CHASSIS_ACC_SIGNAL)
         {
-          struct cmd_chassis_spd_acc *pacc;
-          pacc = &manifold_cmd.chassis_spd_acc;
+          // struct cmd_chassis_spd_acc *pacc;
+          // pacc = &manifold_cmd.chassis_spd_acc;
           // chassis_set_offset(pchassis, pacc->rotate_x_offset, pacc->rotate_x_offset);
           // chassis_set_acc(pchassis, pacc->ax, pacc->ay, pacc->wz / 10.0f);
           // chassis_set_speed(pchassis, pacc->vx, pacc->vy, pacc->vw / 10.0f);

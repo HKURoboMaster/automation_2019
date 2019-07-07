@@ -151,9 +151,9 @@ int32_t chassis_set_speed(struct chassis *chassis, float vx, float vy, float vw)
 {
   if (chassis == NULL)
     return -RM_INVAL;
-  chassis->mecanum.speed.vx = vx;
-  chassis->mecanum.speed.vy = vy;
-  chassis->mecanum.speed.vw = vw;
+  chassis->mecanum.speed.vx = chassis_ramp(vx, chassis->mecanum.speed.vx);
+  chassis->mecanum.speed.vy = chassis_ramp(vy, chassis->mecanum.speed.vy);
+  chassis->mecanum.speed.vw = chassis_ramp(vw, chassis->mecanum.speed.vw);
   return RM_OK;
 }
 

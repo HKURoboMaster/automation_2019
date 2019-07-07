@@ -120,7 +120,6 @@ void chassis_task(void const *argument)
       {
         #ifndef HERO_ROBOT
         wz = 3 * MAX_CHASSIS_VW_SPEED / 5;
-        dodging |= 1;
         #else
           //time-based twist with a sin function
           now_tick = HAL_GetTick();
@@ -133,6 +132,7 @@ void chassis_task(void const *argument)
           }
           vw = twist_sign * sin(PI * twist_count / 500) * CHASSIS_RC_MAX_SPEED_R;
         #endif
+        dodging |= 1;
       }
       else
       {

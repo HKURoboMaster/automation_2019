@@ -152,7 +152,7 @@ void gimbal_task(void const *argument)
       if(prc_info->kb.bit.X != 1)
       {
         //auto_aimming
-        if(prc_info->mouse.r)
+        if(prc_info->mouse.r || rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK)
         {
           gimbal_set_pitch_speed(pgimbal, auto_aiming_pitch);
           gimbal_set_yaw_speed(pgimbal, auto_aiming_yaw);

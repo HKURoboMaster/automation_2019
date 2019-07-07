@@ -33,6 +33,7 @@ int32_t trigger_wheel_watch;
  * @Jun 13, 2019: change the FSM for shooting
  * @Jun 20, 2019: adaption for hero
  * @Jul 3, 2019: retrieve the heat data from refree system
+ * @Jul 7, 2019: modify the adaption for hero
  * 
  * Implement the control logic described in Control.md
  */
@@ -57,7 +58,7 @@ void shoot_task(void const *argument)
   //uint32_t shoot_time;
 
   static uint8_t fric_on = 0; //0x00 for off, 0xFF for on
-  static uint8_t lid_open = 0; //0x00 for closed, 0xFF for opened
+  // static uint8_t lid_open = 0; //0x00 for closed, 0xFF for opened
   shoot_firction_toggle(pshoot, 1);
   shoot_lid_toggle(pshoot,1);
   while (1)
@@ -67,7 +68,6 @@ void shoot_task(void const *argument)
       shoot_firction_toggle(pshoot, fric_on);
       fric_on = ~fric_on;
     }
-    #ifndef HERO_ROBOT
     // if (rc_device_get_state(prc_dev, RC_S1_MID2DOWN) == RM_OK)
     // {
     //   shoot_set_cmd(pshoot, SHOOT_ONCE_CMD, 1);
@@ -83,9 +83,6 @@ void shoot_task(void const *argument)
     {
       shoot_lid_toggle(pshoot, 1);
     }
-    #else
-    // Reserved for lifting / lowering the liner actuator
-    #endif
 
     /*------ implement the keyboard controlling over shooting ------*/
     if(prc_dev->rc_info.kb.bit.Z ) 
@@ -122,7 +119,11 @@ void shoot_task(void const *argument)
         // {
         //   shoot_set_cmd(pshoot, SHOOT_CONTINUOUS_CMD, 0);
         // }
+        #ifndef HERO_ROBOT
         shoot_set_cmd(pshoot, SHOOT_CONTINUOUS_CMD, CONTIN_BULLET_NUM);
+        #else
+        shoot_set_cmd(pshoot, SHOOT_ONCE_CMD, 1);
+        #endif
       }
       else if ((rc_device_get_state(prc_dev, RC_WHEEL_DOWN) == RM_OK && prc_dev->last_rc_info.wheel > -300)
             || mouse_shoot_control(prc_dev)==click)

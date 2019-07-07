@@ -26,6 +26,7 @@
 
 #include "motor.h"
 #include "mecanum.h"
+#include "ramp.h"
 #include "pid_controller.h"
 
 typedef struct chassis *chassis_t;
