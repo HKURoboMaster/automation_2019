@@ -113,13 +113,13 @@ void chassis_task(void const *argument)
       temp_vx += (prc_info->kb.bit.W - prc_info->kb.bit.S)* key_x_speed;
       float temp_vy = -square_ch1 * MAX_CHASSIS_VY_SPEED;
       temp_vy += (prc_info->kb.bit.D - prc_info->kb.bit.A)* key_y_speed;
-      vx = temp_vx * cos(follow_relative_angle / RAD_TO_DEG) - temp_vy * sin(follow_relative_angle / RAD_TO_DEG);
-      vy = temp_vx * sin(follow_relative_angle / RAD_TO_DEG) + temp_vy * cos(follow_relative_angle / RAD_TO_DEG);
+      vx = temp_vx * cos(-follow_relative_angle / RAD_TO_DEG) - temp_vy * sin(-follow_relative_angle / RAD_TO_DEG);
+      vy = temp_vx * sin(-follow_relative_angle / RAD_TO_DEG) + temp_vy * cos(-follow_relative_angle / RAD_TO_DEG);
 
       if(km_dodge || (dodging && !back_to_netural))
       {
         #ifndef HERO_ROBOT
-        wz = 3 * MAX_CHASSIS_VW_SPEED / 5;
+        wz = 4 * MAX_CHASSIS_VW_SPEED / 5;
         #else
           //time-based twist with a sin function
           now_tick = HAL_GetTick();

@@ -154,8 +154,8 @@ void gimbal_task(void const *argument)
         //auto_aimming
         if(prc_info->mouse.r || rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK)
         {
-          gimbal_set_pitch_speed(pgimbal, auto_aiming_pitch);
-          gimbal_set_yaw_speed(pgimbal, auto_aiming_yaw);
+          gimbal_set_pitch_delta(pgimbal, auto_aiming_pitch);
+          gimbal_set_yaw_delta(pgimbal, auto_aiming_yaw);
         }
 
         float square_ch3 = (float)prc_info->ch3 * abs(prc_info->ch3) / RC_CH_SCALE;
