@@ -34,6 +34,7 @@ void fric_set_output(uint16_t  fric_spd1, uint16_t  fric_spd2)
   RIGHT_FRICTION = fric_spd2;
 }
 
+// Here the value of PWM is directly used as Friction Wheel speed
 void fric_get_speed(uint16_t  *fric_spd1, uint16_t  *fric_spd2)
 {
   *fric_spd1 = LEFT_FRICTION;

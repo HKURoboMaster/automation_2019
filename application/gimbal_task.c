@@ -44,6 +44,9 @@ static void gimbal_state_init(gimbal_t pgimbal);
 uint8_t auto_adjust_f;
 uint8_t auto_init_f;
 
+int32_t mpu_pit, mpu_yaw, mpu_rol;
+int32_t mpu_wx, mpu_wy, mpu_wz;
+
 /* control ramp parameter */
 static ramp_t yaw_ramp = RAMP_GEN_DAFAULT;
 static ramp_t pitch_ramp = RAMP_GEN_DAFAULT;
@@ -52,9 +55,10 @@ int32_t yaw_angle_fdb_js, yaw_angle_ref_js;
 int32_t pit_angle_fdb_js, pit_angle_ref_js;
 int32_t yaw_spd_fdb_js, yaw_spd_ref_js;
 int32_t pit_spd_fdb_js, pit_spd_ref_js;
-
+int32_t yaw_ecd_angle_js, pit_ecd_angle_js;
 /** Edited by Y.H. Liu
- *  @Jun 12, 2019: modified the mode switch
+ * @Jun 12, 2019: modified the mode switch
+ * @Jul 6, 2019: polar coordinate for mouse movement
  *
  *  Implement the customized control logic and FSM, details in Control.md
  */
@@ -148,14 +152,38 @@ void gimbal_task(void const *argument)
       if(prc_info->kb.bit.X != 1)
       {
         //auto_aimming
-        gimbal_set_pitch_speed(pgimbal, auto_aiming_pitch);
-        gimbal_set_yaw_speed(pgimbal, auto_aiming_yaw);
+        if(prc_info->mouse.r || rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK)
+        {
+          gimbal_set_pitch_delta(pgimbal, auto_aiming_pitch);
+          gimbal_set_yaw_delta(pgimbal, auto_aiming_yaw);
+        }
 
-        float square_ch3 = (float)prc_info->ch4 * fabsf(prc_info->ch3) / RC_CH_SCALE;
+        float square_ch3 = (float)prc_info->ch3 * abs(prc_info->ch3) / RC_CH_SCALE;
+        /*-------- Map mouse coordinates into polar coordiantes --------*/
+        int16_t yaw_mouse,pit_mouse;
+        int16_t radius = (int16_t)sqrt(prc_info->mouse.y * prc_info->mouse.y + prc_info->mouse.x * prc_info->mouse.x);
+        int16_t tanTheta = prc_info->mouse.y / prc_info->mouse.x;
+        if(tanTheta<0.8 && tanTheta>-0.8)
+        {
+          yaw_mouse = radius * prc_info->mouse.x / abs(prc_info->mouse.x);
+          pit_mouse = 0;
+        }
+        else if(tanTheta>1.2 || tanTheta<-1.2)
+        {
+          yaw_mouse = 0;
+          pit_mouse = radius * prc_info->mouse.y / abs(prc_info->mouse.y);
+        }
+        else
+        {
+          yaw_mouse = prc_info->mouse.x;
+          pit_mouse = prc_info->mouse.y;
+        }
+        
+        
 
         gimbal_set_yaw_mode(pgimbal, GYRO_MODE);
-        pit_delta = -(float)prc_info->ch4 * GIMBAL_RC_PITCH + (float)prc_info->mouse.y * GIMBAL_MOUSE_PITCH;
-        yaw_delta =     -square_ch3       * GIMBAL_RC_YAW   + (float)prc_info->mouse.x * GIMBAL_MOUSE_YAW;
+        pit_delta = -(float)prc_info->ch4 * GIMBAL_RC_PITCH + (float)pit_mouse * GIMBAL_MOUSE_PITCH;
+        yaw_delta =      square_ch3       * GIMBAL_RC_YAW   + (float)yaw_mouse * GIMBAL_MOUSE_YAW;
         yaw_delta += prc_info->kb.bit.E ? YAW_KB_SPEED : 0;
         yaw_delta -= prc_info->kb.bit.Q ? YAW_KB_SPEED : 0;
         gimbal_set_pitch_delta(pgimbal, pit_delta);
@@ -192,7 +220,13 @@ void gimbal_task(void const *argument)
     yaw_spd_ref_js = pgimbal->cascade[0].inter.set * 1000;
     pit_spd_fdb_js = pgimbal->cascade[1].inter.get * 1000;
     pit_spd_ref_js = pgimbal->cascade[1].inter.set * 1000;
-
+		
+		//Eric Edited Debug the ecd of pitch and yaw
+		yaw_ecd_angle_js = pgimbal->ecd_angle.yaw;
+		pit_ecd_angle_js = pgimbal->ecd_angle.pitch;
+		
+		
+		
     gimbal_imu_update(pgimbal);
     gimbal_execute(pgimbal);
     osDelayUntil(&period, 2);
@@ -209,8 +243,16 @@ static int32_t gimbal_imu_update(void *argc)
   // TODO: adapt coordinates to our own design
   gimbal_pitch_gyro_update(pgimbal, -mahony_atti.roll);
   gimbal_yaw_gyro_update(pgimbal, -mahony_atti.yaw);
-  gimbal_rate_update(pgimbal, mpu_sensor.wz * RAD_TO_DEG, -mpu_sensor.wx * RAD_TO_DEG);
+  gimbal_rate_update(pgimbal, mpu_sensor.wy * RAD_TO_DEG, -mpu_sensor.wx * RAD_TO_DEG);
   // TODO: adapt coordinates to our own design
+  
+  mpu_pit = mahony_atti.pitch;
+  mpu_yaw = mahony_atti.yaw;
+  mpu_rol = mahony_atti.roll;
+	mpu_wz = mpu_sensor.wz;
+	mpu_wy = mpu_sensor.wy;
+	mpu_wx = mpu_sensor.wx;
+  
   return 0;
 }
 
@@ -262,71 +304,9 @@ static void auto_gimbal_adjust(gimbal_t pgimbal)
 {
   if (auto_adjust_f)
   {
-    pid_struct_init(&pid_pit, 2000, 0, 60, 0, 0);
-    pid_struct_init(&pid_pit_spd, 30000, 3000, 60, 0.2, 0);
-    while (1) //automatically detect the pitch netrual poistion
-    {
-      gimbal_imu_update(pgimbal);
-
-      pid_calculate(&pid_pit, pgimbal->sensor.gyro_angle.pitch, 0);
-      pid_calculate(&pid_pit_spd, pid_pit.out, pgimbal->sensor.rate.pitch_rate);
-
-      send_gimbal_current(0, -pid_pit_spd.out, 0);
-      HAL_Delay(2);
-
-      if ((fabs(pgimbal->sensor.gyro_angle.pitch) < 0.1))
-      {
-        pit_cnt++;
-      }
-      else
-      {
-        pit_cnt = 0;
-      }
-      if (pit_cnt > 1000)
-      {
-        pit_ecd_c = pgimbal->motor[PITCH_MOTOR_INDEX].data.ecd;
-        break;
-      }
-    }
-    #ifndef HERO_ROBOT
+    pit_ecd_c = pgimbal->motor[PITCH_MOTOR_INDEX].data.ecd;
     yaw_ecd_c = pgimbal->motor[YAW_MOTOR_INDEX].data.ecd;
-    //using the current yaw direction for initialization
-    #else
-    {
-      yaw_time = get_time_ms();
-      while (get_time_ms() - yaw_time <= 2000)
-      {
-        send_gimbal_current(6000, 0, 0);
-        yaw_ecd_l = pgimbal->motor[YAW_MOTOR_INDEX].data.ecd;
-        HAL_Delay(2);
-      }
 
-      yaw_time = HAL_GetTick();
-      while (HAL_GetTick() - yaw_time <= 2000)
-      {
-        send_gimbal_current(-6000, 0, 0);
-        yaw_ecd_r = pgimbal->motor[YAW_MOTOR_INDEX].data.ecd;
-        HAL_Delay(2);
-      }
-
-      if (yaw_ecd_l > yaw_ecd_r)
-      {
-        yaw_ecd_c = (yaw_ecd_l + yaw_ecd_r) / 2;
-      }
-      else
-      {
-        if ((yaw_ecd_l + yaw_ecd_r) / 2 > 4096)
-        {
-          yaw_ecd_c = (yaw_ecd_l + yaw_ecd_r) / 2 - 4096;
-        }
-        else
-        {
-          yaw_ecd_c = (yaw_ecd_l + yaw_ecd_r) / 2 + 4096;
-        }
-      }
-    }
-    #endif
-    yaw_ecd_c = pgimbal->motor[YAW_MOTOR_INDEX].data.ecd;
     gimbal_save_data(yaw_ecd_c, pit_ecd_c);
     gimbal_set_offset(pgimbal, yaw_ecd_c, pit_ecd_c);
     auto_adjust_f = 0;
@@ -368,6 +348,7 @@ static void gimbal_state_init(gimbal_t pgimbal)
       if (fabs(pgimbal->ecd_angle.pitch) < 1.5f)
       {
         gimbal_yaw_enable(pgimbal);
+				// Rotate from current angle to 0 read from ecd
         gimbal_set_yaw_angle(pgimbal, pgimbal->ecd_angle.yaw * (1 - ramp_calculate(&yaw_ramp)), 0);
         if (fabs(pgimbal->ecd_angle.yaw) < 1.5f)
         {

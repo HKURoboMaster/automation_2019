@@ -60,6 +60,7 @@
 
 /* USER CODE BEGIN Includes */
 #include "init.h"
+#include "adc.h"
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -79,7 +80,12 @@ void MX_FREERTOS_Init(void);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
+ADC_HandleTypeDef hadc1;
+ADC_HandleTypeDef hadc2;
+DMA_HandleTypeDef hdma_adc1;
+DMA_HandleTypeDef hdma_adc2;
 
+uint32_t Trans_Data1,Trans_Data2; //Two global variables to read voltage and current
 /* USER CODE END 0 */
 
 /**
@@ -121,10 +127,17 @@ int main(void)
   MX_SPI5_Init();
   MX_TIM1_Init();
   MX_TIM3_Init();
+	MX_TIM4_Init();
   MX_TIM12_Init();
   /* USER CODE BEGIN 2 */
   hw_init();
   task_init();
+	MX_ADC1_Init();
+	MX_ADC2_Init();
+	HAL_ADC_Start(&hadc1);
+	HAL_ADC_Start(&hadc2);
+	//HAL_ADC_Start_DMA(&hadc1,(uint32_t*)&Trans_Data1,1);
+	//HAL_ADC_Start_DMA(&hadc2,(uint32_t*)&Trans_Data2,1);
   /* USER CODE END 2 */
 
   /* Call init function for freertos objects (in freertos.c) */
@@ -140,14 +153,14 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-
+	
   /* USER CODE END WHILE */
-
+	
   /* USER CODE BEGIN 3 */
-
+	
   }
   /* USER CODE END 3 */
-
+	
 }
 
 /**

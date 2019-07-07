@@ -34,7 +34,7 @@
 #define YAW_ANGLE_MAX      30.0f
 #define YAW_ANGLE_MIN     -30.0f
 #endif
-#define YAW_KB_SPEED        0.7f
+#define YAW_KB_SPEED        0.17f
 
 /************************** gimbal parameter *****************************/
 /* the ratio of motor encoder value translate to degree */
@@ -49,9 +49,9 @@
 /* the deceleration ratio of yaw axis motor */
 #define YAW_DECELE_RATIO       1.0f
 /* the positive direction of pitch axis motor */
-#define PITCH_MOTOR_POSITIVE_DIR  1.0f
+#define PITCH_MOTOR_POSITIVE_DIR -1.0f
 /* the positive direction of yaw axis motor */
-#define YAW_MOTOR_POSITIVE_DIR  1.0f
+#define YAW_MOTOR_POSITIVE_DIR  -1.0f
 
 #include "motor.h"
 #include "pid_controller.h"
@@ -69,6 +69,9 @@
 #define YAW_FASTEST (0u)
 #define YAW_CLOCKWISE (1u)
 #define YAW_ANTICLOCKWISE (2u)
+
+#define PITCH_DIRECTI -1
+#define YAW_DIRECT 0
 
 typedef struct gimbal *gimbal_t;
 

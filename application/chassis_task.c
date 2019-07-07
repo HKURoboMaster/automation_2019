@@ -21,16 +21,26 @@
 #include "infantry_cmd.h"
 #include "ahrs.h"
 #include "drv_imu.h"
-
+#include "smooth_filter.h"
 #include <math.h>
-#define PI 3.142f
 #define RAD_TO_DEG 57.296f // 180/PI
-
+#define MAPPING_INDEX_CRT 0.005f
+#define MAPPING_INDEX_VTG 0.005f
 static float vx, vy, wz;
 
 float follow_relative_angle;
 struct pid pid_follow = {0}; //angle control
 static void chassis_imu_update(void *argc);
+
+/**Eric Edited get data from ADC
+  * @Jul 3, 2019: Add power gettter function: get_chassis_power
+*/
+extern ADC_HandleTypeDef hadc1,hadc2;
+struct chassis_power chassis_power; // Using a struct to store related dara from chassis
+float weight[] = {0.05f,0.05f,0.1f,0.1f,0.1f,0.1f,0.1f,0.1f,0.1f,0.2f};
+int32_t current_js;
+int32_t power_pidout_js;
+
 
 /** Edited by Y.H. Liu
   * @Jun 12, 2019: modified the mode switch
@@ -41,8 +51,8 @@ static void chassis_imu_update(void *argc);
 */
 #ifdef CHASSIS_POWER_CTRL
   #include "referee_system.h"
-  static uint8_t reset_chassis_speed(chassis_t pchassis, uint8_t flag);
-  static uint8_t detect_chassis_power(chassis_t, uint8_t *, uint8_t sprint_cmd, uint16_t sc_v);
+  static uint8_t reset_chassis_speed(chassis_t pchassis, uint8_t flag, float current);
+  static uint8_t detect_chassis_power(chassis_t, uint8_t *, uint8_t sprint_cmd, uint16_t sc_v, float current);
   typedef enum {NORMAL=0, SPRINT, BUFF_RECOVER}chassis_power_t;
 #endif
 
@@ -71,6 +81,8 @@ void chassis_task(void const *argument)
 
   pid_struct_init(&pid_follow, MAX_CHASSIS_VW_SPEED, 50, 8.0f, 0.0f, 2.0f);
 
+  chassis_disable(pchassis);
+
   #ifdef HERO_ROBOT
   static uint32_t now_tick;
   static int32_t twist_count;
@@ -81,6 +93,7 @@ void chassis_task(void const *argument)
   {
     if (rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK || rc_device_get_state(prc_dev, RC_S2_MID) == RM_OK)
     { //not disabled
+      chassis_enable(pchassis);
       int32_t key_x_speed = 2*MAX_CHASSIS_VX_SPEED/3;
       int32_t key_y_speed = 2*MAX_CHASSIS_VY_SPEED/3;
       if(prc_info->kb.bit.SHIFT)
@@ -100,14 +113,13 @@ void chassis_task(void const *argument)
       temp_vx += (prc_info->kb.bit.W - prc_info->kb.bit.S)* key_x_speed;
       float temp_vy = -square_ch1 * MAX_CHASSIS_VY_SPEED;
       temp_vy += (prc_info->kb.bit.D - prc_info->kb.bit.A)* key_y_speed;
-      vx = temp_vx * cos(follow_relative_angle / RAD_TO_DEG) - temp_vy * sin(follow_relative_angle / RAD_TO_DEG);
-      vy = temp_vx * sin(follow_relative_angle / RAD_TO_DEG) + temp_vy * cos(follow_relative_angle / RAD_TO_DEG);
+      vx = temp_vx * cos(-follow_relative_angle / RAD_TO_DEG) - temp_vy * sin(-follow_relative_angle / RAD_TO_DEG);
+      vy = temp_vx * sin(-follow_relative_angle / RAD_TO_DEG) + temp_vy * cos(-follow_relative_angle / RAD_TO_DEG);
 
       if(km_dodge || (dodging && !back_to_netural))
       {
         #ifndef HERO_ROBOT
-        wz = 3 * MAX_CHASSIS_VW_SPEED / 5;
-        dodging |= 1;
+        wz = 4 * MAX_CHASSIS_VW_SPEED / 5;
         #else
           //time-based twist with a sin function
           now_tick = HAL_GetTick();
@@ -120,6 +132,7 @@ void chassis_task(void const *argument)
           }
           vw = twist_sign * sin(PI * twist_count / 500) * CHASSIS_RC_MAX_SPEED_R;
         #endif
+        dodging |= 1;
       }
       else
       {
@@ -136,6 +149,7 @@ void chassis_task(void const *argument)
     else
     {
       chassis_set_speed(pchassis, 0, 0, 0);
+      chassis_disable(pchassis);
     }
 
     chassis_set_acc(pchassis, 0, 0, 0);
@@ -176,27 +190,32 @@ void chassis_task(void const *argument)
     */
    
     #ifdef CHASSIS_POWER_CTRL
-      uint8_t superCapacitor_V = 22; // TODO: retrive from function
       uint8_t superCapacitor_Ctrl = 0;
       uint8_t power_excess = 0;
       do
       {
         if(power_excess)
-          power_excess = reset_chassis_speed(pchassis, power_excess);
+          power_excess = reset_chassis_speed(pchassis, power_excess, chassis_power.current);
         chassis_imu_update(pchassis);
         chassis_execute(pchassis);
+        get_chassis_power(&chassis_power); // Power Value Getter
         osDelayUntil(&period, 2);
         power_excess = detect_chassis_power(pchassis, 
                                             &superCapacitor_Ctrl, 
                                             prc_info->kb.bit.SHIFT || prc_info->ch2>600,
-                                            superCapacitor_V );
-        //set_cmd_to_sc(superCapacitor_V)
+                                            chassis_power.voltage,
+                                            chassis_power.current);
+        //set_cmd_to_sc(superCapacitor_Ctrl)
       }while(power_excess);
     #else
       chassis_imu_update(pchassis);
       chassis_execute(pchassis);
-    
+      get_chassis_power(&chassis_power); // Power Value Getter
       osDelayUntil(&period, 2);
+      power_pidout_js = pchassis->motor[0].current +
+                        pchassis->motor[1].current + 
+                        pchassis->motor[2].current + 
+                        pchassis->motor[3].current;
     #endif
   }
 }
@@ -209,9 +228,7 @@ static void chassis_imu_update(void *argc)
   chassis_t pchassis = (chassis_t)argc;
   mpu_get_data(&mpu_sensor);
   mahony_ahrs_updateIMU(&mpu_sensor, &mahony_atti);
-  // TODO: adapt coordinates to our own design
-  chassis_gyro_update(pchassis, -mahony_atti.yaw, mpu_sensor.wz * RAD_TO_DEG);
-  // TODO: adapt coordinates to our own design
+  chassis_gyro_update(pchassis, -mahony_atti.yaw, -mpu_sensor.wz * RAD_TO_DEG);
 }
 
 #ifdef CHASSIS_POWER_CTRL
@@ -220,17 +237,19 @@ static void chassis_imu_update(void *argc)
  * 
  * Reset the chassis moving speed ref in case too much power consumed
  */
-static uint8_t reset_chassis_speed(chassis_t pchassis, uint8_t flag)
+static uint8_t reset_chassis_speed(chassis_t pchassis, uint8_t flag, float current)
 {
-  extPowerHeatData_t * power = get_heat_power();
   float portion; 
   switch (flag)
   {
   case 1:
-    portion = sqrtf(power->chassisPower / CHASSIS_POWER_TH);
+    portion = sqrtf(current * WORKING_VOLTAGE / CHASSIS_POWER_TH);
+    break;
+  case 2:
+    portion = sqrtf(current * WORKING_VOLTAGE / CHASSIS_POWER_TH);
     break;
   case 4:
-    portion = sqrtf(power->chassisPower / (0.8f * CHASSIS_POWER_TH));
+    portion = sqrtf(current * WORKING_VOLTAGE / (0.8f * CHASSIS_POWER_TH));
   default:
     portion = 1;
     break;
@@ -246,12 +265,12 @@ static uint8_t reset_chassis_speed(chassis_t pchassis, uint8_t flag)
  * 
  * state update and detect whether the chassis is consuming too much power
  */
-static uint8_t detect_chassis_power(chassis_t pchassis, uint8_t * supercap_ctrl, uint8_t sprint_cmd, uint16_t sc_v)
+static uint8_t detect_chassis_power(chassis_t pchassis, uint8_t * supercap_ctrl, uint8_t sprint_cmd, uint16_t sc_v, float current)
 {
   static chassis_power_t st = NORMAL;
   static uint32_t no_buffer_time = 0;
   static uint32_t last_click = 0;
-  int16_t power_limit = CHASSIS_POWER_TH;
+  int16_t current_limit = CHASSIS_POWER_TH/WORKING_VOLTAGE;
   extPowerHeatData_t * power = get_heat_power();
 
   if(power->chassisPowerBuffer<=0)
@@ -278,17 +297,16 @@ static uint8_t detect_chassis_power(chassis_t pchassis, uint8_t * supercap_ctrl,
     break;
   case SPRINT:
     *supercap_ctrl = 1;
-    power_limit = 32767; // positive infinity
     if(!sprint_cmd || sc_v <= LOW_VOLTAGE)
       st = NORMAL;
-    else if(no_buffer_time > 3000)
+    else if(no_buffer_time > NO_BUFFER_TIME_TH)
       st = BUFF_RECOVER;
     else 
       st = NORMAL;
     break;
   case BUFF_RECOVER:
     *supercap_ctrl = 0;
-    power_limit *= 0.8;
+    current_limit *= 0.8; // limit the current below the allowed value
     if(power->chassisPowerBuffer > 2*LOW_BUFFER)
       st = NORMAL;
     else
@@ -300,7 +318,7 @@ static uint8_t detect_chassis_power(chassis_t pchassis, uint8_t * supercap_ctrl,
     break;
   }
 
-  return power->chassisPower>power_limit ? 1<<(uint8_t)st : 0;
+  return current>current_limit ? 1<<(uint8_t)st : 0;
   //thus, return 0 <=> No excessing
   //             1 <=> NORMAL, exceeded
   //             2 <=> SRPINT, exceeded
@@ -313,3 +331,24 @@ int32_t chassis_set_relative_angle(float angle)
   follow_relative_angle = angle;
   return 0;
 }
+
+int get_chassis_power(struct chassis_power *chassis_power)
+{
+	if (HAL_ADC_PollForConversion(&hadc1,10000)== HAL_OK)
+	{
+		chassis_power->current_debug = HAL_ADC_GetValue(&hadc1);
+	}
+	if (HAL_ADC_PollForConversion(&hadc2,10000)==HAL_OK)
+	{
+		chassis_power->voltage_debug = HAL_ADC_GetValue(&hadc2);
+	}
+	
+	chassis_power->current = smooth_filter(10,((float)chassis_power->current_debug) * MAPPING_INDEX_CRT,weight);
+	chassis_power->voltage = smooth_filter(10,((float)chassis_power->voltage_debug) * MAPPING_INDEX_VTG,weight);
+	// chassis_power->power = chassis_power->current * chassis_power->voltage;
+  chassis_power->power = chassis_power->current * 24u;
+	current_js = (int) chassis_power->power;
+	
+	return chassis_power->power;
+}
+

@@ -29,12 +29,26 @@
 void chassis_task(void const * argument);
 int32_t chassis_set_relative_angle(float angle);
 
+struct chassis_power
+{
+	int current_debug;
+	int voltage_debug;
+	float current;
+	float voltage;
+	float power;
+};
+//Edited by Eric Chen 
+int get_chassis_power(struct chassis_power *chassis_power); 
+
+//Eric Chen Edition End
 #define RC_CH_SCALE 660
 #define CHASSIS_NETURAL_TH 10
 
 #define CHASSIS_POWER_TH  80
 #define LOW_BUFFER  10
 #define LOW_VOLTAGE   16
+#define WORKING_VOLTAGE 21
+#define NO_BUFFER_TIME_TH 3000
 //#define CHASSIS_POWER_CTRL
 
 #endif // __CHASSIS_TASK_H__

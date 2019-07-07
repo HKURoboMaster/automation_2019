@@ -19,19 +19,28 @@
 #include "shoot.h"
 #include "dbus.h"
 #include "shoot_task.h"
+#include "referee_system.h"
 
 int32_t shoot_firction_toggle(shoot_t pshoot, uint8_t toggled);
 int32_t shoot_lid_toggle(shoot_t pshoot, uint8_t toggled);
 
+enum shoot_state shoot_state_watch;
+uint8_t shoot_cmd_watch;
+uint8_t trigger_state_watch;
+int32_t trigger_wheel_watch;
+
 /**Edited by Y.H. Liu
  * @Jun 13, 2019: change the FSM for shooting
  * @Jun 20, 2019: adaption for hero
+ * @Jul 3, 2019: retrieve the heat data from refree system
+ * @Jul 7, 2019: modify the adaption for hero
  * 
  * Implement the control logic described in Control.md
  */
 enum mouse_cmd{non, click, press};
 typedef enum mouse_cmd mouse_cmd_e;
 mouse_cmd_e mouse_shoot_control(rc_device_t rc_dev);
+static uint16_t get_heat_limit(void);
 
 void shoot_task(void const *argument)
 {
@@ -49,7 +58,7 @@ void shoot_task(void const *argument)
   //uint32_t shoot_time;
 
   static uint8_t fric_on = 0; //0x00 for off, 0xFF for on
-  static uint8_t lid_open = 0; //0x00 for closed, 0xFF for opened
+  // static uint8_t lid_open = 0; //0x00 for closed, 0xFF for opened
   shoot_firction_toggle(pshoot, 1);
   shoot_lid_toggle(pshoot,1);
   while (1)
@@ -59,7 +68,6 @@ void shoot_task(void const *argument)
       shoot_firction_toggle(pshoot, fric_on);
       fric_on = ~fric_on;
     }
-    #ifndef HERO_ROBOT
     // if (rc_device_get_state(prc_dev, RC_S1_MID2DOWN) == RM_OK)
     // {
     //   shoot_set_cmd(pshoot, SHOOT_ONCE_CMD, 1);
@@ -70,16 +78,13 @@ void shoot_task(void const *argument)
     {
       shoot_lid_toggle(pshoot, 0);
     }
-    if(rc_device_get_state(prc_dev, RC_S1_DOWN2MID) == RM_OK ||
-     !prc_dev->rc_info.kb.bit.R && prc_dev->last_rc_info.kb.bit.R)
+    if(rc_device_get_state(prc_dev, RC_S1_DOWN2MID) == RM_OK ||(
+     !prc_dev->rc_info.kb.bit.R && prc_dev->last_rc_info.kb.bit.R))
     {
       shoot_lid_toggle(pshoot, 1);
     }
-    #else
-    // Reserved for lifting / lowering the liner actuator
-    #endif
 
-    /*------ implement the kebboard controlling over shooting ------*/
+    /*------ implement the keyboard controlling over shooting ------*/
     if(prc_dev->rc_info.kb.bit.Z ) 
     {
       if(prc_dev->rc_info.kb.bit.F && !prc_dev->last_rc_info.kb.bit.F) //turn off the fric regardless the situation
@@ -98,18 +103,29 @@ void shoot_task(void const *argument)
     }
     
     /*------ implement the function of a trigger ------*/
-    if (rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK && !fric_on) //not in disabled mode
+    extPowerHeatData_t * heatPowerData = get_heat_power();
+    uint16_t heatLimit = get_heat_limit();
+
+    #ifndef HERO_ROBOT
+    if (heatPowerData->shooterHeat0 < heatLimit && rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK && !fric_on) //not in disabled mode
+    #else
+    if (heatPowerData->shooterHeat1 < heatLimit && rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK && !fric_on) //not in disabled mode
+    #endif
     {
-      if (rc_device_get_state(prc_dev, RC_WHEEL_DOWN) == RM_OK
+      if (rc_device_get_state(prc_dev, RC_WHEEL_UP) == RM_OK
         || mouse_shoot_control(prc_dev)==press)
       {
         // if (get_time_ms() - shoot_time > 2500)
         // {
         //   shoot_set_cmd(pshoot, SHOOT_CONTINUOUS_CMD, 0);
         // }
+        #ifndef HERO_ROBOT
         shoot_set_cmd(pshoot, SHOOT_CONTINUOUS_CMD, CONTIN_BULLET_NUM);
+        #else
+        shoot_set_cmd(pshoot, SHOOT_ONCE_CMD, 1);
+        #endif
       }
-      else if (rc_device_get_state(prc_dev, RC_WHEEL_UP) == RM_OK
+      else if ((rc_device_get_state(prc_dev, RC_WHEEL_DOWN) == RM_OK && prc_dev->last_rc_info.wheel > -300)
             || mouse_shoot_control(prc_dev)==click)
       {
         shoot_set_cmd(pshoot, SHOOT_ONCE_CMD, 1);
@@ -118,11 +134,16 @@ void shoot_task(void const *argument)
       {
         shoot_set_cmd(pshoot, SHOOT_STOP_CMD, 0);
       }
-      
     }
-
+    
     shoot_execute(pshoot);
     osDelayUntil(&period, 5);
+
+    /*-------- For shoot_task debug --------*/
+    shoot_state_watch = pshoot->state;
+    shoot_cmd_watch = pshoot->cmd;
+    trigger_state_watch = pshoot->trigger_key;
+    trigger_wheel_watch = prc_dev->rc_info.wheel;
   }
 }
 
@@ -137,12 +158,12 @@ int32_t shoot_firction_toggle(shoot_t pshoot, uint8_t toggled)
 {
   if (toggled)
   {
-    shoot_set_fric_speed(pshoot, 1000, 1000);
+    shoot_set_fric_speed(pshoot, 100, 100);
     turn_off_laser();
   }
   else
   {
-    shoot_set_fric_speed(pshoot, 1250, 1250);
+    shoot_set_fric_speed(pshoot, 195, 195);
     turn_on_laser();
   }
   return 0;
@@ -201,3 +222,23 @@ mouse_cmd_e mouse_shoot_control(rc_device_t rc_dev)
   }
   return ret_val;
 } 
+
+/**Addd by Y. H. Liu
+ * @Jul 3, 2019: declare the function and create the defination framework
+ * 
+ * Calculate the heat limit
+ */
+static uint16_t get_heat_limit(void)
+{
+  extGameRobotState_t * robotState = get_robot_state();
+  uint16_t limit = 4096;
+  if(robotState->robotLevel != 0)
+  {
+    #ifndef HERO_ROBOT
+    limit = robotState->robotLevel * 120 + 120;
+    #else
+    limit = robotState->robotLevel * 100 + 100;
+    #endif
+  }
+  return limit; 
+}

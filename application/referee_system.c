@@ -441,3 +441,21 @@ extPowerHeatData_t * get_heat_power(void)
 {
   return &referee_data.powerHeatData;
 }
+/** Added by Y.H. Liu
+ * @Jul 3, 2019: retrieve the struct storing the robot states
+ * 
+ * @ Ret: address of the struct gameRobotState
+ */
+extGameRobotState_t * get_robot_state(void)
+{
+  return &referee_data.gameRobotState;
+}
+/** Added by Y.H. Liu
+ * @Jul 3, 2019: retrieve the struct storing the RFID card message
+ * 
+ * @ Ret: address of the struct rfidDetect
+ */
+extRfidDetect_t * get_rfid_data(void)
+{
+  return &referee_data.rfidDetect;
+}
