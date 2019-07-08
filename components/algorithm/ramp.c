@@ -35,3 +35,19 @@ float ramp_calculate(ramp_t *ramp)
   return ramp->out;
 }
 
+/**Added by Y.H. Liu
+ * @Jul 7, 2019: define the function
+ * 
+ * Ramp function for chassis references
+ * @Param: v_ref: input speed ref
+ *         mec_ref: last mecanum speed reference
+ * @ReVal: mecanum speed reference
+ */
+float chassis_ramp(float v_ref, float mec_ref)
+{
+  if(v_ref>mec_ref+2*RAMP_CHASSIS_CO)
+    return mec_ref+RAMP_CHASSIS_CO;
+  else if(v_ref<mec_ref-2*RAMP_CHASSIS_CO)
+    return mec_ref-RAMP_CHASSIS_CO;
+  return v_ref;
+}

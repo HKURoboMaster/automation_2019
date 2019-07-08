@@ -26,6 +26,7 @@
 
 #include "motor.h"
 #include "mecanum.h"
+#include "ramp.h"
 #include "pid_controller.h"
 
 #define USING_RM 1; // if using a remote control, if in use then 1

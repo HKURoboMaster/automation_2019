@@ -21,6 +21,7 @@
 #include "spi.h"
 #include "sys.h"
 #include "drv_imu.h"
+#include "drv_io.h"
 
 #define MPU_DELAY(x) HAL_Delay(x)
 
@@ -290,7 +291,7 @@ uint8_t mpu_device_init(void)
 static void get_mpu_gyro_offset(void)
 {
   int i;
-  for (i = 0; i < 300; i++)
+  for (i = 0; i < 500; i++)
   {
     mpu_read_regs(MPU6500_ACCEL_XOUT_H, mpu_buff, 14);
 
@@ -298,12 +299,18 @@ static void get_mpu_gyro_offset(void)
     mpu_data.gy_offset += mpu_buff[10] << 8 | mpu_buff[11];
     mpu_data.gz_offset += mpu_buff[12] << 8 | mpu_buff[13];
 
+    if(i%50==0)
+    {
+      LED_R_TOGGLE();
+
+    }
+
     MPU_DELAY(2);
   }
 
-  mpu_data.gx_offset = mpu_data.gx_offset / 300;
-  mpu_data.gy_offset = mpu_data.gy_offset / 300;
-  mpu_data.gz_offset = mpu_data.gz_offset / 300;
+  mpu_data.gx_offset = mpu_data.gx_offset / 500;
+  mpu_data.gy_offset = mpu_data.gy_offset / 500;
+  mpu_data.gz_offset = mpu_data.gz_offset / 500;
   imu_cali.gyro_flag = 0;
 }
 

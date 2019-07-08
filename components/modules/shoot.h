@@ -31,15 +31,16 @@
 #define SHOOT_ONCE_CMD (1u)
 #define SHOOT_CONTINUOUS_CMD (2u)
 
-#define FIRC_STOP_SPEED 1000u
-#define FIRC_MAX_SPEED 1400u
-#define FRIC_MIN_SPEED 1220u
+#define FIRC_STOP_SPEED 100u
+#define FIRC_MAX_SPEED 200u
+#define FRIC_MIN_SPEED 99u
 
 #define BLOCK_CURRENT_DEFAULT 26000.0F
 #define BLOCK_SPEED_DEFAULT -1650
 #define BLOCK_TIMEOUT_DEFAULT 200
 #define BLOCK_CHECK_TIMEOUT_DEFAULT 80
 #define TURN_SPEED_DEFAULT 1200
+
 
 enum trigger_state
 {
@@ -52,6 +53,7 @@ enum shoot_state
   SHOOT_INIT = 0,
   SHOOT_READY,
   SHOOT_BLOCK,
+  SHOOT_RUNNING
 };
 
 struct shoot_param
@@ -82,7 +84,7 @@ struct shoot
   uint8_t cmd;
 
   uint8_t trigger_key;
-  uint16_t fric_spd[2];
+  float fric_spd[2];
 
   uint32_t shoot_num;
   uint32_t block_time;
@@ -98,12 +100,19 @@ struct shoot
 shoot_t shoot_find(const char *name);
 int32_t shoot_pid_register(struct shoot *shoot, const char *name, enum device_can can);
 int32_t shoot_set_fric_speed(struct shoot *shoot, uint16_t fric_spd1, uint16_t fric_spd2);
-int32_t shoot_get_fric_speed(struct shoot *shoot, uint16_t *fric_spd1, uint16_t *fric_spd2);
+int32_t shoot_get_fric_speed(struct shoot *shoot, float *fric_spd1, float *fric_spd2);
 int32_t shoot_set_cmd(struct shoot *shoot, uint8_t cmd, uint32_t shoot_num);
 int32_t shoot_execute(struct shoot *shoot);
 int32_t shoot_state_update(struct shoot *shoot);
 int32_t shoot_enable(struct shoot *shoot);
 int32_t shoot_disable(struct shoot *shoot);
 int32_t shoot_set_turn_speed(struct shoot *shoot, uint16_t speed);
+int32_t laser_cmd(uint8_t cmd);
+int32_t magazine_lid_cmd(uint8_t cmd);
+
+#define open_lid()        magazine_lid_cmd(1u)
+#define close_lid()       magazine_lid_cmd(0u)
+#define turn_on_laser()   laser_cmd(1u)
+#define turn_off_laser()  laser_cmd(0u)
 
 #endif // __SHOOT_H__
