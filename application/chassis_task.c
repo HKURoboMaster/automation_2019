@@ -28,8 +28,17 @@ float follow_relative_angle;
 struct pid pid_follow = {0}; //angle control
 static void chassis_imu_update(void *argc);
 
-int left_blocked = 0, right_blocked = 0;
-int left_ir_js = 0, right_ir_js = 0;
+int left_blocked = 0, right_blocked = 0;  //IR detects if left or right side is blocked
+int left_ir_js = 0, right_ir_js = 0;  //for jscope
+int using_rm = USING_RM;  //if using a remote control, if in use then 1
+
+//=======chassis movement logic global var========
+chassis_state_t state; //The state of chassis
+//set_state(&state, LAZY_STATE);
+cv_dynamic_event_t dynamic_eve = ENEMY_STAY_STILL;
+cv_static_event_t static_eve = ENEMY_NOT_DETECTED;
+power_event_t power_eve = POWER_NORMAL;
+armor_event_t armor_eve = NO_HIT_FOR_THREE_SEC;
 
 float direction_control(float v) {
   float res_v;
@@ -43,10 +52,10 @@ float direction_control(float v) {
 }
 
 void check_ir_signal() {
-    left_blocked = (HAL_GPIO_ReadPin(IR_LEFT_Port, IR_LEFT_Pin) == GPIO_PIN_RESET);
-    right_blocked = (HAL_GPIO_ReadPin(IR_RIGHT_Port, IR_RIGHT_Pin) == GPIO_PIN_RESET);
-    left_ir_js = left_blocked ? 5000 : 0;
-    right_ir_js = right_blocked ? -5000 : 0;
+  left_blocked = (HAL_GPIO_ReadPin(IR_LEFT_Port, IR_LEFT_Pin) == GPIO_PIN_RESET);
+  right_blocked = (HAL_GPIO_ReadPin(IR_RIGHT_Port, IR_RIGHT_Pin) == GPIO_PIN_RESET);
+  left_ir_js = left_blocked ? 5000 : 0;
+  right_ir_js = right_blocked ? -5000 : 0;
 }
 
 void chassis_task(void const *argument)
@@ -131,4 +140,26 @@ int32_t chassis_set_relative_angle(float angle)
 {
   follow_relative_angle = angle;
   return 0;
+}
+
+void set_state(chassis_state_t * state, chassis_state_name_t dest_state) {
+  state->state_name = dest_state;
+  switch (dest_state) {
+    case LAZY_STATE:
+      state->constant_spd = LAZY_CONSTANT_SPEED;
+      break;
+    case NORMAL_STATE:
+      state->constant_spd = NORMAL_CONSTANT_SPEED;
+      break;
+    case BOOST_STATE:
+      state->constant_spd = BOOST_CONSTANT_SPEED;
+  }
+}
+
+chassis_state_name_t get_state(const chassis_state_t * state) {
+  return state->state_name;
+}
+
+float get_spd(const chassis_state_t * state) {
+  return state->constant_spd;
 }

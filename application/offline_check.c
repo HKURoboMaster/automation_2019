@@ -59,20 +59,23 @@ void offline_init(void)
 
   detect_device_register(&offline_dev, "detect", 0, 0);
 
-  detect_device_add_event(&offline_dev, RC_OFFLINE_EVENT, 100, rc_offline_callback, NULL);
+	int using_rm = USING_RM;
+  if (using_rm) {
+    detect_device_add_event(&offline_dev, RC_OFFLINE_EVENT, 100, rc_offline_callback, NULL);
+  }
 
   if (app == CHASSIS_APP)
   {
     detect_device_add_event(&offline_dev, MOTOR1_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[1]);
-    detect_device_add_event(&offline_dev, MOTOR2_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[2]);
+    //etect_device_add_event(&offline_dev, MOTOR2_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[2]);
     detect_device_add_event(&offline_dev, MOTOR3_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[3]);
-    detect_device_add_event(&offline_dev, MOTOR4_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[4]);
+    //detect_device_add_event(&offline_dev, MOTOR4_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[4]);
   }
   else
   {
-    detect_device_add_event(&offline_dev, YAW_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[5]);
-    detect_device_add_event(&offline_dev, PITCH_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[6]);
-    detect_device_add_event(&offline_dev, TURN_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[7]);
+    // detect_device_add_event(&offline_dev, YAW_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[5]);
+    // detect_device_add_event(&offline_dev, PITCH_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[6]);
+    // detect_device_add_event(&offline_dev, TURN_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[7]);
   }
 
   soft_timer_register(offline_check, NULL, 20);
