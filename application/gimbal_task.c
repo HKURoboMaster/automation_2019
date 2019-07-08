@@ -158,7 +158,7 @@ void gimbal_task(void const *argument)
           gimbal_set_yaw_delta(pgimbal, auto_aiming_yaw);
         }
 
-        float square_ch3 = (float)prc_info->ch3 * abs(prc_info->ch3) / RC_CH_SCALE;
+        float square_ch1 = (float)prc_info->ch1 * abs(prc_info->ch1) / RC_CH_SCALE;
         /*-------- Map mouse coordinates into polar coordiantes --------*/
         int16_t yaw_mouse,pit_mouse;
         int16_t radius = (int16_t)sqrt(prc_info->mouse.y * prc_info->mouse.y + prc_info->mouse.x * prc_info->mouse.x);
@@ -182,8 +182,8 @@ void gimbal_task(void const *argument)
         
 
         gimbal_set_yaw_mode(pgimbal, GYRO_MODE);
-        pit_delta = -(float)prc_info->ch4 * GIMBAL_RC_PITCH + (float)pit_mouse * GIMBAL_MOUSE_PITCH;
-        yaw_delta =      square_ch3       * GIMBAL_RC_YAW   + (float)yaw_mouse * GIMBAL_MOUSE_YAW;
+        pit_delta =  (float)prc_info->ch2 * GIMBAL_RC_PITCH + (float)pit_mouse * GIMBAL_MOUSE_PITCH;
+        yaw_delta =      square_ch1       * GIMBAL_RC_YAW   + (float)yaw_mouse * GIMBAL_MOUSE_YAW;
         yaw_delta += prc_info->kb.bit.E ? YAW_KB_SPEED : 0;
         yaw_delta -= prc_info->kb.bit.Q ? YAW_KB_SPEED : 0;
         gimbal_set_pitch_delta(pgimbal, pit_delta);
@@ -240,18 +240,17 @@ static int32_t gimbal_imu_update(void *argc)
   gimbal_t pgimbal = (gimbal_t)argc;
   mpu_get_data(&mpu_sensor);
   mahony_ahrs_updateIMU(&mpu_sensor, &mahony_atti);
-  // TODO: adapt coordinates to our own design
+
   gimbal_pitch_gyro_update(pgimbal, -mahony_atti.roll);
   gimbal_yaw_gyro_update(pgimbal, -mahony_atti.yaw);
   gimbal_rate_update(pgimbal, mpu_sensor.wy * RAD_TO_DEG, -mpu_sensor.wx * RAD_TO_DEG);
-  // TODO: adapt coordinates to our own design
   
-  mpu_pit = mahony_atti.pitch;
-  mpu_yaw = mahony_atti.yaw;
-  mpu_rol = mahony_atti.roll;
-	mpu_wz = mpu_sensor.wz;
-	mpu_wy = mpu_sensor.wy;
-	mpu_wx = mpu_sensor.wx;
+  mpu_pit = mahony_atti.pitch * 1000;
+  mpu_yaw = mahony_atti.yaw   * 1000;
+  mpu_rol = mahony_atti.roll  * 1000;
+	mpu_wz = mpu_sensor.wz * 1000;
+	mpu_wy = mpu_sensor.wy * 1000;
+	mpu_wx = mpu_sensor.wx * 1000;
   
   return 0;
 }
@@ -297,6 +296,7 @@ struct pid pid_pit_spd = {0};
 
 /**Modified by Y.H. Liu
  * @Jun 20, 2019: adaption for hero
+ * @Jul 8, 2018: use the original methods to calculate the pitch centre
  * 
  * Automatically adjust the netural position for gimbal
  */
@@ -304,7 +304,32 @@ static void auto_gimbal_adjust(gimbal_t pgimbal)
 {
   if (auto_adjust_f)
   {
-    pit_ecd_c = pgimbal->motor[PITCH_MOTOR_INDEX].data.ecd;
+    pid_struct_init(&pid_pit, 2000, 0, 60, 0, 0);
+    pid_struct_init(&pid_pit_spd, 30000, 3000, 60, 0.2, 0);
+    while (1)
+    {
+      gimbal_imu_update(pgimbal);
+      pid_calculate(&pid_pit, pgimbal->sensor.gyro_angle.pitch, 0);
+      pid_calculate(&pid_pit_spd, pid_pit.out, pgimbal->sensor.rate.pitch_rate);
+
+      send_gimbal_current(0, -pid_pit_spd.out, 0);
+
+      HAL_Delay(2);
+
+      if ((fabs(pgimbal->sensor.gyro_angle.pitch) < 0.1))
+      {
+        pit_cnt++;
+      }
+      else
+      {
+        pit_cnt = 0;
+      }
+      if (pit_cnt > 1000)
+      {
+        pit_ecd_c = pgimbal->motor[PITCH_MOTOR_INDEX].data.ecd;
+        break;
+      }
+    }
     yaw_ecd_c = pgimbal->motor[YAW_MOTOR_INDEX].data.ecd;
 
     gimbal_save_data(yaw_ecd_c, pit_ecd_c);
