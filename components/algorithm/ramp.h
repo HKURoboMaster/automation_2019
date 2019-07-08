@@ -52,7 +52,7 @@ float ramp_calculate(ramp_t *ramp);
  * 
  * For chassis ramp
  */
-#define RAMP_CHASSIS_CO 8.95924f
+#define RAMP_CHASSIS_CO 6.82146928f
 float chassis_ramp(float v_ref, float mec_ref);
 
 #endif // __RAMP_H__

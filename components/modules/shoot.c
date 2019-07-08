@@ -81,32 +81,31 @@ end:
   return err;
 }
 
+/**Edited by Y.H. Liu
+ * @Jul 8, 2019: Change the slope to the function: shoot_fric_ctrl
+ * 
+ * Set the target speed of the trigger motor
+ */
 int32_t shoot_set_fric_speed(struct shoot *shoot, uint16_t fric_spd1, uint16_t fric_spd2)
 {
   if (shoot == NULL)
     return -RM_INVAL;
   shoot->target.fric_spd[0] = fric_spd1;
   shoot->target.fric_spd[1] = fric_spd2;
-	static int slope = 1000;
-	if(fric_spd1>100)
-	{
-		if(slope<=1950)
-			slope+=1;
-	}
-	else
-	{
-		if(slope>1000)
-			slope--;
-	}
-	fric_set_output(slope/10,slope/10);
+
 	return RM_OK;
 }
 
-int32_t shoot_get_fric_speed(struct shoot *shoot, uint16_t *fric_spd1, uint16_t *fric_spd2)
+int32_t shoot_get_fric_speed(struct shoot *shoot, float *fric_spd1, float *fric_spd2)
 {
   if (shoot == NULL)
     return -RM_INVAL;
-  fric_get_speed(fric_spd1, fric_spd2);
+  uint16_t fric_pwm_1, fric_pwm_2;
+  fric_get_speed(&fric_pwm_1, &fric_pwm_2);
+  *fric_spd1 = *fric_spd1 - (int16_t)*fric_spd1;
+  *fric_spd2 = *fric_spd2 - (int16_t)*fric_spd2;
+  *fric_spd1 += fric_pwm_1;
+  *fric_spd2 += fric_pwm_2;
   return RM_OK;
 }
 
@@ -318,15 +317,17 @@ static int32_t shoot_cmd_ctrl(struct shoot *shoot)
   return RM_OK;
 }
 
+/**Edited by Y.H. Liu
+ * @Jul 8, 2019: Slow down the speeding up
+ * 
+ * Send the friction wheel motor signals by PWM
+ */
 static int32_t shoot_fric_ctrl(struct shoot *shoot)
 {
   if (shoot == NULL)
     return -RM_INVAL;
 
-  VAL_LIMIT(shoot->target.fric_spd[0], FIRC_STOP_SPEED, FIRC_MAX_SPEED);
-  VAL_LIMIT(shoot->target.fric_spd[1], FIRC_STOP_SPEED, FIRC_MAX_SPEED);
-
-  shoot_get_fric_speed(shoot, &(shoot->fric_spd[0]), &(shoot->fric_spd[1]));
+  shoot_get_fric_speed(shoot, &shoot->fric_spd[0], &shoot->fric_spd[1]);
 
   if (shoot->target.fric_spd[0] != shoot->fric_spd[0])
   {
@@ -336,7 +337,7 @@ static int32_t shoot_fric_ctrl(struct shoot *shoot)
     }
     else
     {
-      shoot->fric_spd[0] += 1;
+      shoot->fric_spd[0] += 0.25f;
     }
   }
   else if (shoot->target.fric_spd[1] != shoot->fric_spd[1])
@@ -347,10 +348,14 @@ static int32_t shoot_fric_ctrl(struct shoot *shoot)
     }
     else
     {
-      shoot->fric_spd[1] += 1;
+      shoot->fric_spd[1] += 0.25f;
     }
   }
-	fric_set_output(shoot->fric_spd[0], shoot->fric_spd[1]);
+
+  VAL_LIMIT(shoot->fric_spd[0], FIRC_STOP_SPEED, FIRC_MAX_SPEED);
+  VAL_LIMIT(shoot->fric_spd[1], FIRC_STOP_SPEED, FIRC_MAX_SPEED);
+
+	fric_set_output((uint16_t)shoot->fric_spd[0], (uint16_t)shoot->fric_spd[1]);
   return RM_OK;
 }
 

@@ -41,6 +41,7 @@
 #define BLOCK_CHECK_TIMEOUT_DEFAULT 80
 #define TURN_SPEED_DEFAULT 1200
 
+
 enum trigger_state
 {
   TRIG_PRESS_DOWN = 0,
@@ -83,7 +84,7 @@ struct shoot
   uint8_t cmd;
 
   uint8_t trigger_key;
-  uint16_t fric_spd[2];
+  float fric_spd[2];
 
   uint32_t shoot_num;
   uint32_t block_time;
@@ -99,7 +100,7 @@ struct shoot
 shoot_t shoot_find(const char *name);
 int32_t shoot_pid_register(struct shoot *shoot, const char *name, enum device_can can);
 int32_t shoot_set_fric_speed(struct shoot *shoot, uint16_t fric_spd1, uint16_t fric_spd2);
-int32_t shoot_get_fric_speed(struct shoot *shoot, uint16_t *fric_spd1, uint16_t *fric_spd2);
+int32_t shoot_get_fric_speed(struct shoot *shoot, float *fric_spd1, float *fric_spd2);
 int32_t shoot_set_cmd(struct shoot *shoot, uint8_t cmd, uint32_t shoot_num);
 int32_t shoot_execute(struct shoot *shoot);
 int32_t shoot_state_update(struct shoot *shoot);
