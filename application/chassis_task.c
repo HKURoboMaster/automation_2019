@@ -24,7 +24,7 @@
 #include "smooth_filter.h"
 #include <math.h>
 #define RAD_TO_DEG 57.296f // 180/PI
-#define MAPPING_INDEX_CRT 0.005f
+#define MAPPING_INDEX_CRT 1.0f
 #define MAPPING_INDEX_VTG 0.005f
 static float vx, vy, wz;
 
@@ -346,8 +346,8 @@ int get_chassis_power(struct chassis_power *chassis_power)
 	chassis_power->current = smooth_filter(10,((float)chassis_power->current_debug) * MAPPING_INDEX_CRT,weight);
 	chassis_power->voltage = smooth_filter(10,((float)chassis_power->voltage_debug) * MAPPING_INDEX_VTG,weight);
 	// chassis_power->power = chassis_power->current * chassis_power->voltage;
-  chassis_power->power = chassis_power->current * 24u;
-	current_js = (int) chassis_power->power;
+  chassis_power->power = (chassis_power->current-2048)*5/819.2;
+	current_js = (int) chassis_power->voltage;
 	
 	return chassis_power->power;
 }
