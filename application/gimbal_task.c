@@ -62,8 +62,8 @@ int32_t yaw_ecd_angle_js, pit_ecd_angle_js;
  *
  *  Implement the customized control logic and FSM, details in Control.md
  */
-extern int32_t auto_aiming_pitch;
-extern int32_t auto_aiming_yaw;
+extern float auto_aiming_pitch;
+extern float auto_aiming_yaw;
 void gimbal_task(void const *argument)
 {
   uint32_t period = osKernelSysTick();

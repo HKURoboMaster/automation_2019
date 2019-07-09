@@ -66,14 +66,13 @@ int32_t gimbal_adjust_cmd(uint8_t *buff, uint16_t len)
   return 0;
 }
 
-
 /** Edited by Y.H. Liu
  *  @Jun 12, 2019: disbable the auto mode and implement the auto_aiming
  *
  *  Implement the customized control logic described in Control.md
  */
- int32_t auto_aiming_pitch = 0;
- int32_t auto_aiming_yaw   = 0;
+float auto_aiming_pitch = 0;
+float auto_aiming_yaw   = 0;
 void infantry_cmd_task(void const *argument)
 {
   uint8_t app;
@@ -147,21 +146,21 @@ void infantry_cmd_task(void const *argument)
           {
             if (pangle->ctrl.bit.pitch_mode == 0)
             {
-              gimbal_set_pitch_angle(pgimbal, pangle->pitch / 10.0f);
+              gimbal_set_pitch_angle(pgimbal, pangle->pitch / 100.0f);
             }
             else
             {
               // gimbal_set_pitch_speed(pgimbal, pangle->pitch / 10.0f);
-              auto_aiming_pitch = pangle->pitch / 10.0f;
+              auto_aiming_pitch = pangle->pitch / 100.0f;
             }
             if (pangle->ctrl.bit.yaw_mode == 0)
             {
-              gimbal_set_yaw_angle(pgimbal, pangle->yaw / 10.0f, 0);
+              gimbal_set_yaw_angle(pgimbal, pangle->yaw / 100.0f, 0);
             }
             else
             {
               // gimbal_set_yaw_speed(pgimbal, pangle->yaw / 10.0f);
-              auto_aiming_yaw = pangle->yaw / 10.0f;
+              auto_aiming_yaw = pangle->yaw / 100.0f;
             }
           }
           else
