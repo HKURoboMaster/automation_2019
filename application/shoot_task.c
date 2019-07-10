@@ -107,9 +107,9 @@ void shoot_task(void const *argument)
     uint16_t heatLimit = get_heat_limit();
 
     #ifndef HERO_ROBOT
-    if (heatPowerData->shooterHeat0 < heatLimit && rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK && !fric_on) //not in disabled mode
+    if (heatPowerData->shooterHeat0 < heatLimit && rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK) //not in disabled mode
     #else
-    if (heatPowerData->shooterHeat1 < heatLimit && rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK && !fric_on) //not in disabled mode
+    if (heatPowerData->shooterHeat1 < heatLimit && rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK) //not in disabled mode
     #endif
     {
       if (rc_device_get_state(prc_dev, RC_WHEEL_UP) == RM_OK
@@ -163,7 +163,7 @@ int32_t shoot_firction_toggle(shoot_t pshoot, uint8_t toggled)
   }
   else
   {
-    shoot_set_fric_speed(pshoot, 195, 195);
+    shoot_set_fric_speed(pshoot, 175, 175);
     turn_on_laser();
   }
   return 0;
