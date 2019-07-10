@@ -60,6 +60,9 @@ int32_t shoot_pid_register(struct shoot *shoot, const char *name, enum device_ca
   shoot->param.turn_speed = TURN_SPEED_DEFAULT;
   shoot->param.check_timeout = BLOCK_CHECK_TIMEOUT_DEFAULT;
 
+  shoot->fric_spd[0] = FRIC_MIN_SPEED;
+  shoot->fric_spd[1] = FRIC_MIN_SPEED;
+
   memcpy(&motor_name[name_len], "_TURN\0", 6);
 
   err = motor_device_register(&(shoot->motor), motor_name, 0);
