@@ -96,8 +96,8 @@
 #define IR_LEFT_Port GPIOH
 #define IR_RIGHT_Pin GPIO_PIN_15
 #define IR_RIGHT_Port GPIOD
-#define IR_OUTPUT_Pin GPIO_PIN_13
-#define IR_OUTPUT_Port GPIOD
+#define IR_OUTPUT_Pin GPIO_PIN_0
+#define IR_OUTPUT_Port GPIOA
 
 /* ########################## Assert Selection ############################## */
 /**

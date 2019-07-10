@@ -67,7 +67,7 @@ void offline_init(void)
   if (app == CHASSIS_APP)
   {
     detect_device_add_event(&offline_dev, MOTOR1_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[1]);
-    //etect_device_add_event(&offline_dev, MOTOR2_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[2]);
+    //detect_device_add_event(&offline_dev, MOTOR2_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[2]);
     detect_device_add_event(&offline_dev, MOTOR3_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[3]);
     //detect_device_add_event(&offline_dev, MOTOR4_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[4]);
   }

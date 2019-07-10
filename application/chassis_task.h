@@ -72,6 +72,8 @@ float get_spd(const chassis_state_t * state);
 
 void chassis_task(void const * argument);
 int32_t chassis_set_relative_angle(float angle);
+float direction_control(float v);
+void check_ir_signal();
 
 struct chassis_power
 {

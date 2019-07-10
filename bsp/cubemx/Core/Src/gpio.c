@@ -98,7 +98,7 @@ void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(LED_G_GPIO_Port, LED_G_Pin, GPIO_PIN_RESET);
 
-  HAL_GPIO_WritePin(IR_OUTPUT_Port, IR_OUTPUT_Pin, GPIO_PIN_SET);
+  
 
   /*Configure GPIO pins : PEPin PEPin */
   GPIO_InitStruct.Pin = IST_RESET_Pin|LED_R_Pin;
@@ -191,6 +191,8 @@ void MX_GPIO_Init(void)
   HAL_GPIO_Init(LASER_GPIO_PORT, &GPIO_InitStruct);
 
   HAL_GPIO_WritePin(LASER_GPIO_PORT, LASER_PIN, GPIO_PIN_RESET);
+	
+	HAL_GPIO_WritePin(IR_OUTPUT_Port, IR_OUTPUT_Pin, GPIO_PIN_SET);
 }
 
 /* USER CODE BEGIN 2 */
