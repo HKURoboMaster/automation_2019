@@ -38,8 +38,7 @@ int left_ir_js = 0, right_ir_js = 0;  //for jscope
 int using_rm = USING_RM;  //if using a remote control, if in use then 1
 
 //=======chassis movement logic global var========
-chassis_state_t state; //The state of chassis
-//set_state(&state, LAZY_STATE);
+chassis_state_t state = {IDLE_STATE, IDLE_CONSTANT_SPEED}; //The state of chassis
 cv_dynamic_event_t dynamic_eve = ENEMY_STAY_STILL;
 cv_static_event_t static_eve = ENEMY_NOT_DETECTED;
 power_event_t power_eve = POWER_NORMAL;
@@ -354,7 +353,7 @@ float direction_control(float v) {
  * Update IR Sensor's signal as well as updating jscope
  * variables.
  */
-void check_ir_signal() {
+void check_ir_signal(void) {
   left_blocked = (HAL_GPIO_ReadPin(IR_LEFT_Port, IR_LEFT_Pin) == GPIO_PIN_RESET);
   right_blocked = (HAL_GPIO_ReadPin(IR_RIGHT_Port, IR_RIGHT_Pin) == GPIO_PIN_RESET);
   left_ir_js = left_blocked ? 5000 : 0;
@@ -364,13 +363,13 @@ void check_ir_signal() {
 /**
  * Jerry @10 Jul
  * Set the chassis state to be one of the three states.
- * Example: set_state(&state, LAZY_STATE);
+ * Example: set_state(&state, IDLE_STATE);
  */
 void set_state(chassis_state_t * state, chassis_state_name_t dest_state) {
   state->state_name = dest_state;
   switch (dest_state) {
-    case LAZY_STATE:
-      state->constant_spd = LAZY_CONSTANT_SPEED;
+    case IDLE_STATE:
+      state->constant_spd = IDLE_CONSTANT_SPEED;
       break;
     case NORMAL_STATE:
       state->constant_spd = NORMAL_CONSTANT_SPEED;

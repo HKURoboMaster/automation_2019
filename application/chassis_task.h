@@ -26,12 +26,12 @@
 
 #include "chassis.h"
 
-#define LAZY_CONSTANT_SPEED 500;  //speed of lazy state
-#define NORMAL_CONSTANT_SPEED 1000; //speed of normal state
-#define BOOST_CONSTANT_SPEED 3000;  //speed of boost state
+#define IDLE_CONSTANT_SPEED 500  //speed of idle state
+#define NORMAL_CONSTANT_SPEED 1000 //speed of normal state
+#define BOOST_CONSTANT_SPEED 3000  //speed of boost state
 
 typedef enum chassis_state_name {
-  LAZY_STATE, NORMAL_STATE, BOOST_STATE
+  IDLE_STATE, NORMAL_STATE, BOOST_STATE
 } chassis_state_name_t;
 
 //enemy static state detection from tx2
@@ -73,7 +73,7 @@ float get_spd(const chassis_state_t * state);
 void chassis_task(void const * argument);
 int32_t chassis_set_relative_angle(float angle);
 float direction_control(float v);
-void check_ir_signal();
+void check_ir_signal(void);
 
 struct chassis_power
 {
