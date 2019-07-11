@@ -195,6 +195,11 @@ void gimbal_task(void const *argument)
         gimbal_set_yaw_angle(pgimbal, 0, 0);
         //no rotation allowed, gimbal rotate back to the netural position of the encoder
         //reserved for get rid of the uncontrollable dodging when necessary
+        if(prc_info->kb.bit.Z)
+        {
+          pgimbal->param.yaw_ecd_center += ((float)prc_info->wheel/RC_CH_SCALE);
+          gimbal_set_offset(pgimbal, pgimbal->param.yaw_ecd_center, pgimbal->param.pitch_ecd_center);
+        }
       }
     }
     if(rc_device_get_state(prc_dev, RC_S2_DOWN) == RM_OK)
@@ -274,6 +279,7 @@ static int32_t imu_temp_keep(void *argc)
 uint8_t auto_adjust_f;
 volatile uint32_t pit_time, yaw_time;
 uint32_t pit_cnt;
+uint32_t pit_timeout_cnt=0;
 volatile uint16_t yaw_ecd_r, yaw_ecd_l;
 volatile uint16_t pit_ecd_c, yaw_ecd_c;
 
@@ -309,22 +315,24 @@ static void auto_gimbal_adjust(gimbal_t pgimbal)
     while (1)
     {
       gimbal_imu_update(pgimbal);
-      pid_calculate(&pid_pit, pgimbal->sensor.gyro_angle.pitch, 0);
-      pid_calculate(&pid_pit_spd, pid_pit.out, pgimbal->sensor.rate.pitch_rate);
+      pid_calculate(&pid_pit, -pgimbal->sensor.gyro_angle.pitch, -85);
+      pid_calculate(&pid_pit_spd, -pgimbal->sensor.rate.pitch_rate, pid_pit.out);
 
       send_gimbal_current(0, -pid_pit_spd.out, 0);
 
       HAL_Delay(2);
 
-      if ((fabs(pgimbal->sensor.gyro_angle.pitch) < 0.1))
+      if ((fabs(pgimbal->sensor.gyro_angle.pitch-85) < 0.1))
       {
         pit_cnt++;
+        pit_timeout_cnt = 0;
       }
       else
       {
         pit_cnt = 0;
+        pit_timeout_cnt++;
       }
-      if (pit_cnt > 1000)
+      if (pit_cnt > 1000 || pit_timeout_cnt>2000)
       {
         pit_ecd_c = pgimbal->motor[PITCH_MOTOR_INDEX].data.ecd;
         break;

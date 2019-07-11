@@ -17,6 +17,7 @@
 
 #ifndef __SHOOT_TASK_H__
 #define __SHOOT_TASK_H__
+#define HERO_ROBOT
 
 #ifdef SHOOT_TASK_H_GLOBAL
   #define SHOOT_TASK_H_EXTERN 

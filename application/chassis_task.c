@@ -59,7 +59,6 @@ int32_t power_js;
 #endif
 
 #define km_dodge          prc_info->kb.bit.V == 1
-#define back_to_netural   follow_relative_angle < CHASSIS_NETURAL_TH && follow_relative_angle >= -CHASSIS_NETURAL_TH
 
 uint8_t dodging = 0;
 void chassis_task(void const *argument)
@@ -96,8 +95,8 @@ void chassis_task(void const *argument)
     if (rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK || rc_device_get_state(prc_dev, RC_S2_MID) == RM_OK)
     { //not disabled
       chassis_enable(pchassis);
-      int32_t key_x_speed = 2*MAX_CHASSIS_VX_SPEED/3;
-      int32_t key_y_speed = 2*MAX_CHASSIS_VY_SPEED/3;
+      int32_t key_x_speed = MAX_CHASSIS_VX_SPEED/2;
+      int32_t key_y_speed = MAX_CHASSIS_VY_SPEED/2;
       if(prc_info->kb.bit.SHIFT)
       {
         key_x_speed = MAX_CHASSIS_VX_SPEED;
@@ -114,14 +113,14 @@ void chassis_task(void const *argument)
       float temp_vx = square_ch4 * MAX_CHASSIS_VX_SPEED;
       temp_vx += (prc_info->kb.bit.W - prc_info->kb.bit.S)* key_x_speed;
       float temp_vy = -square_ch3 * MAX_CHASSIS_VY_SPEED;
-      temp_vy += (prc_info->kb.bit.D - prc_info->kb.bit.A)* key_y_speed;
+      temp_vy += (prc_info->kb.bit.A - prc_info->kb.bit.D)* key_y_speed;
       vx = temp_vx * cos(-follow_relative_angle / RAD_TO_DEG) - temp_vy * sin(-follow_relative_angle / RAD_TO_DEG);
       vy = temp_vx * sin(-follow_relative_angle / RAD_TO_DEG) + temp_vy * cos(-follow_relative_angle / RAD_TO_DEG);
 
-      if(km_dodge || (dodging && !back_to_netural))
+      if(km_dodge)
       {
         #ifndef HERO_ROBOT
-        wz = 4 * MAX_CHASSIS_VW_SPEED / 5;
+        wz = 1.1f * MAX_CHASSIS_VW_SPEED;
         #else
           //time-based twist with a sin function
           now_tick = HAL_GetTick();
@@ -132,9 +131,15 @@ void chassis_task(void const *argument)
 		        twist_count = twist_count>0?500:-500;
             twist_sign *= -1;
           }
-          vw = twist_sign * sin(PI * twist_count / 500) * CHASSIS_RC_MAX_SPEED_R;
+          wz = twist_sign * sin(PI * twist_count / 500) * MAX_CHASSIS_VW_SPEED;
         #endif
         dodging |= 1;
+        if(vx!=0 || vy!=0)
+        {
+          vx*=0.6f;
+          vy*=0.6f;
+          wz*=0.8f;
+        }
       }
       else
       {
@@ -142,6 +147,7 @@ void chassis_task(void const *argument)
         dodging &= 0;
         #ifdef HERO_ROBOT
         last_tick = 0;
+        twist_count = 0;
         #endif
       }
 
