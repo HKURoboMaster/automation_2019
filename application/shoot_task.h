@@ -24,6 +24,9 @@
   #define SHOOT_TASK_H_EXTERN extern
 #endif
 
+#define CONTIN_BULLET_NUM 20
+#define CONTINUE_SHOOT_TH 300 //continue-shoot threashold: 300 counts
+
 void shoot_task(void const * argument);
 
 #endif // __SHOOT_TASK_H__
