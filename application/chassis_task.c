@@ -177,7 +177,7 @@ void chassis_task(void const *argument)
         if(power->chassisPowerBuffer > LOW_BUFFER && chassis_power.voltage>LOW_VOLTAGE && 
            chassis_power.power > (CHASSIS_POWER_TH+LOW_BUFFER)/WORKING_VOLTAGE)
         {
-          current_excess_flag = 1;
+          current_excess_flag = 2;
         }
         else if(chassis_power.power > CHASSIS_POWER_TH/WORKING_VOLTAGE)
         {
@@ -196,11 +196,11 @@ void chassis_task(void const *argument)
       //control the speed ref if necessary
         if(current_excess_flag)
         {
-          float prop = chassis_power.power / CHASSIS_POWER_TH/WORKING_VOLTAGE;
+          float prop = chassis_power.power / ((CHASSIS_POWER_TH+(current_excess_flag-1)*LOW_BUFFER)/WORKING_VOLTAGE);
           prop = sqrtf(prop);
           chassis_set_vx_vy(pchassis, pchassis->mecanum.speed.vx/prop, pchassis->mecanum.speed.vy/prop);
         }
-        if(HAL_GetTick()%150==0)
+        if(HAL_GetTick()%150==0) //LED for debugging
           LED_R_TOGGLE();
       }while(current_excess_flag);
     #else
