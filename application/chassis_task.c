@@ -39,7 +39,9 @@ extern ADC_HandleTypeDef hadc1,hadc2;
 struct chassis_power chassis_power; // Using a struct to store related dara from chassis
 float weight[] = {0.05f,0.05f,0.1f,0.1f,0.1f,0.1f,0.1f,0.1f,0.1f,0.2f};
 int32_t current_js;
+int32_t current_js_smooth;
 int32_t power_pidout_js;
+int32_t power_js;
 
 
 /** Edited by Y.H. Liu
@@ -255,11 +257,12 @@ int get_chassis_power(struct chassis_power *chassis_power)
 		chassis_power->voltage_debug = HAL_ADC_GetValue(&hadc2);
 	}
 
-	chassis_power->current = smooth_filter(10,((float)chassis_power->current_debug) * MAPPING_INDEX_CRT,weight);
-	chassis_power->voltage = smooth_filter(10,((float)chassis_power->voltage_debug) * MAPPING_INDEX_VTG,weight);
+	chassis_power->current = smooth_filter(10,((float)chassis_power->current_debug) * MAPPING_INDEX_CRT,weight)/2;
+	//chassis_power->voltage = smooth_filter(10,((float)chassis_power->voltage_debug) * MAPPING_INDEX_VTG,weight);
 	// chassis_power->power = chassis_power->current * chassis_power->voltage;
-  chassis_power->power = (chassis_power->current-2048)*15/819.2f;
-	current_js = (int) chassis_power->voltage;
-
+  chassis_power->power = ((chassis_power->current-2048.0f)*25.0f/2048.0f)/10.0f; // Assume the sensor is 20 A
+	current_js = (int) chassis_power->current_debug;
+	current_js_smooth = (int)chassis_power->current;
+	power_js = (int)(chassis_power->power*1000);
 	return chassis_power->power;
 }
