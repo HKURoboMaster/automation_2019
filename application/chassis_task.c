@@ -22,6 +22,7 @@
 #include "ahrs.h"
 #include "drv_imu.h"
 #include "smooth_filter.h"
+#include "drv_io.h"
 #include <math.h>
 #define RAD_TO_DEG 57.296f // 180/PI
 #define MAPPING_INDEX_CRT 1.0f
@@ -167,19 +168,18 @@ void chassis_task(void const *argument)
       {
         chassis_imu_update(pchassis);
         chassis_execute(pchassis);
-        get_chassis_power(&chassis_power); // Power Value Getter
+        current_js = get_chassis_power(&chassis_power); // Power Value Getter
         osDelayUntil(&period, 2);
         /*-------- Then, adjust the power --------*/
       //get the buffer
         extPowerHeatData_t * power = get_heat_power();
       //set the current & voltage flags
-        if(power->chassisPowerBuffer > LOW_BUFFER && 
-           chassis_power.current > (CHASSIS_POWER_TH+LOW_BUFFER)/WORKING_VOLTAGE)
+        if(power->chassisPowerBuffer > LOW_BUFFER && chassis_power.voltage>LOW_VOLTAGE && 
+           chassis_power.power > (CHASSIS_POWER_TH+LOW_BUFFER)/WORKING_VOLTAGE)
         {
           current_excess_flag = 1;
         }
-        else if(power->chassisPowerBuffer < LOW_BUFFER &&
-                chassis_power.current > CHASSIS_POWER_TH/WORKING_VOLTAGE)
+        else if(chassis_power.power > CHASSIS_POWER_TH/WORKING_VOLTAGE)
         {
           current_excess_flag = 1;
         }
@@ -196,10 +196,12 @@ void chassis_task(void const *argument)
       //control the speed ref if necessary
         if(current_excess_flag)
         {
-          float prop = chassis_power.current / CHASSIS_POWER_TH/WORKING_VOLTAGE;
+          float prop = chassis_power.power / CHASSIS_POWER_TH/WORKING_VOLTAGE;
           prop = sqrtf(prop);
           chassis_set_vx_vy(pchassis, pchassis->mecanum.speed.vx/prop, pchassis->mecanum.speed.vy/prop);
         }
+        if(HAL_GetTick()%150==0)
+          LED_R_TOGGLE();
       }while(current_excess_flag);
     #else
       chassis_imu_update(pchassis);
