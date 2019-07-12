@@ -51,9 +51,8 @@ int32_t power_pidout_js;
 */
 #ifdef CHASSIS_POWER_CTRL
   #include "referee_system.h"
-  static uint8_t reset_chassis_speed(chassis_t pchassis, uint8_t flag, float current);
-  static uint8_t detect_chassis_power(chassis_t, uint8_t *, uint8_t sprint_cmd, uint16_t sc_v, float current);
-  typedef enum {NORMAL=0, SPRINT, BUFF_RECOVER}chassis_power_t;
+  static uint8_t superCapacitor_Ctrl(chassis_t pchassis, uint8_t low_cap_flag);
+//TODO
 #endif
 
 #define km_dodge          prc_info->kb.bit.V == 1
@@ -157,62 +156,49 @@ void chassis_task(void const *argument)
       chassis_set_speed(pchassis, 0, 0, 0);
       chassis_disable(pchassis);
     }
-
     chassis_set_acc(pchassis, 0, 0, 0);
 
-    /*
-    if (rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK)
-    {
-      if (rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK)
-      {
-        vx = (float)prc_info->ch2 / 660 * MAX_CHASSIS_VX_SPEED;
-        vy = -(float)prc_info->ch1 / 660 * MAX_CHASSIS_VY_SPEED;
-        wz = -pid_calculate(&pid_follow, follow_relative_angle, 0);
-        chassis_set_offset(pchassis, ROTATE_X_OFFSET, ROTATE_Y_OFFSET);
-        chassis_set_speed(pchassis, vx, vy, wz);
-      }
-
-      if (rc_device_get_state(prc_dev, RC_S2_MID) == RM_OK)
-      {
-        vx = (float)prc_info->ch2 / 660 * MAX_CHASSIS_VX_SPEED;
-        vy = -(float)prc_info->ch1 / 660 * MAX_CHASSIS_VY_SPEED;
-        wz = -(float)prc_info->ch3 / 660 * MAX_CHASSIS_VW_SPEED;
-        chassis_set_offset(pchassis, 0, 0);
-        chassis_set_speed(pchassis, vx, vy, wz);
-      }
-
-      if (rc_device_get_state(prc_dev, RC_S2_MID2DOWN) == RM_OK)
-      {
-        chassis_set_speed(pchassis, 0, 0, 0);
-      }
-
-      if (rc_device_get_state(prc_dev, RC_S2_MID2UP) == RM_OK)
-      {
-        chassis_set_speed(pchassis, 0, 0, 0);
-      }
-
-      chassis_set_acc(pchassis, 0, 0, 0);
-    }
-    */
-
     #ifdef CHASSIS_POWER_CTRL
-      uint8_t superCapacitor_Ctrl = 0;
-      uint8_t power_excess = 0;
+      uint8_t current_excess_flag = 0;
+      uint8_t low_volatge_flag = 0;
       do
       {
-        if(power_excess)
-          power_excess = reset_chassis_speed(pchassis, power_excess, chassis_power.current);
         chassis_imu_update(pchassis);
         chassis_execute(pchassis);
         get_chassis_power(&chassis_power); // Power Value Getter
         osDelayUntil(&period, 2);
-        power_excess = detect_chassis_power(pchassis,
-                                            &superCapacitor_Ctrl,
-                                            prc_info->kb.bit.SHIFT || prc_info->ch2>600,
-                                            chassis_power.voltage,
-                                            chassis_power.current);
-        //set_cmd_to_sc(superCapacitor_Ctrl)
-      }while(power_excess);
+        /*-------- Then, adjust the power --------*/
+      //get the buffer
+        extPowerHeatData_t * power = get_heat_power();
+      //set the current & voltage flags
+        if(power->chassisPowerBuffer > LOW_BUFFER && 
+           chassis_power.current > (CHASSIS_POWER_TH+LOW_BUFFER)/WORKING_VOLTAGE)
+        {
+          current_excess_flag = 1;
+        }
+        else if(power->chassisPowerBuffer < LOW_BUFFER &&
+                chassis_power.current > CHASSIS_POWER_TH/WORKING_VOLTAGE)
+        {
+          current_excess_flag = 1;
+        }
+        else
+        {
+          current_excess_flag = 0;
+        }
+        if(chassis_power.voltage<LOW_VOLTAGE)
+          low_volatge_flag = 1;
+        else
+          low_volatge_flag = 0;
+      //control the supercap
+        uint8_t sw = superCapacitor_Ctrl(pchassis,low_volatge_flag);
+      //control the speed ref if necessary
+        if(current_excess_flag)
+        {
+          float prop = chassis_power.current / CHASSIS_POWER_TH/WORKING_VOLTAGE;
+          prop = sqrtf(prop);
+          chassis_set_vx_vy(pchassis, pchassis->mecanum.speed.vx/prop, pchassis->mecanum.speed.vy/prop);
+        }
+      }while(current_excess_flag);
     #else
       chassis_imu_update(pchassis);
       chassis_execute(pchassis);
@@ -238,97 +224,17 @@ static void chassis_imu_update(void *argc)
 }
 
 #ifdef CHASSIS_POWER_CTRL
-/**Added by Y.H. Liu
- * @Jun 18, 2019: implement the function
- *
- * Reset the chassis moving speed ref in case too much power consumed
- */
-static uint8_t reset_chassis_speed(chassis_t pchassis, uint8_t flag, float current)
+static uint8_t superCapacitor_Ctrl(chassis_t pchassis, uint8_t low_cap_flag)
 {
-  float portion;
-  switch (flag)
+  if(!low_cap_flag)
   {
-  case 1:
-    portion = sqrtf(current * WORKING_VOLTAGE / CHASSIS_POWER_TH);
-    break;
-  case 2:
-    portion = sqrtf(current * WORKING_VOLTAGE / CHASSIS_POWER_TH);
-    break;
-  case 4:
-    portion = sqrtf(current * WORKING_VOLTAGE / (0.8f * CHASSIS_POWER_TH));
-  default:
-    portion = 1;
-    break;
+    for(int i=0; i<4; i++)
+    {
+      if(pchassis->motor[i].data.speed_rpm < pchassis->mecanum.wheel_rpm[i]/20)
+        return 1;
+    }
   }
-
-  pchassis->mecanum.speed.vx /= portion;
-  pchassis->mecanum.speed.vy /= portion;
-
-  return 0;
-}
-/**Added by Y.H. Liu
- * @Jun 18, 2019: implement the function
- *
- * state update and detect whether the chassis is consuming too much power
- */
-static uint8_t detect_chassis_power(chassis_t pchassis, uint8_t * supercap_ctrl, uint8_t sprint_cmd, uint16_t sc_v, float current)
-{
-  static chassis_power_t st = NORMAL;
-  static uint32_t no_buffer_time = 0;
-  static uint32_t last_click = 0;
-  int16_t current_limit = CHASSIS_POWER_TH/WORKING_VOLTAGE;
-  extPowerHeatData_t * power = get_heat_power();
-
-  if(power->chassisPowerBuffer<=0)
-  {
-    no_buffer_time = no_buffer_time==0 ? 1 : no_buffer_time+(HAL_GetTick()-last_click);
-    last_click = HAL_GetTick();
-  }
-  else
-  {
-    no_buffer_time = 0;
-    last_click = 0;
-  }
-
-  switch (st)
-  {
-  case NORMAL:
-    *supercap_ctrl = 0;
-    if(power->chassisPowerBuffer <= LOW_BUFFER)
-      st = BUFF_RECOVER;
-    else if(sprint_cmd)
-      st = SPRINT;
-    else
-      st = NORMAL;
-    break;
-  case SPRINT:
-    *supercap_ctrl = 1;
-    if(!sprint_cmd || sc_v <= LOW_VOLTAGE)
-      st = NORMAL;
-    else if(no_buffer_time > NO_BUFFER_TIME_TH)
-      st = BUFF_RECOVER;
-    else
-      st = NORMAL;
-    break;
-  case BUFF_RECOVER:
-    *supercap_ctrl = 0;
-    current_limit *= 0.8; // limit the current below the allowed value
-    if(power->chassisPowerBuffer > 2*LOW_BUFFER)
-      st = NORMAL;
-    else
-      st = BUFF_RECOVER;
-    break;
-  default:
-    *supercap_ctrl = 0;
-    st = NORMAL;
-    break;
-  }
-
-  return current>current_limit ? 1<<(uint8_t)st : 0;
-  //thus, return 0 <=> No excessing
-  //             1 <=> NORMAL, exceeded
-  //             2 <=> SRPINT, exceeded
-  //             4 <=> RECOVERY, exceeded
+  return 0; //charge the super capacitor
 }
 #endif
 

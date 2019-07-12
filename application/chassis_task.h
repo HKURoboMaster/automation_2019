@@ -48,8 +48,8 @@ int get_chassis_power(struct chassis_power *chassis_power);
 #define CHASSIS_POWER_TH  80
 #define LOW_BUFFER  10
 #define LOW_VOLTAGE   16
-#define WORKING_VOLTAGE 21
+#define WORKING_VOLTAGE 22
 #define NO_BUFFER_TIME_TH 3000
-//#define CHASSIS_POWER_CTRL
+#define CHASSIS_POWER_CTRL
 
 #endif // __CHASSIS_TASK_H__
