@@ -36,12 +36,17 @@
 #include "offline_check.h"
 #include "referee_system.h"
 
+#include "engineer.h"
+#include "dualmotor.h"
+#include "moonrover.h"
+
 struct chassis chassis;
 static struct rc_device rc_dev;
 
 static uint8_t glb_sys_cfg;
 
 extern int ulog_console_backend_init(void);
+extern Engineer engg;
 
 void system_config(void)
 {
@@ -72,10 +77,10 @@ void hw_init(void)
     dr16_forword_callback_register(rc_data_forword_by_can);
     chassis_pid_register(&chassis, "chassis", DEVICE_CAN1);
     chassis_disable(&chassis);
-  }
-  else
-  {
-    rc_device_register(&rc_dev, "can_rc", 0);
+		dualmotor_cascade_register(&engg, "dualmotor", DEVICE_CAN1);
+		dualmotor_disable(&engg);
+		moonrover_pid_register(&engg, "moonrover", DEVICE_CAN1);
+		moonrover_disable(&engg);
   }
 
   offline_init();
@@ -85,6 +90,9 @@ osThreadId timer_task_t;
 osThreadId chassis_task_t;
 osThreadId communicate_task_t;
 osThreadId cmd_task_t;
+osThreadId dualmotor_task_t;
+osThreadId moonrover_task_t;
+osThreadId engineer_task_t;
 
 void task_init(void)
 {
@@ -104,9 +112,14 @@ void task_init(void)
   {
     osThreadDef(CHASSIS_TASK, chassis_task, osPriorityRealtime, 0, 512);
     chassis_task_t = osThreadCreate(osThread(CHASSIS_TASK), NULL);
-  }
-  else
-  {
 		
+		osThreadDef(DUALMOTOR_TASK, dualmotor_task, osPriorityNormal, 0, 512);
+		dualmotor_task_t = osThreadCreate(osThread(DUALMOTOR_TASK), NULL);
+		
+		osThreadDef(MOONROVER_TASK, moonrover_task, osPriorityNormal, 0, 512);
+		moonrover_task_t = osThreadCreate(osThread(MOONROVER_TASK), NULL);
+		
+		osThreadDef(ENGINEER_TASK, engineer_task, osPriorityNormal, 0, 512);
+		engineer_task_t = osThreadCreate(osThread(ENGINEER_TASK), NULL);
   }
 }

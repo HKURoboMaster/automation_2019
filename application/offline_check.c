@@ -23,6 +23,8 @@
 #include "offline_check.h"
 #include "timer_task.h"
 #include "infantry_cmd.h"
+#include "dualmotor.h"
+#include "moonrover.h"
 
 #define BEEP_MAX_TIMES 20
 
@@ -37,6 +39,7 @@ struct detect_device *get_offline_dev(void)
 }
 
 static chassis_t pchassis = NULL;
+extern Engineer engg;
 
 void offline_init(void)
 {
@@ -60,12 +63,12 @@ void offline_init(void)
     detect_device_add_event(&offline_dev, MOTOR2_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[2]);
     detect_device_add_event(&offline_dev, MOTOR3_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[3]);
     detect_device_add_event(&offline_dev, MOTOR4_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[4]);
+		detect_device_add_event(&offline_dev, DUALMOTOR1_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[5]);
+		detect_device_add_event(&offline_dev, DUALMOTOR2_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[6]);
+		detect_device_add_event(&offline_dev, MOONROVER1_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[7]);
+		detect_device_add_event(&offline_dev, MOONROVER2_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[8]);
   }
-  else
-  {
-    detect_device_add_event(&offline_dev, TURN_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[7]);
-  }
-
+ 
   soft_timer_register(offline_check, NULL, 20);
   can_fifo0_rx_callback_register(&can1_manage, can1_detect_update);
   can_fifo0_rx_callback_register(&can2_manage, can2_detect_update);
@@ -79,12 +82,16 @@ int32_t offline_check(void *argc)
     offline_beep_set_times(&offline_beep_times[0]);
 
     chassis_enable(pchassis);
+		dualmotor_enable(&engg);
+		moonrover_enable(&engg);
 		
 		LED_R_OFF();
   }
   else
   {
     chassis_disable(pchassis);
+		dualmotor_disable(&engg);
+		moonrover_disable(&engg);
   }
   return 0;
 }
@@ -123,11 +130,16 @@ int32_t can1_detect_update(CAN_RxHeaderTypeDef *header, uint8_t *rx_data)
     detect_device_update(&offline_dev, MOTOR4_OFFLINE_EVENT);
     break;
   case 0x205:
+		detect_device_update(&offline_dev, DUALMOTOR1_OFFLINE_EVENT);
     break;
   case 0x206:
+		detect_device_update(&offline_dev, DUALMOTOR2_OFFLINE_EVENT);
     break;
   case 0x207:
-    detect_device_update(&offline_dev, TURN_OFFLINE_EVENT);
+    detect_device_update(&offline_dev, MOONROVER1_OFFLINE_EVENT);
+    break;
+	case 0x208:
+    detect_device_update(&offline_dev, MOONROVER2_OFFLINE_EVENT);
     break;
   default:
     break;

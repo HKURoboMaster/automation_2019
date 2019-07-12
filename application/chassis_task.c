@@ -21,12 +21,15 @@
 #include "infantry_cmd.h"
 #include "ahrs.h"
 #include "drv_imu.h"
+#include "engineer.h"
 
 static float vx, vy, wz;
 
 float follow_relative_angle;
 struct pid pid_follow = {0}; //angle control
 static void chassis_imu_update(void *argc);
+
+extern Engineer engg;
 
 void chassis_task(void const *argument)
 {
@@ -51,7 +54,10 @@ void chassis_task(void const *argument)
 
   while (1)
   {
-    if (rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK)
+		if (engg.HALT_CHASSIS) {
+			chassis_set_speed(pchassis, 0, 0, 0);
+		}
+    if (rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK && !engg.HALT_CHASSIS)
     {
       if (rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK)
       {

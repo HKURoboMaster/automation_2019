@@ -61,6 +61,7 @@
 /* USER CODE BEGIN Includes */
 #include "i2c.h"
 #include "init.h"
+#include "engg_gpio.h"
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -112,6 +113,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+	ENGG_GPIO_Init();
   MX_DMA_Init();
   MX_USART6_UART_Init();
   MX_CAN1_Init();

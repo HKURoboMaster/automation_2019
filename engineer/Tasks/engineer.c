@@ -5,6 +5,8 @@
 #include "can.h"
 #include "board.h"
 #include "dbus.h"
+#include "dualmotor.h"
+#include "engg_gpio.h"
 
 /* VARIABLES: ENGINEER - related */
 float PITCH_TILL_ASSIST  = 0.5;
@@ -30,33 +32,24 @@ int32_t imu_update(Engineer engineer) {
 }
 /* END of FUNCTIONS: ENGINEER - related */
 
-/* VARIABLES: RTOS - related */
-osThreadId ENGINEER_Handle;
-/* END of VARIABLES: RTOS - related */
-
-/* FUNCTIONS: RTOS - related */
-void ENGINEER_Task(void const *argument)
+/* RTOS: ENGINEER - related */
+void engineer_task(void const *argument)
 {
-	uint32_t ENGINEER_wake_time = osKernelSysTick();
+	uint32_t period = osKernelSysTick();
+	engg.dualMotor.rest_angle = REST_ANGLE;
+	engg.dualMotor.rise_angle = RISE_ANGLE;
+	
 	for(;;) {
-		if (engg.ENGINEER_STATE == CHASSIS) {
-			// use base 2019 code to control chassis
-		}
-		else if (engg.ENGINEER_STATE == CLIMBING) {
-			imu_update(engg);
-			if (engg.pitch > PITCH_TILL_ASSIST) {
-				// spin third wheel, send CAN cmd etc
+		imu_update(engg);
+		if (engg.ENGINEER_STATE == LOCATING) {
+			if (read_sonicL() && read_sonicR()) {
+					engg.HALT_CHASSIS = 1;
+			}
+			else {
+				engg.HALT_CHASSIS = 0;
 			}
 		}
-		else if (engg.ENGINEER_STATE == LOCATING) {
-			// poll GPIO
-		}
-		osDelayUntil(&ENGINEER_wake_time, 5);
+		osDelayUntil(&period, 2);
 	}
 }
-void CREATE_ENGINEER_Task(void)
-{
-	osThreadDef(ENGINEERTask, ENGINEER_Task, osPriorityRealtime, 0, 256);
-	ENGINEER_Handle = osThreadCreate(osThread(ENGINEERTask), NULL);
-}
-/* END of FUNCTIONS: RTOS - related */
+/* END of RTOS: ENGINEER - related */

@@ -17,7 +17,7 @@
 
 #include "motor.h"
 
-#define MAX_MOTOR_NUM 6
+#define MAX_MOTOR_NUM 8
 
 static void get_encoder_data(motor_device_t motor, uint8_t can_rx_data[]);
 static void get_motor_offset(motor_data_t ptr, uint8_t can_rx_data[]);

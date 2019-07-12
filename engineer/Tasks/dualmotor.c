@@ -1,14 +1,16 @@
 #include "dualmotor.h"
-#include "motor.h"
+#include "engineer.h"
 #include "pid.h"
 #include "math.h"
-#include "engineer.h"
 
 /* VARIABLES: DUALMOTOR - related */
+extern Engineer engg;
 /* END of VARIABLES: DUALMOTOR - related */
 
 /* FUNCTIONS: DUALMOTOR - related */
-int32_t DUALMOTOR_cascade_register(Engineer *engineer, const char *name, enum device_can can) {
+static float dualmotor_get_ecd_angle(int16_t raw_ecd);
+
+int32_t dualmotor_cascade_register(Engineer *engineer, const char *name, enum device_can can) {
 	char motor_name[2][OBJECT_NAME_MAX_LEN] = {0};
   uint8_t name_len;
   int32_t err;
@@ -20,7 +22,7 @@ int32_t DUALMOTOR_cascade_register(Engineer *engineer, const char *name, enum de
 	for (int i = DUALMOTOR_OFFSET + 0; i < DUALMOTOR_OFFSET + 2; i++)
   {
     memcpy(&motor_name[i], name, name_len);
-    engineer->motor[i].can_periph = can;
+    engineer->motor[i].can_periph = can;	
     engineer->motor[i].can_id = 0x205 + i;
   }
 	memcpy(&motor_name[LEFT_DUALMOTOR_INDEX][name_len], "_LEFT\0", 6);
@@ -39,47 +41,95 @@ int32_t DUALMOTOR_cascade_register(Engineer *engineer, const char *name, enum de
 	for (int i = DUALMOTOR_OFFSET + 0; i < DUALMOTOR_OFFSET + 2; i++)
   {
     err = cascade_controller_register(&(engineer->ctrl[i]), motor_name[i],
-                                      &(engineer->cascade[i]),
-                                      &(engineer->cascade_fdb[i]), 1);
+                                      &(engineer->cascade[i - DUALMOTOR_OFFSET]),
+                                      &(engineer->cascade_fdb[i - DUALMOTOR_OFFSET]), 1);
     if (err != RM_OK) {
 			// error handle
 		}
   }
 	return RM_OK;
 }
-int32_t DUALMOTOR_execute(Engineer engineer) {
-	float motor_out;
-  struct motor_data *pdata;
-}
-/* END of FUNCTIONS: DUALMOTOR - related */
 
-/* VARIABLES: RTOS - related */
-osThreadId DUALMOTOR_Handle;
-/* END of VARIABLES: RTOS - related */
-
-/* FUNCTIONS: DUALMOTOR - related */
-float rms_error_2vel(float TARGET_left_vel, float TARGET_right_vel) {
-	float left_motor_vel = left.data.speed_rpm * (3.14159265359/30.0) / 19.0;
-	float right_motor_vel = right.data.speed_rpm * (3.14159265359/30.0) / 19.0;
-	return sqrt((TARGET_left_vel - left_motor_vel)*(TARGET_left_vel - left_motor_vel) + (TARGET_right_vel - right_motor_vel)*(TARGET_right_vel - right_motor_vel));
+int32_t dualmotor_execute(Engineer* engineer) {
+	if (engineer == NULL)
+		return -RM_INVAL;
+	
+	struct controller *ctrl_lm, *ctrl_rm;
+	float ecd_target_angle;
+	
+	if (engineer->ENGINEER_STATE == CLAW_ROTATE) {
+		ecd_target_angle = engineer->dualMotor.rise_angle;
+	}
+	else {
+		ecd_target_angle = engineer->dualMotor.rest_angle;
+	}
+	
+	ctrl_lm = &(engineer->ctrl[LEFT_DUALMOTOR_INDEX]);
+	ctrl_rm = &(engineer->ctrl[RIGHT_DUALMOTOR_INDEX]);
+	
+	controller_set_input(ctrl_lm, ecd_target_angle);
+	controller_set_input(ctrl_rm, ecd_target_angle);
+	
+	float motor_out_lm, motor_out_rm;
+	struct motor_data *pdata_lm, *pdata_rm;
+	
+	pdata_lm = motor_device_get_data(&(engineer->motor[LEFT_DUALMOTOR_INDEX]));
+	pdata_rm = motor_device_get_data(&(engineer->motor[RIGHT_DUALMOTOR_INDEX]));
+	
+	engineer->dualMotor.left_ecd_angle = dualmotor_get_ecd_angle(pdata_lm->ecd);
+	engineer->dualMotor.right_ecd_angle = dualmotor_get_ecd_angle(pdata_rm->ecd);
+	
+	controller_execute(&(engineer->ctrl[LEFT_DUALMOTOR_INDEX]), (void *)engineer);
+	controller_execute(&(engineer->ctrl[RIGHT_DUALMOTOR_INDEX]), (void *)engineer);
+	
+  controller_get_output(&(engineer->ctrl[LEFT_DUALMOTOR_INDEX]), &motor_out_lm);
+	controller_get_output(&(engineer->ctrl[RIGHT_DUALMOTOR_INDEX]), &motor_out_rm);
+	
+  motor_device_set_current(&(engineer->motor[LEFT_DUALMOTOR_INDEX]), (int16_t)motor_out_lm);
+	motor_device_set_current(&(engineer->motor[RIGHT_DUALMOTOR_INDEX]), (int16_t)motor_out_rm);
+	
+	return RM_OK;
 }
-void DUALMOTOR_Task(void const *argument)
+
+static float dualmotor_get_ecd_angle(int16_t raw_ecd)
 {
-	uint32_t DUALMOTOR_wake_time = osKernelSysTick();
-	float TARGET_left_pos, TARGET_right_pos, TARGET_left_vel, TARGET_right_vel;
-	float eps = 0.1;
-	for(;;) {	// POSITION
-		left_motor.outer.current_value = left.data.total_angle / left.data.round_cnt;
-		right_motor.outer.current_value = right.data.total_angle / right.data.round_cnt;
-		TARGET_left_vel = CASCADE_OUTER_CALC(TARGET_left_pos, &left_motor);
-		TARGET_right_vel = CASCADE_OUTER_CALC(TARGET_right_pos, &right_motor);
-		while(rms_error_2vel(TARGET_left_vel, TARGET_right_vel) > eps) {	// SPEED
-			left_motor.inner.current_value = left.data.speed_rpm * (3.14159265359/30.0) / 19.0;
-			right_motor.inner.current_value = right.data.speed_rpm * (3.14159265359/30.0) / 19.0;
-			TRANSMIT_Can(CASCADE_INNER_CALC(TARGET_left_vel, &left_motor), 0, 0, CASCADE_INNER_CALC(TARGET_right_vel, &right_motor));
-			osDelayUntil(&DUALMOTOR_wake_time, 5);
-		}
-    osDelayUntil(&DUALMOTOR_wake_time, 5);
+  return fabs(raw_ecd / 8191.0) * 360.0;
+}
+
+int32_t dualmotor_enable(Engineer* engineer)
+{
+  if (engineer == NULL)
+    return -RM_INVAL;
+
+  for (int i = DUALMOTOR_OFFSET + 0; i < DUALMOTOR_OFFSET + 2; i++)
+  {
+    controller_enable(&(engineer->ctrl[i])); 
   }
+
+  return RM_OK;
+}
+
+int32_t dualmotor_disable(Engineer* engineer)
+{
+  if (engineer == NULL)
+    return -RM_INVAL;
+
+  for (int i = DUALMOTOR_OFFSET + 0; i < DUALMOTOR_OFFSET + 2; i++)
+  {
+    controller_disable(&(engineer->ctrl[i])); 
+  }
+
+  return RM_OK;
 }
 /* END of FUNCTIONS: DUALMOTOR - related */
+
+/* RTOS: DUALMOTOR - related */
+void dualmotor_task(void const *argument)
+{
+  uint32_t period = osKernelSysTick();
+	for(;;) {
+		dualmotor_execute(&engg);
+    osDelayUntil(&period, 2);
+	}
+}
+/* END of RTOS: DUALMOTOR - related */
