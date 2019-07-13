@@ -43,6 +43,7 @@ int32_t current_js;
 int32_t current_js_smooth;
 int32_t power_pidout_js;
 int32_t power_js;
+uint8_t current_excess_flag_js;
 
 
 /** Edited by Y.H. Liu
@@ -199,9 +200,14 @@ void chassis_task(void const *argument)
           float prop = chassis_power.power / ((CHASSIS_POWER_TH+(current_excess_flag-1)*LOW_BUFFER)/WORKING_VOLTAGE);
           prop = sqrtf(prop);
           chassis_set_vx_vy(pchassis, pchassis->mecanum.speed.vx/prop, pchassis->mecanum.speed.vy/prop);
+          LED_R_ON();
         }
-        if(HAL_GetTick()%150==0) //LED for debugging
-          LED_R_TOGGLE();
+        else
+        {
+          LED_R_OFF();
+        }
+        
+        current_excess_flag_js = current_excess_flag;
       }while(current_excess_flag);
     #else
       chassis_imu_update(pchassis);
@@ -262,9 +268,9 @@ int get_chassis_power(struct chassis_power *chassis_power)
 	chassis_power->current = smooth_filter(10,((float)chassis_power->current_debug) * MAPPING_INDEX_CRT,weight)/2;
 	//chassis_power->voltage = smooth_filter(10,((float)chassis_power->voltage_debug) * MAPPING_INDEX_VTG,weight);
 	// chassis_power->power = chassis_power->current * chassis_power->voltage;
-  chassis_power->power = ((chassis_power->current-2048.0f)*25.0f/2048.0f)/10.0f; // Assume the sensor is 20 A
-	current_js = (int) chassis_power->current_debug;
-	current_js_smooth = (int)chassis_power->current;
+  chassis_power->power = ((chassis_power->current-2048.0f)*25.0f/1024.0f)/10.0f; // Assume the sensor is 20 A
+	current_js = (int) (chassis_power->current_debug*1000);
+	current_js_smooth = (int) (chassis_power->current*1000);
 	power_js = (int)(chassis_power->power*1000);
 	return chassis_power->power;
 }
