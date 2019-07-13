@@ -197,8 +197,15 @@ void gimbal_task(void const *argument)
         //reserved for get rid of the uncontrollable dodging when necessary
         if(prc_info->kb.bit.Z)
         {
-          pgimbal->param.yaw_ecd_center += ((float)prc_info->wheel/RC_CH_SCALE);
-          gimbal_set_offset(pgimbal, pgimbal->param.yaw_ecd_center, pgimbal->param.pitch_ecd_center);
+          if(!prc_info->kb.bit.CTRL)
+          {
+            pgimbal->param.yaw_ecd_center += ((float)prc_info->wheel/RC_CH_SCALE);
+            gimbal_set_offset(pgimbal, pgimbal->param.yaw_ecd_center, pgimbal->param.pitch_ecd_center);
+          }
+          else
+          {
+            mpu_manual_cali(0, 2*prc_info->wheel/RC_CH_SCALE, 0);
+          }
         }
       }
     }
