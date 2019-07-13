@@ -39,7 +39,7 @@ enum object_class_type
   Object_Class_Module = 1,
   Object_Class_Controller = 2,
   Object_Class_Chassis = 3,
-  Object_Class_Gimbal = 4,
+  Object_Class_DualMotor = 4,
   Object_Class_Shoot = 5,
   Object_Class_Unknown,
 };

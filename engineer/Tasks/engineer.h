@@ -27,6 +27,7 @@
 /* END of STATES: Engineer - related */
 
 typedef struct Engineer {
+	struct object parent;
 	float roll, yaw, pitch;
 	int ENGINEER_STATE;
 	int HALT_CHASSIS;
