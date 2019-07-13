@@ -60,6 +60,7 @@
 #define CMD_RC_DATA_FORWORD                 (0x0401u)
 #define CMD_PUSH_UWB_INFO                   (0x0402u)
 #define CMD_GIMBAL_ADJUST                   (0x0403u)
+#define CMD_CHASSIS_POWER                   (0x0404u)
 
 #pragma pack(push,1)
 
@@ -161,5 +162,20 @@ void infantry_cmd_task(void const * argument);
 int32_t gimbal_push_info(void *argc);
 int32_t chassis_push_info(void *argc);
 struct manifold_cmd *get_manifold_cmd(void);
+
+/*-------- Send current info to gimbal --------*/
+int32_t power_data_sent_by_can(uint8_t current_flag, uint8_t voltage_flag, float current, float voltage, float buffer);
+#pragma pack(push,2)
+struct chassis_power_data_t
+{
+  uint8_t current_flag;
+  uint8_t voltage_flag;
+  float current;
+  float voltage;
+  float buffer;
+};
+#pragma pack(pop)
+/*-------- For chassis power receiver --------*/
+int32_t chassis_power_callback(uint8_t * buff, uint16_t len);
 
 #endif // __INFANTRY_H__

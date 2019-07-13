@@ -22,7 +22,6 @@
 #include "ahrs.h"
 #include "drv_imu.h"
 #include "smooth_filter.h"
-#include "drv_io.h"
 #include <math.h>
 #define RAD_TO_DEG 57.296f // 180/PI
 #define MAPPING_INDEX_CRT 1.0f
@@ -173,9 +172,9 @@ void chassis_task(void const *argument)
         osDelayUntil(&period, 2);
         /*-------- Then, adjust the power --------*/
       //get the buffer
-        extPowerHeatData_t * power = get_heat_power();
+        extPowerHeatData_t * referee_power = get_heat_power();
       //set the current & voltage flags
-        if(power->chassisPowerBuffer > LOW_BUFFER && chassis_power.voltage>LOW_VOLTAGE && 
+        if(referee_power->chassisPowerBuffer > LOW_BUFFER && chassis_power.voltage>LOW_VOLTAGE && 
            chassis_power.power > (CHASSIS_POWER_TH+LOW_BUFFER)/WORKING_VOLTAGE)
         {
           current_excess_flag = 2;
@@ -200,14 +199,11 @@ void chassis_task(void const *argument)
           float prop = chassis_power.power / ((CHASSIS_POWER_TH+(current_excess_flag-1)*LOW_BUFFER)/WORKING_VOLTAGE);
           prop = sqrtf(prop);
           chassis_set_vx_vy(pchassis, pchassis->mecanum.speed.vx/prop, pchassis->mecanum.speed.vy/prop);
-          LED_R_ON();
         }
-        else
-        {
-          LED_R_OFF();
-        }
-        
         current_excess_flag_js = current_excess_flag;
+
+        power_data_sent_by_can(current_excess_flag, low_volatge_flag, chassis_power.power, chassis_power.voltage, referee_power->chassisPowerBuffer);
+
       }while(current_excess_flag);
     #else
       chassis_imu_update(pchassis);
