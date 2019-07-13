@@ -264,7 +264,7 @@ int get_chassis_power(struct chassis_power *chassis_power)
 	chassis_power->current = smooth_filter(10,((float)chassis_power->current_debug) * MAPPING_INDEX_CRT,weight)/2;
 	//chassis_power->voltage = smooth_filter(10,((float)chassis_power->voltage_debug) * MAPPING_INDEX_VTG,weight);
 	// chassis_power->power = chassis_power->current * chassis_power->voltage;
-  chassis_power->power = ((chassis_power->current-2048.0f)*25.0f/1024.0f)/10.0f; // Assume the sensor is 20 A
+  chassis_power->power = (((chassis_power->current-2048.0f)*25.0f/1024.0f)/10.0f-2.45f)*3; // Assume the sensor is 20 A
 	current_js = (int) (chassis_power->current_debug*1000);
 	current_js_smooth = (int) (chassis_power->current*1000);
 	power_js = (int)(chassis_power->power*1000);
