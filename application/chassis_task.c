@@ -246,3 +246,65 @@ int get_chassis_power(struct chassis_power *chassis_power)
 	power_js = (int)(chassis_power->power*1000);
 	return chassis_power->power;
 }
+
+/**
+ * Jerry @10 Jul
+ * Control the direction of v so that sentry won't crash.
+ */
+float direction_control(float v) {
+  float res_v;
+  if (left_blocked) {
+    res_v = (v < 0 ? 0 : v);
+  }
+  if (right_blocked) {
+    res_v = (v > 0 ? 0 : v);
+  }
+  return res_v;
+}
+
+/**
+ * Jerry @10 Jul
+ * Update IR Sensor's signal as well as updating jscope
+ * variables.
+ */
+void check_ir_signal(void) {
+  left_blocked = (HAL_GPIO_ReadPin(IR_LEFT_Port, IR_LEFT_Pin) == GPIO_PIN_RESET);
+  right_blocked = (HAL_GPIO_ReadPin(IR_RIGHT_Port, IR_RIGHT_Pin) == GPIO_PIN_RESET);
+  left_ir_js = left_blocked ? 5000 : 0;
+  right_ir_js = right_blocked ? -5000 : 0;
+}
+
+/**
+ * Jerry @10 Jul
+ * Set the chassis state to be one of the three states.
+ * Example: set_state(&state, IDLE_STATE);
+ */
+void set_state(chassis_state_t * state, chassis_state_name_t dest_state) {
+  state->state_name = dest_state;
+  switch (dest_state) {
+    case IDLE_STATE:
+      state->constant_spd = IDLE_CONSTANT_SPEED;
+      break;
+    case NORMAL_STATE:
+      state->constant_spd = NORMAL_CONSTANT_SPEED;
+      break;
+    case BOOST_STATE:
+      state->constant_spd = BOOST_CONSTANT_SPEED;
+  }
+}
+
+/**
+ * Jerry @10 Jul
+ * Get the chassis state name.
+ */
+chassis_state_name_t get_state(const chassis_state_t * state) {
+  return state->state_name;
+}
+
+/**
+ * Jerry @10 Jul
+ * Get the constant speed under current state.
+ */
+float get_spd(const chassis_state_t * state) {
+  return state->constant_spd;
+}
