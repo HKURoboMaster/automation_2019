@@ -1,3 +1,6 @@
+## Latest Update on Sentry
+
+- Everything related to chassis movement logic will be put in `chassis_calc.c` from now on.
 
 ## 概述
 
