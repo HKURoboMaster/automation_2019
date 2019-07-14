@@ -314,6 +314,18 @@ static void get_mpu_gyro_offset(void)
   imu_cali.gyro_flag = 0;
 }
 
+/**Added by Y.H. Liu
+ * @Jul 14, 2019: Define the funtion
+ * 
+ * For external usage, to cali the imu manually
+ */
+void mpu_manual_cali(int16_t delta_gx_offset, int16_t delta_gy_offset, int16_t delta_gz_offset)
+{
+  mpu_data.gx_offset = mpu_data.gx_offset + delta_gx_offset;
+  mpu_data.gy_offset = mpu_data.gy_offset + delta_gy_offset;
+  mpu_data.gz_offset = mpu_data.gz_offset + delta_gz_offset;
+}
+
 static void get_mpu_acc_offset(void)
 {
   int i;

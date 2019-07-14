@@ -17,7 +17,7 @@
 
 #ifndef __GIMBAL_H__
 #define __GIMBAL_H__
-#define HERO_ROBOT
+// #define HERO_ROBOT
 
 #ifdef GIMBAL_H_GLOBAL
   #define GIMBAL_H_EXTERN

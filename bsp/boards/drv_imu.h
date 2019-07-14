@@ -69,4 +69,7 @@ uint8_t mpu_device_init(void);
 void mpu_get_data(struct ahrs_sensor *sensor);
 void mpu_get_temp(float *tmp);
 
+/*-------- for external adjustment --------*/
+void mpu_manual_cali(int16_t delta_gx_offset, int16_t delta_gy_offset, int16_t delta_gz_offset);
+
 #endif // __DRV_IMU_H__

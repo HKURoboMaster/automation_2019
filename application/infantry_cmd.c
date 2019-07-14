@@ -66,6 +66,13 @@ int32_t gimbal_adjust_cmd(uint8_t *buff, uint16_t len)
   return 0;
 }
 
+/**Added by Y.H. Liu
+ * @Jul 13, 2019: define js variables
+ * 
+ * for chassis power debugging via gimbal
+ */
+uint8_t current_excess, low_voltage;
+int32_t current_detecting_js, voltage_detecting_js, buffer_remained_js;
 /** Edited by Y.H. Liu
  *  @Jun 12, 2019: disbable the auto mode and implement the auto_aiming
  *
@@ -103,6 +110,7 @@ void infantry_cmd_task(void const *argument)
     protocol_rcv_cmd_register(CMD_SET_FRICTION_SPEED, shoot_firction_ctrl);
     protocol_rcv_cmd_register(CMD_SET_SHOOT_FREQUENTCY, shoot_ctrl);
     protocol_rcv_cmd_register(CMD_GIMBAL_ADJUST, gimbal_adjust_cmd);
+    protocol_rcv_cmd_register(CMD_CHASSIS_POWER, chassis_power_callback);
   }
 
   while (1)
@@ -301,4 +309,34 @@ int32_t chassis_push_info(void *argc)
   protocol_send(MANIFOLD2_ADDRESS, CMD_PUSH_CHASSIS_INFO, &cmd_chassis_info, sizeof(cmd_chassis_info));
 
   return 0;
+}
+
+/**Added by Y.H. Liu
+ * @Jul 13, 2019: Declare the function
+ * 
+ * Send the chassis current data
+ */
+int32_t power_data_sent_by_can(uint8_t current_flag, uint8_t voltage_flag, float current, float voltage, float buffer)
+{
+  struct chassis_power_data_t chassis_power_data = {current_flag, voltage_flag, current, voltage, buffer};
+  protocol_send(GIMBAL_ADDRESS, CMD_CHASSIS_POWER, &chassis_power_data, sizeof(struct chassis_power_data_t));
+  return RM_OK;
+}
+/**Added by Y.H. Liu
+ * @Jul 13, 2019: Declare the function
+ * 
+ * Callback for chassis_power info from chassis board
+ */
+int32_t chassis_power_callback(uint8_t *buff, uint16_t len)
+{
+  if(len == sizeof(struct chassis_power_data_t))
+  {
+    struct chassis_power_data_t * pchassis_power = (struct chassis_power_data_t *) buff; 
+    current_excess = pchassis_power->current_flag;
+    low_voltage = pchassis_power->voltage_flag;
+    current_detecting_js = pchassis_power->current;
+    voltage_detecting_js = pchassis_power->voltage;
+    buffer_remained_js = pchassis_power->buffer;
+  }
+	return RM_OK;
 }
