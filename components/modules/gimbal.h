@@ -17,7 +17,6 @@
 
 #ifndef __GIMBAL_H__
 #define __GIMBAL_H__
-// #define HERO_ROBOT
 
 #ifdef GIMBAL_H_GLOBAL
   #define GIMBAL_H_EXTERN
@@ -26,17 +25,10 @@
 #endif
 
 /* gimbal relevant */
-#ifndef HERO_ROBOT
-#define PITCH_ANGLE_MAX      20.0f
-#define PITCH_ANGLE_MIN      -15.0f
-#define YAW_ANGLE_MAX        180.0f
-#define YAW_ANGLE_MIN       -179.0f
-#else
-#define PITCH_ANGLE_MAX      17.5f
-#define PITCH_ANGLE_MIN      -2.5f
-#define YAW_ANGLE_MAX        30.0f
-#define YAW_ANGLE_MIN       -30.0f
-#endif
+#define PITCH_ANGLE_MAX       5.5f //TODO: Adjust for the sentry gimbal
+#define PITCH_ANGLE_MIN     -20.5f //TODO: Adjust for the sentry gimbal
+#define YAW_ANGLE_MAX       180.0f
+#define YAW_ANGLE_MIN      -179.0f
 #define YAW_KB_SPEED        0.17f
 
 /************************** gimbal parameter *****************************/
@@ -52,9 +44,9 @@
 /* the deceleration ratio of yaw axis motor */
 #define YAW_DECELE_RATIO       1.0f
 /* the positive direction of pitch axis motor */
-#define PITCH_MOTOR_POSITIVE_DIR -1.0f
+#define PITCH_MOTOR_POSITIVE_DIR  1.0f
 /* the positive direction of yaw axis motor */
-#define YAW_MOTOR_POSITIVE_DIR  -1.0f
+#define YAW_MOTOR_POSITIVE_DIR   -1.0f //TODO: change the motor direction (compared to the one on Intantry)
 
 #include "motor.h"
 #include "pid_controller.h"
