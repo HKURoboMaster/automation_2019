@@ -31,7 +31,6 @@
 #define SEND_PROTOCOL_SIGNAL      ( 1 << 1 )
 #define REFEREE_SIGNAL            ( 1 << 2 )
 
-#define HERO_ROBOT
 
 enum interface{
   USB_INTERFACE = 0,

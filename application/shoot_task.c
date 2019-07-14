@@ -34,6 +34,7 @@ int32_t trigger_wheel_watch;
  * @Jun 20, 2019: adaption for hero
  * @Jul 3, 2019: retrieve the heat data from refree system
  * @Jul 7, 2019: modify the adaption for hero
+ * @Jul 14, 2019: adaption for sentry
  * 
  * Implement the control logic described in Control.md
  */
@@ -106,7 +107,6 @@ void shoot_task(void const *argument)
     extPowerHeatData_t * heatPowerData = get_heat_power();
     uint16_t heatLimit = get_heat_limit();
 
-    #ifndef HERO_ROBOT
     if (heatPowerData->shooterHeat0 < heatLimit && rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK && fric_on) //not in disabled mode
     {
       if (rc_device_get_state(prc_dev, RC_WHEEL_UP) == RM_OK
@@ -128,24 +128,6 @@ void shoot_task(void const *argument)
         shoot_set_cmd(pshoot, SHOOT_STOP_CMD, 0);
       }
     }
-    #else
-    if (heatPowerData->shooterHeat1 < heatLimit && rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK && fric_on) //not in disabled mode
-    {
-      if (rc_device_get_state(prc_dev, RC_WHEEL_UP) == RM_OK && prc_dev->last_rc_info.wheel < 300)
-      {
-        shoot_set_cmd(pshoot, SHOOT_ONCE_CMD, 1);
-      }
-      else if ((rc_device_get_state(prc_dev, RC_WHEEL_DOWN) == RM_OK && prc_dev->last_rc_info.wheel > -300)
-            || mouse_shoot_control(prc_dev)==click )
-      {
-        shoot_set_cmd(pshoot, SHOOT_ONCE_CMD, 1);
-      }
-      else
-      {
-        shoot_set_cmd(pshoot, SHOOT_STOP_CMD, 0);
-      }
-    }
-    #endif
     
     shoot_execute(pshoot);
     osDelayUntil(&period, 5);
@@ -236,20 +218,11 @@ mouse_cmd_e mouse_shoot_control(rc_device_t rc_dev)
 
 /**Addd by Y. H. Liu
  * @Jul 3, 2019: declare the function and create the defination framework
+ * @Jul 14, 2019: change for sentry
  * 
  * Calculate the heat limit
  */
 static uint16_t get_heat_limit(void)
 {
-  extGameRobotState_t * robotState = get_robot_state();
-  uint16_t limit = 4096;
-  if(robotState->robotLevel != 0)
-  {
-    #ifndef HERO_ROBOT
-    limit = robotState->robotLevel * 120 + 120;
-    #else
-    limit = robotState->robotLevel * 100 + 100;
-    #endif
-  }
-  return limit; 
+  return 480u; 
 }

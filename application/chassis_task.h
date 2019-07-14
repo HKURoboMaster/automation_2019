@@ -17,7 +17,6 @@
 
 #ifndef __CHASSIS_TASK_H__
 #define __CHASSIS_TASK_H__
-// #define HERO_ROBOT
 
 #ifdef CHASSIS_TASK_H_GLOBAL
   #define CHASSIS_TASK_H_EXTERN 
@@ -91,11 +90,11 @@ int get_chassis_power(struct chassis_power *chassis_power);
 #define RC_CH_SCALE 660
 #define CHASSIS_NETURAL_TH 10
 
-#define CHASSIS_POWER_TH  80
+#define CHASSIS_POWER_TH  20
 #define LOW_BUFFER  10
 #define LOW_VOLTAGE   16
 #define WORKING_VOLTAGE 22
-#define NO_BUFFER_TIME_TH 3000
+#define NO_BUFFER_TIME_TH 1000
 #define CHASSIS_POWER_CTRL
 
 #endif // __CHASSIS_TASK_H__

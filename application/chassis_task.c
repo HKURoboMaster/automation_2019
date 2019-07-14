@@ -61,13 +61,12 @@ uint8_t current_excess_flag_js;
   * @Jun 12, 2019: modified the mode switch
   * @Jun 18, 2019: chassis current control
   * @Jun 20, 2019: adaption for hero
+  * @Jun 14, 2019: delete the supercapacitor control for sentry
   *
   * Implement the customized control logic and FSM, details in Control.md
 */
 #ifdef CHASSIS_POWER_CTRL
   #include "referee_system.h"
-  static uint8_t superCapacitor_Ctrl(chassis_t pchassis, uint8_t low_cap_flag);
-//TODO
 #endif
 
 #define km_dodge          prc_info->kb.bit.V == 1
@@ -139,7 +138,7 @@ void chassis_task(void const *argument)
 
     #ifdef CHASSIS_POWER_CTRL
       uint8_t current_excess_flag = 0;
-      uint8_t low_volatge_flag = 0;
+      uint8_t low_volatge_flag = 0xFF;
       do
       {
         chassis_imu_update(pchassis);
@@ -163,13 +162,6 @@ void chassis_task(void const *argument)
         {
           current_excess_flag = 0;
         }
-        if(chassis_power.voltage<LOW_VOLTAGE)
-          low_volatge_flag = 1;
-        else
-          low_volatge_flag = 0;
-      //control the supercap
-        uint8_t sw = superCapacitor_Ctrl(pchassis,low_volatge_flag);
-      //control the speed ref if necessary
         if(current_excess_flag)
         {
           float prop = chassis_power.power / ((CHASSIS_POWER_TH+(current_excess_flag-1)*LOW_BUFFER)/WORKING_VOLTAGE);
@@ -204,21 +196,6 @@ static void chassis_imu_update(void *argc)
   mahony_ahrs_updateIMU(&mpu_sensor, &mahony_atti);
   chassis_gyro_update(pchassis, -mahony_atti.yaw, -mpu_sensor.wz * RAD_TO_DEG);
 }
-
-#ifdef CHASSIS_POWER_CTRL
-static uint8_t superCapacitor_Ctrl(chassis_t pchassis, uint8_t low_cap_flag)
-{
-  if(!low_cap_flag)
-  {
-    for(int i=0; i<4; i++)
-    {
-      if(pchassis->motor[i].data.speed_rpm < pchassis->mecanum.wheel_rpm[i]/20)
-        return 1;
-    }
-  }
-  return 0; //charge the super capacitor
-}
-#endif
 
 int32_t chassis_set_relative_angle(float angle)
 {
