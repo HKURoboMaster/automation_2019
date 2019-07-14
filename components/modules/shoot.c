@@ -60,6 +60,9 @@ int32_t shoot_pid_register(struct shoot *shoot, const char *name, enum device_ca
   shoot->param.turn_speed = TURN_SPEED_DEFAULT;
   shoot->param.check_timeout = BLOCK_CHECK_TIMEOUT_DEFAULT;
 
+  shoot->fric_spd[0] = FRIC_MIN_SPEED;
+  shoot->fric_spd[1] = FRIC_MIN_SPEED;
+
   memcpy(&motor_name[name_len], "_TURN\0", 6);
 
   err = motor_device_register(&(shoot->motor), motor_name, 0);
@@ -383,11 +386,19 @@ static uint8_t trigger_motor_status(struct shoot * shoot)
   trigger_motor_rotation += abs(shoot->motor.data.total_angle - total_angle_last)/36.0f;
   total_angle_last = shoot->motor.data.total_angle;
   trigger_motor_rotation = fmodf(trigger_motor_rotation, 360.0f);
+  #ifndef HERO_ROBOT
   float bullet_passing_offset = fmodf(trigger_motor_rotation, 45.0f);
   if(bullet_passing_offset>=5 && bullet_passing_offset<40 && trigger_motor_rot_last!=trigger_motor_rotation)
     return TRIG_BOUNCE_UP;
   else 
     return TRIG_PRESS_DOWN;
+  #else
+  float bullet_passing_offset = fmodf(trigger_motor_rotation, 72.0f);
+  if(bullet_passing_offset>=5 && bullet_passing_offset<67 && trigger_motor_rot_last!=trigger_motor_rotation)
+    return TRIG_BOUNCE_UP;
+  else 
+    return TRIG_PRESS_DOWN;
+  #endif
 }
 
 /**Edited by Y.H Liu

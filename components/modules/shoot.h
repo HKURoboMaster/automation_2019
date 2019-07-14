@@ -32,7 +32,7 @@
 #define SHOOT_CONTINUOUS_CMD (2u)
 
 #define FIRC_STOP_SPEED 100u
-#define FIRC_MAX_SPEED 200u
+#define FIRC_MAX_SPEED 180u //MAX=200u, for safety set it to be 180
 #define FRIC_MIN_SPEED 99u
 
 #define BLOCK_CURRENT_DEFAULT 26000.0F

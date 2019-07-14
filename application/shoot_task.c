@@ -107,10 +107,7 @@ void shoot_task(void const *argument)
     uint16_t heatLimit = get_heat_limit();
 
     #ifndef HERO_ROBOT
-    if (heatPowerData->shooterHeat0 < heatLimit && rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK && !fric_on) //not in disabled mode
-    #else
-    if (heatPowerData->shooterHeat1 < heatLimit && rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK && !fric_on) //not in disabled mode
-    #endif
+    if (heatPowerData->shooterHeat0 < heatLimit && rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK && fric_on) //not in disabled mode
     {
       if (rc_device_get_state(prc_dev, RC_WHEEL_UP) == RM_OK
         || mouse_shoot_control(prc_dev)==press)
@@ -119,11 +116,7 @@ void shoot_task(void const *argument)
         // {
         //   shoot_set_cmd(pshoot, SHOOT_CONTINUOUS_CMD, 0);
         // }
-        #ifndef HERO_ROBOT
         shoot_set_cmd(pshoot, SHOOT_CONTINUOUS_CMD, CONTIN_BULLET_NUM);
-        #else
-        shoot_set_cmd(pshoot, SHOOT_ONCE_CMD, 1);
-        #endif
       }
       else if ((rc_device_get_state(prc_dev, RC_WHEEL_DOWN) == RM_OK && prc_dev->last_rc_info.wheel > -300)
             || mouse_shoot_control(prc_dev)==click)
@@ -135,6 +128,24 @@ void shoot_task(void const *argument)
         shoot_set_cmd(pshoot, SHOOT_STOP_CMD, 0);
       }
     }
+    #else
+    if (heatPowerData->shooterHeat1 < heatLimit && rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK && fric_on) //not in disabled mode
+    {
+      if (rc_device_get_state(prc_dev, RC_WHEEL_UP) == RM_OK && prc_dev->last_rc_info.wheel < 300)
+      {
+        shoot_set_cmd(pshoot, SHOOT_ONCE_CMD, 1);
+      }
+      else if ((rc_device_get_state(prc_dev, RC_WHEEL_DOWN) == RM_OK && prc_dev->last_rc_info.wheel > -300)
+            || mouse_shoot_control(prc_dev)==click )
+      {
+        shoot_set_cmd(pshoot, SHOOT_ONCE_CMD, 1);
+      }
+      else
+      {
+        shoot_set_cmd(pshoot, SHOOT_STOP_CMD, 0);
+      }
+    }
+    #endif
     
     shoot_execute(pshoot);
     osDelayUntil(&period, 5);
@@ -163,7 +174,7 @@ int32_t shoot_firction_toggle(shoot_t pshoot, uint8_t toggled)
   }
   else
   {
-    shoot_set_fric_speed(pshoot, 195, 195);
+    shoot_set_fric_speed(pshoot, 175, 175);
     turn_on_laser();
   }
   return 0;
@@ -205,7 +216,7 @@ mouse_cmd_e mouse_shoot_control(rc_device_t rc_dev)
     {
       case non:
         ret_val = click;
-        pressed_count += 1;
+        pressed_count = 1;
         break;
       case click:
         pressed_count += 1;
@@ -220,7 +231,7 @@ mouse_cmd_e mouse_shoot_control(rc_device_t rc_dev)
     pressed_count = 0;
     ret_val = non;
   }
-  return ret_val;
+  return (pressed_count>=10 && ret_val==click) ? non : ret_val;
 } 
 
 /**Addd by Y. H. Liu
