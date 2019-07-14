@@ -28,6 +28,7 @@
 #include "infantry_cmd.h"
 
 #define BEEP_MAX_TIMES 20
+#define RC_CONNECTED
 
 static struct detect_device offline_dev;
 static uint8_t offline_beep_times[BEEP_MAX_TIMES];
@@ -59,10 +60,9 @@ void offline_init(void)
 
   detect_device_register(&offline_dev, "detect", 0, 0);
 
-	int using_rm = USING_RM;
-  if (using_rm) {
-    detect_device_add_event(&offline_dev, RC_OFFLINE_EVENT, 100, rc_offline_callback, NULL);
-  }
+  #ifdef RC_CONNECTED
+  detect_device_add_event(&offline_dev, RC_OFFLINE_EVENT, 100, rc_offline_callback, NULL);
+  #endif
 
   if (app == CHASSIS_APP)
   {
@@ -73,9 +73,9 @@ void offline_init(void)
   }
   else
   {
-    // detect_device_add_event(&offline_dev, YAW_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[5]);
-    // detect_device_add_event(&offline_dev, PITCH_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[6]);
-    // detect_device_add_event(&offline_dev, TURN_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[7]);
+    detect_device_add_event(&offline_dev, YAW_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[5]);
+    detect_device_add_event(&offline_dev, PITCH_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[6]);
+    detect_device_add_event(&offline_dev, TURN_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[7]);
   }
 
   soft_timer_register(offline_check, NULL, 20);

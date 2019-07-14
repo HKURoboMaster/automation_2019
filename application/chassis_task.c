@@ -17,6 +17,7 @@
 
 #include "dbus.h"
 #include "chassis_task.h"
+#include "chassis_calc.h"
 #include "timer_task.h"
 #include "infantry_cmd.h"
 #include "ahrs.h"
@@ -32,10 +33,13 @@ float follow_relative_angle;
 struct pid pid_follow = {0}; //angle control
 static void chassis_imu_update(void *argc);
 
-///=======ir & control global var========
+// =======uncomment this if using rc, not random movement=======
+// #define USING_RC_CTRL_VY
+#define RC_CONNECTED
+
+//=======ir & control global var========
 int left_blocked = 0, right_blocked = 0;  //IR detects if left or right side is blocked
-int left_ir_js = 0, right_ir_js = 0;  //for jscope
-int using_rm = USING_RM;  //if using a remote control, if in use then 1
+int left_ir_js = 0, right_ir_js = 0;  // for jscope
 
 //=======chassis movement logic global var========
 chassis_state_t state = {IDLE_STATE, IDLE_CONSTANT_SPEED}; //The state of chassis
@@ -43,6 +47,7 @@ cv_dynamic_event_t dynamic_eve = ENEMY_STAY_STILL;
 cv_static_event_t static_eve = ENEMY_NOT_DETECTED;
 power_event_t power_eve = POWER_NORMAL;
 armor_event_t armor_eve = NO_HIT_FOR_THREE_SEC;
+int vy_js = 0; // for debugging vy
 
 /**Eric Edited get data from ADC
   * @Jul 3, 2019: Add power gettter function: get_chassis_power
@@ -96,12 +101,22 @@ void chassis_task(void const *argument)
 
   chassis_disable(pchassis);
 
+  generate_movement(); // initialize a movement
+
+  set_state(&state, IDLE_STATE); // default state: idle
+
   while (1)
   {
     check_ir_signal(); // check ir signals
-    if (rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK || rc_device_get_state(prc_dev, RC_S2_MID) == RM_OK)
-    { //not disabled
-      chassis_enable(pchassis);
+
+    #ifdef RC_CONNECTED
+		if (rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK || rc_device_get_state(prc_dev, RC_S2_MID) == RM_OK)
+		{ //not disabled
+    #endif
+
+			chassis_enable(pchassis);
+
+			#ifdef USING_RC_CTRL_VY
       int32_t key_x_speed = MAX_CHASSIS_VX_SPEED/2;
       int32_t key_y_speed = MAX_CHASSIS_VY_SPEED/2;
       if(prc_info->kb.bit.SHIFT)
@@ -123,18 +138,33 @@ void chassis_task(void const *argument)
       temp_vy += (prc_info->kb.bit.A - prc_info->kb.bit.D)* key_y_speed;
       vx = temp_vx * cos(-follow_relative_angle / RAD_TO_DEG) - temp_vy * sin(-follow_relative_angle / RAD_TO_DEG);
       vy = temp_vx * sin(-follow_relative_angle / RAD_TO_DEG) + temp_vy * cos(-follow_relative_angle / RAD_TO_DEG);
+			#else
+      vy = chassis_random_movement(get_spd(&state));
+      vy_js = vy * 1000;
+			#endif
 
       chassis_set_offset(pchassis, ROTATE_X_OFFSET, ROTATE_Y_OFFSET);
 
       vy = direction_control(vy); // direction control
 
+      #ifndef USING_RC_CTRL_VY
+      // if blocked by wall
+      if (vy == 0) {
+        generate_movement();
+      }
+      #endif
+
       chassis_set_speed(pchassis, 0, vy, 0);
+
+    #ifdef RC_CONNECTED
     }
     else
     {
       chassis_set_speed(pchassis, 0, 0, 0);
       chassis_disable(pchassis);
     }
+    #endif
+    
     chassis_set_acc(pchassis, 0, 0, 0);
 
     #ifdef CHASSIS_POWER_CTRL
@@ -248,8 +278,8 @@ int get_chassis_power(struct chassis_power *chassis_power)
 }
 
 /**
- * Jerry @10 Jul
- * Control the direction of v so that sentry won't crash.
+ * Jerry 10 Jul
+ * @brief Control the direction of v so that sentry won't crash.
  */
 float direction_control(float v) {
   float res_v;
@@ -263,8 +293,8 @@ float direction_control(float v) {
 }
 
 /**
- * Jerry @10 Jul
- * Update IR Sensor's signal as well as updating jscope
+ * Jerry 10 Jul
+ * @brief Update IR Sensor's signal as well as updating jscope
  * variables.
  */
 void check_ir_signal(void) {
@@ -275,8 +305,8 @@ void check_ir_signal(void) {
 }
 
 /**
- * Jerry @10 Jul
- * Set the chassis state to be one of the three states.
+ * Jerry 10 Jul
+ * @brief Set the chassis state to be one of the three states.
  * Example: set_state(&state, IDLE_STATE);
  */
 void set_state(chassis_state_t * state, chassis_state_name_t dest_state) {
@@ -294,16 +324,16 @@ void set_state(chassis_state_t * state, chassis_state_name_t dest_state) {
 }
 
 /**
- * Jerry @10 Jul
- * Get the chassis state name.
+ * Jerry 10 Jul
+ * @brief Get the chassis state name.
  */
 chassis_state_name_t get_state(const chassis_state_t * state) {
   return state->state_name;
 }
 
 /**
- * Jerry @10 Jul
- * Get the constant speed under current state.
+ * Jerry 10 Jul
+ * @brief Get the constant speed under current state.
  */
 float get_spd(const chassis_state_t * state) {
   return state->constant_spd;
