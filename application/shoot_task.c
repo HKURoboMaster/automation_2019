@@ -109,7 +109,7 @@ void shoot_task(void const *argument)
     uint16_t heatLimit = get_heat_limit();
 
     #ifndef HERO_ROBOT
-    if (heatPowerData->shooterHeat0 < heatLimit && rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK) //not in disabled mode
+    if (heatPowerData->shooterHeat0 < heatLimit && rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK && fric_on) //not in disabled mode
     {
       if (rc_device_get_state(prc_dev, RC_WHEEL_UP) == RM_OK
         || mouse_shoot_control(prc_dev)==press)
@@ -131,9 +131,9 @@ void shoot_task(void const *argument)
       }
     }
     #else
-    if (heatPowerData->shooterHeat1 < heatLimit && rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK) //not in disabled mode
+    if (heatPowerData->shooterHeat1 < heatLimit && rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK && fric_on) //not in disabled mode
     {
-      if (rc_device_get_state(prc_dev, RC_WHEEL_DOWN) == RM_OK && prc_dev->last_rc_info.wheel < 300)
+      if (rc_device_get_state(prc_dev, RC_WHEEL_UP) == RM_OK && prc_dev->last_rc_info.wheel < 300)
       {
         shoot_set_cmd(pshoot, SHOOT_ONCE_CMD, 1);
 				shoot_set_cmd(pshoot2, SHOOT_ONCE_CMD, 1);//Leo

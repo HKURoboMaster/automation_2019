@@ -17,7 +17,7 @@
 
 #ifndef __CHASSIS_TASK_H__
 #define __CHASSIS_TASK_H__
-#define HERO_ROBOT
+// #define HERO_ROBOT
 
 #ifdef CHASSIS_TASK_H_GLOBAL
   #define CHASSIS_TASK_H_EXTERN 

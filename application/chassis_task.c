@@ -22,7 +22,6 @@
 #include "ahrs.h"
 #include "drv_imu.h"
 #include "smooth_filter.h"
-#include "drv_io.h"
 #include <math.h>
 #define RAD_TO_DEG 57.296f // 180/PI
 #define MAPPING_INDEX_CRT 1.0f
@@ -43,6 +42,7 @@ int32_t current_js;
 int32_t current_js_smooth;
 int32_t power_pidout_js;
 int32_t power_js;
+uint8_t current_excess_flag_js;
 
 
 /** Edited by Y.H. Liu
@@ -172,9 +172,9 @@ void chassis_task(void const *argument)
         osDelayUntil(&period, 2);
         /*-------- Then, adjust the power --------*/
       //get the buffer
-        extPowerHeatData_t * power = get_heat_power();
+        extPowerHeatData_t * referee_power = get_heat_power();
       //set the current & voltage flags
-        if(power->chassisPowerBuffer > LOW_BUFFER && chassis_power.voltage>LOW_VOLTAGE && 
+        if(referee_power->chassisPowerBuffer > LOW_BUFFER && chassis_power.voltage>LOW_VOLTAGE && 
            chassis_power.power > (CHASSIS_POWER_TH+LOW_BUFFER)/WORKING_VOLTAGE)
         {
           current_excess_flag = 2;
@@ -200,8 +200,10 @@ void chassis_task(void const *argument)
           prop = sqrtf(prop);
           chassis_set_vx_vy(pchassis, pchassis->mecanum.speed.vx/prop, pchassis->mecanum.speed.vy/prop);
         }
-        if(HAL_GetTick()%150==0) //LED for debugging
-          LED_R_TOGGLE();
+        current_excess_flag_js = current_excess_flag;
+
+        power_data_sent_by_can(current_excess_flag, low_volatge_flag, chassis_power.power, chassis_power.voltage, referee_power->chassisPowerBuffer);
+
       }while(current_excess_flag);
     #else
       chassis_imu_update(pchassis);
@@ -262,9 +264,9 @@ int get_chassis_power(struct chassis_power *chassis_power)
 	chassis_power->current = smooth_filter(10,((float)chassis_power->current_debug) * MAPPING_INDEX_CRT,weight)/2;
 	//chassis_power->voltage = smooth_filter(10,((float)chassis_power->voltage_debug) * MAPPING_INDEX_VTG,weight);
 	// chassis_power->power = chassis_power->current * chassis_power->voltage;
-  chassis_power->power = ((chassis_power->current-2048.0f)*25.0f/2048.0f)/10.0f; // Assume the sensor is 20 A
-	current_js = (int) chassis_power->current_debug;
-	current_js_smooth = (int)chassis_power->current;
+  chassis_power->power = (((chassis_power->current-2048.0f)*25.0f/1024.0f)/10.0f-2.45f)*3; // Assume the sensor is 20 A
+	current_js = (int) (chassis_power->current_debug*1000);
+	current_js_smooth = (int) (chassis_power->current*1000);
 	power_js = (int)(chassis_power->power*1000);
 	return chassis_power->power;
 }
