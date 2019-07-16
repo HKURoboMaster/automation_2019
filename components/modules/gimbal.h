@@ -32,8 +32,8 @@
 #define YAW_ANGLE_MAX        180.0f
 #define YAW_ANGLE_MIN       -179.0f
 #else
-#define PITCH_ANGLE_MAX      17.5f
-#define PITCH_ANGLE_MIN      -2.5f
+#define PITCH_ANGLE_MAX      -2.5f
+#define PITCH_ANGLE_MIN      17.5f
 #define YAW_ANGLE_MAX        30.0f
 #define YAW_ANGLE_MIN       -30.0f
 #endif

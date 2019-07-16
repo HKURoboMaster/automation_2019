@@ -156,6 +156,8 @@ void gimbal_task(void const *argument)
         {
           gimbal_set_pitch_delta(pgimbal, auto_aiming_pitch);
           gimbal_set_yaw_delta(pgimbal, auto_aiming_yaw);
+          auto_aiming_pitch = 0;
+          auto_aiming_yaw = 0;
         }
 
         float square_ch1 = (float)prc_info->ch1 * abs(prc_info->ch1) / RC_CH_SCALE;

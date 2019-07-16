@@ -48,7 +48,7 @@
 #define MAX_CHASSIS_VX_SPEED 3300
 #define MAX_CHASSIS_VY_SPEED 3300
 /* chassis maximum rotation speed, unit is degree/s */
-#define MAX_CHASSIS_VW_SPEED 150
+#define MAX_CHASSIS_VW_SPEED 250
 
 #define MOTOR_ENCODER_ACCURACY 8192.0f
 

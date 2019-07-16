@@ -23,6 +23,7 @@
 #include "drv_imu.h"
 #include "smooth_filter.h"
 #include <math.h>
+#include "drv_io.h"
 #define RAD_TO_DEG 57.296f // 180/PI
 #define MAPPING_INDEX_CRT 1.0f
 #define MAPPING_INDEX_VTG 0.005f
@@ -80,15 +81,12 @@ void chassis_task(void const *argument)
 
   soft_timer_register(chassis_push_info, (void *)pchassis, 10);
 
-  pid_struct_init(&pid_follow, MAX_CHASSIS_VW_SPEED, 50, 8.0f, 0.0f, 2.0f);
+  pid_struct_init(&pid_follow, MAX_CHASSIS_VW_SPEED*0.9f, 50, 8.764f, 0.0f, 2.0f);
 
   chassis_disable(pchassis);
 
   #ifdef HERO_ROBOT
-  static uint32_t now_tick;
-  static int32_t twist_count;
   static int8_t   twist_sign = 1;
-  static uint32_t last_tick = 0;
   #endif
   while (1)
   {
@@ -122,16 +120,12 @@ void chassis_task(void const *argument)
         #ifndef HERO_ROBOT
         wz = 1.1f * MAX_CHASSIS_VW_SPEED;
         #else
-          //time-based twist with a sin function
-          now_tick = HAL_GetTick();
-          twist_count += last_tick==0 ? twist_sign : twist_sign * (now_tick-last_tick);
-          last_tick = now_tick;
-          if(twist_count >= 500 || twist_count <= -500)
-          {
-		        twist_count = twist_count>0?500:-500;
+          if(fabsf(follow_relative_angle) >= DODGING_TH)
             twist_sign *= -1;
-          }
-          wz = twist_sign * sin(PI * twist_count / 500) * MAX_CHASSIS_VW_SPEED;
+          if(!dodging) //first in dodging
+            wz = twist_sign * MAX_CHASSIS_VW_SPEED / 15;
+          else
+            wz = twist_sign * sin(PI * fabs(follow_relative_angle) / DODGING_TH);
         #endif
         dodging |= 1;
         if(vx!=0 || vy!=0)
@@ -146,8 +140,7 @@ void chassis_task(void const *argument)
         wz  = pid_calculate(&pid_follow, follow_relative_angle, 0);
         dodging &= 0;
         #ifdef HERO_ROBOT
-        last_tick = 0;
-        twist_count = 0;
+        twist_sign = 1;
         #endif
       }
 
@@ -199,11 +192,15 @@ void chassis_task(void const *argument)
           float prop = chassis_power.power / ((CHASSIS_POWER_TH+(current_excess_flag-1)*LOW_BUFFER)/WORKING_VOLTAGE);
           prop = sqrtf(prop);
           chassis_set_vx_vy(pchassis, pchassis->mecanum.speed.vx/prop, pchassis->mecanum.speed.vy/prop);
+          LED_R_ON();
         }
+        else if(chassis_check_enable(pchassis))
+        {
+          LED_R_OFF();
+        }
+        //Share the flags and data with the gimbal
         current_excess_flag_js = current_excess_flag;
-
         power_data_sent_by_can(current_excess_flag, low_volatge_flag, chassis_power.power, chassis_power.voltage, referee_power->chassisPowerBuffer);
-
       }while(current_excess_flag);
     #else
       chassis_imu_update(pchassis);
