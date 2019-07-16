@@ -43,6 +43,7 @@
 struct chassis chassis;
 struct gimbal gimbal;
 struct shoot shoot;
+struct shoot shoot2;//Leo
 static struct rc_device rc_dev;
 
 static uint8_t glb_sys_cfg;
@@ -85,7 +86,7 @@ void hw_init(void)
     gimbal_cascade_register(&gimbal, "gimbal", DEVICE_CAN1);
 
     shoot_pid_register(&shoot, "shoot", DEVICE_CAN1);
-
+		shoot_pid_register2(&shoot2, "shoot2", DEVICE_CAN1);//Leo
     gimbal_yaw_disable(&gimbal);
     gimbal_pitch_disable(&gimbal);
     shoot_disable(&shoot);

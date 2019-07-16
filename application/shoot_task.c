@@ -48,7 +48,9 @@ void shoot_task(void const *argument)
   rc_device_t prc_dev = NULL;
 
   shoot_t pshoot = NULL;
+	shoot_t pshoot2 = NULL;
   pshoot = shoot_find("shoot");
+	pshoot2 = shoot_find("shoot2");//Leo
   prc_dev = rc_device_find("can_rc");
 
   if (prc_dev == NULL)
@@ -134,20 +136,25 @@ void shoot_task(void const *argument)
       if (rc_device_get_state(prc_dev, RC_WHEEL_DOWN) == RM_OK && prc_dev->last_rc_info.wheel < 300)
       {
         shoot_set_cmd(pshoot, SHOOT_ONCE_CMD, 1);
+				shoot_set_cmd(pshoot2, SHOOT_ONCE_CMD, 1);//Leo
       }
       else if ((rc_device_get_state(prc_dev, RC_WHEEL_DOWN) == RM_OK && prc_dev->last_rc_info.wheel > -300)
             || mouse_shoot_control(prc_dev)==click )
       {
         shoot_set_cmd(pshoot, SHOOT_ONCE_CMD, 1);
+				shoot_set_cmd(pshoot2, SHOOT_ONCE_CMD, 1);//Leo
+
       }
       else
       {
         shoot_set_cmd(pshoot, SHOOT_STOP_CMD, 0);
+				shoot_set_cmd(pshoot2, SHOOT_STOP_CMD, 0);//Leo
       }
     }
     #endif
     
     shoot_execute(pshoot);
+		shoot_execute(pshoot2);//Leo
     osDelayUntil(&period, 5);
 
     /*-------- For shoot_task debug --------*/
