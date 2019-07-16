@@ -65,8 +65,8 @@ void offline_init(void)
     detect_device_add_event(&offline_dev, MOTOR4_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[4]);
 		detect_device_add_event(&offline_dev, DUALMOTOR1_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[5]);
 		detect_device_add_event(&offline_dev, DUALMOTOR2_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[6]);
-		//detect_device_add_event(&offline_dev, MOONROVER1_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[7]);
-		//detect_device_add_event(&offline_dev, MOONROVER2_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[8]);
+		detect_device_add_event(&offline_dev, MOONROVER1_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[7]);
+		detect_device_add_event(&offline_dev, MOONROVER2_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[8]);
   }
  
   soft_timer_register(offline_check, NULL, 20);
@@ -83,7 +83,7 @@ int32_t offline_check(void *argc)
 
     chassis_enable(pchassis);
 		dualmotor_enable(&engg);
-		//moonrover_enable(&engg);
+		moonrover_enable(&engg);
 		
 		LED_R_OFF();
   }
@@ -91,7 +91,7 @@ int32_t offline_check(void *argc)
   {
     chassis_disable(pchassis);
 		dualmotor_disable(&engg);
-		//moonrover_disable(&engg);
+		moonrover_disable(&engg);
   }
   return 0;
 }

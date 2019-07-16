@@ -5,7 +5,7 @@
 /* END of VARIABLES: SERVO - related */
 
 /* FUNCTIONS: SERVO - related */
-void PCA9685_init() {
+void PCA9685_init(void) {
 	// START
 	HAL_I2C_Master_Transmit(&hi2c2, SLAVE, 0x00, 1, 1);
 	// INIT

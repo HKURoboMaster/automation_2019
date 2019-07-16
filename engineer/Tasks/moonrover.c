@@ -4,9 +4,9 @@
 #include "pid_controller.h"
 #include "engineer.h"
 #include "chassis.h"
+#include "dbus.h"
 
 /* VARIABLES: MOONROVER - related */
-chassis_t pchassis = NULL;
 extern Engineer engg;
 /* END of VARIABLES: MOONROVER - related */
 
@@ -69,11 +69,12 @@ int32_t moonrover_pid_register(Engineer* engineer, const char *name, enum device
   return RM_OK;
 }
 
-int32_t moonrover_execute(Engineer* engineer) {
+int32_t moonrover_execute(Engineer* engineer, chassis_t pchassis, rc_device_t prc_dev, rc_info_t prc_info) {
   if (engineer == NULL)
     return -RM_INVAL;
   	
-	if (engineer->ENGINEER_STATE == CLIMBING) {
+	if (engineer->ENGINEER_BIG_STATE == LOWERPART && engineer->ENGINEER_SMALL_STATE == CHASSIS &&
+			(rc_device_get_state(prc_dev, RC_WHEEL_DOWN) == RM_OK && prc_dev->last_rc_info.wheel > -300)) {
 		engineer->mecanum.speed.vx = pchassis->mecanum.speed.vx;
     engineer->mecanum.speed.vy = pchassis->mecanum.speed.vy;
     engineer->mecanum.speed.vw = pchassis->mecanum.speed.vw;
@@ -142,9 +143,21 @@ int32_t moonrover_disable(Engineer* engineer)
 void moonrover_task(void const *argument)
 {
   uint32_t period = osKernelSysTick();
+	
+	chassis_t pchassis = NULL;
 	pchassis = chassis_find("chassis");
+	
+	rc_device_t prc_dev = NULL;
+	rc_info_t prc_info = NULL;
+	
+	prc_dev = rc_device_find("uart_rc");
+  if (prc_dev != NULL)
+  {
+    prc_info = rc_device_get_info(prc_dev);
+  }
+	
 	for(;;) {
-		moonrover_execute(&engg);
+		moonrover_execute(&engg, pchassis, prc_dev, prc_info);
     osDelayUntil(&period, 2);
 	}
 }

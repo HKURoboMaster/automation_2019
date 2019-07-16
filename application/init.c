@@ -79,8 +79,8 @@ void hw_init(void)
     chassis_disable(&chassis);
 		dualmotor_cascade_register(&engg, "dualmotor", DEVICE_CAN1);
 		dualmotor_disable(&engg);
-		//moonrover_pid_register(&engg, "moonrover", DEVICE_CAN1);
-		//moonrover_disable(&engg);
+		moonrover_pid_register(&engg, "moonrover", DEVICE_CAN1);
+		moonrover_disable(&engg);
   }
 
   offline_init();
@@ -93,6 +93,8 @@ osThreadId cmd_task_t;
 osThreadId dualmotor_task_t;
 osThreadId moonrover_task_t;
 osThreadId engineer_task_t;
+osThreadId grab_task_t;
+osThreadId locomotion_task_t;
 
 void task_init(void)
 {
@@ -118,8 +120,14 @@ void task_init(void)
 		
 		osThreadDef(DUALMOTOR_TASK, dualmotor_task, osPriorityNormal, 0, 512);
 		dualmotor_task_t = osThreadCreate(osThread(DUALMOTOR_TASK), NULL);
+			
+		osThreadDef(MOONROVER_TASK, moonrover_task, osPriorityNormal, 0, 512);
+		moonrover_task_t = osThreadCreate(osThread(MOONROVER_TASK), NULL);
 		
-		//osThreadDef(MOONROVER_TASK, moonrover_task, osPriorityNormal, 0, 512);
-		//moonrover_task_t = osThreadCreate(osThread(MOONROVER_TASK), NULL);
+		osThreadDef(GRAB_TASK, grab_task, osPriorityNormal, 0, 512);
+		grab_task_t = osThreadCreate(osThread(GRAB_TASK), NULL);
+		
+		osThreadDef(LOCOMOTION_TASK, locomotion_task, osPriorityNormal, 0, 512);
+		locomotion_task_t = osThreadCreate(osThread(LOCOMOTION_TASK), NULL);
   }
 }

@@ -1185,16 +1185,6 @@
               <FilePath>..\engineer\Lib\servos.h</FilePath>
             </File>
             <File>
-              <FileName>relay.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\engineer\Lib\relay.c</FilePath>
-            </File>
-            <File>
-              <FileName>relay.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\engineer\Lib\relay.h</FilePath>
-            </File>
-            <File>
               <FileName>engg_gpio.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\engineer\Lib\engg_gpio.c</FilePath>
@@ -1317,6 +1307,26 @@
               <FileName>moonrover.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\engineer\Tasks\moonrover.h</FilePath>
+            </File>
+            <File>
+              <FileName>grab.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\engineer\Tasks\grab.c</FilePath>
+            </File>
+            <File>
+              <FileName>grab.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\engineer\Tasks\grab.h</FilePath>
+            </File>
+            <File>
+              <FileName>locomotion.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\engineer\Tasks\locomotion.c</FilePath>
+            </File>
+            <File>
+              <FileName>locomotion.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\engineer\Tasks\locomotion.h</FilePath>
             </File>
           </Files>
         </Group>

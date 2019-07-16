@@ -13,6 +13,7 @@ typedef struct Servo {
 	int maxPulse;
 } Servo;
 
+void PCA9685_init(void);
 void SERVO_pwm(Servo* servo, int startAngle, int endAngle);
 
 #endif

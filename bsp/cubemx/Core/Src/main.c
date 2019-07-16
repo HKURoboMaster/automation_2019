@@ -62,6 +62,7 @@
 #include "i2c.h"
 #include "init.h"
 #include "engg_gpio.h"
+#include "servos.h"
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -129,6 +130,7 @@ int main(void)
 	MX_I2C2_Init();
   hw_init();
   task_init();
+	PCA9685_init();
   /* USER CODE END 2 */
 
   /* Call init function for freertos objects (in freertos.c) */

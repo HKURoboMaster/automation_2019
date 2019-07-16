@@ -43,6 +43,9 @@
 #define RC_S2_MID      (1 << 12u)
 #define RC_S2_DOWN     (1 << 13u)
 
+#define RC_WHEEL_UP    (1 << 14u)
+#define RC_WHEEL_DOWN  (1 << 15u)
+
 typedef struct rc_device *rc_device_t;
 typedef struct rc_info *rc_info_t;
 

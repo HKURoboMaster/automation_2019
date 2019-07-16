@@ -57,32 +57,22 @@ void chassis_task(void const *argument)
 		if (engg.HALT_CHASSIS) {
 			chassis_set_speed(pchassis, 0, 0, 0);
 		}
-    if (rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK && !engg.HALT_CHASSIS)
-    {
-      if (rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK)
-      {
-        vx = (float)prc_info->ch2 / 660 * MAX_CHASSIS_VX_SPEED;
-        vy = -(float)prc_info->ch1 / 660 * MAX_CHASSIS_VY_SPEED;
-        wz = -pid_calculate(&pid_follow, follow_relative_angle, 0);
-        chassis_set_offset(pchassis, ROTATE_X_OFFSET, ROTATE_Y_OFFSET);
-        chassis_set_speed(pchassis, vx, vy, wz);
-      }
-
+    else if (rc_device_get_state(prc_dev, RC_S1_DOWN) != RM_OK && rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK) {
+			
+			int chassis_direction = 1;
+			if (engg.ENGINEER_BIG_STATE == LOWERPART && engg.ENGINEER_SMALL_STATE == REVERSE_CHASSIS)
+				chassis_direction = -1;
+			
       if (rc_device_get_state(prc_dev, RC_S2_MID) == RM_OK)
       {
         vx = (float)prc_info->ch2 / 660 * MAX_CHASSIS_VX_SPEED;
         vy = -(float)prc_info->ch1 / 660 * MAX_CHASSIS_VY_SPEED;
         wz = -(float)prc_info->ch3 / 660 * MAX_CHASSIS_VW_SPEED;
         chassis_set_offset(pchassis, 0, 0);
-        chassis_set_speed(pchassis, vx, vy, wz);
+        chassis_set_speed(pchassis, chassis_direction * vx, chassis_direction * vy, wz);
       }
 
       if (rc_device_get_state(prc_dev, RC_S2_MID2DOWN) == RM_OK)
-      {
-        chassis_set_speed(pchassis, 0, 0, 0);
-      }
-
-      if (rc_device_get_state(prc_dev, RC_S2_MID2UP) == RM_OK)
       {
         chassis_set_speed(pchassis, 0, 0, 0);
       }
@@ -104,9 +94,8 @@ static void chassis_imu_update(void *argc)
   chassis_t pchassis = (chassis_t)argc;
   mpu_get_data(&mpu_sensor);
   mahony_ahrs_updateIMU(&mpu_sensor, &mahony_atti);
-  // TODO: adapt coordinates to our own design
   chassis_gyro_update(pchassis, -mahony_atti.yaw, mpu_sensor.wz * RAD_TO_DEG);
-  // TODO: adapt coordinates to our own design
+	update_engg_imu(mahony_atti.yaw, mahony_atti.pitch, mahony_atti.roll);
 }
 
 int32_t chassis_set_relative_angle(float angle)

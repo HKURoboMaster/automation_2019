@@ -10,6 +10,9 @@ struct dualMotor {
 	float right_ecd_angle;
 	float left_ecd_velocity;
 	float right_ecd_velocity;
+	int init;
+	float current_target_angle;
+	float DUALMOTOR_STATE;
 };
 
 typedef struct Engineer Engineer;
