@@ -322,10 +322,10 @@ static void auto_gimbal_adjust(gimbal_t pgimbal)
     while (1)
     {
       gimbal_imu_update(pgimbal);
-      pid_calculate(&pid_pit, -pgimbal->sensor.gyro_angle.pitch, -85);
+      pid_calculate(&pid_pit, -pgimbal->sensor.gyro_angle.pitch, -90);
       pid_calculate(&pid_pit_spd, -pgimbal->sensor.rate.pitch_rate, pid_pit.out);
 
-      send_gimbal_current(0, PITCH_MOTOR_POSITIVE_DIR*pid_pit_spd.out, 0);
+      send_gimbal_current(0, pid_pit_spd.out, 0);
 
       HAL_Delay(2);
 
