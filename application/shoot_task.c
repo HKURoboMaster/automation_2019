@@ -68,6 +68,7 @@ void shoot_task(void const *argument)
     if (rc_device_get_state(prc_dev, RC_S1_MID2UP) == RM_OK)
     {
       shoot_firction_toggle(pshoot, fric_on);
+      shoot_firction_toggle(pshoot2, fric_on);
       fric_on = ~fric_on;
     }
     // if (rc_device_get_state(prc_dev, RC_S1_MID2DOWN) == RM_OK)
@@ -79,11 +80,13 @@ void shoot_task(void const *argument)
      (prc_dev->rc_info.kb.bit.R && !prc_dev->last_rc_info.kb.bit.R))
     {
       shoot_lid_toggle(pshoot, 0);
+      shoot_lid_toggle(pshoot2, 0);
     }
     if(rc_device_get_state(prc_dev, RC_S1_DOWN2MID) == RM_OK ||(
      !prc_dev->rc_info.kb.bit.R && prc_dev->last_rc_info.kb.bit.R))
     {
       shoot_lid_toggle(pshoot, 1);
+      shoot_lid_toggle(pshoot2, 1);
     }
 
     /*------ implement the keyboard controlling over shooting ------*/
@@ -92,7 +95,8 @@ void shoot_task(void const *argument)
       if(prc_dev->rc_info.kb.bit.F && !prc_dev->last_rc_info.kb.bit.F) //turn off the fric regardless the situation
       {
         shoot_firction_toggle(pshoot,1); //assume that currently the fric is on
-        fric_on &= ~fric_on; //set fric_on to be 0x00 i.e. off
+        shoot_firction_toggle(pshoot2,1); //Leo assume that currently the fric is on
+				fric_on &= ~fric_on; //set fric_on to be 0x00 i.e. off
       }
     }
     else
@@ -100,7 +104,8 @@ void shoot_task(void const *argument)
       if(prc_dev->rc_info.kb.bit.F && !prc_dev->last_rc_info.kb.bit.F) //turn on the fric regardless the situation
       {
         shoot_firction_toggle(pshoot,0); //assume that currently the fric is off
-        fric_on |= ~fric_on; //set fric_on to be 0xFF i.e. on
+        shoot_firction_toggle(pshoot2,0); //Leo assume that currently the fric is off
+				fric_on |= ~fric_on; //set fric_on to be 0xFF i.e. on
       }
     }
     
@@ -118,7 +123,7 @@ void shoot_task(void const *argument)
         // {
         //   shoot_set_cmd(pshoot, SHOOT_CONTINUOUS_CMD, 0);
         // }
-        shoot_set_cmd(pshoot, SHOOT_CONTINUOUS_CMD, CONTIN_BULLET_NUM);
+        shoot_set_cmd(pshoot, SHOOT_CONTINUOUS_CMD, CONTIN_BULLET_NUM);				
       }
       else if ((rc_device_get_state(prc_dev, RC_WHEEL_DOWN) == RM_OK && prc_dev->last_rc_info.wheel > -300)
             || mouse_shoot_control(prc_dev)==click)
@@ -152,7 +157,6 @@ void shoot_task(void const *argument)
       }
     }
     #endif
-    
     shoot_execute(pshoot);
 		shoot_execute(pshoot2);//Leo
     osDelayUntil(&period, 5);

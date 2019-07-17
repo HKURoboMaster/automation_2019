@@ -90,6 +90,7 @@ void hw_init(void)
     gimbal_yaw_disable(&gimbal);
     gimbal_pitch_disable(&gimbal);
     shoot_disable(&shoot);
+		shoot_disable(&shoot2);
   }
 
   offline_init();
