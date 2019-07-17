@@ -1194,6 +1194,11 @@
               <FileType>5</FileType>
               <FilePath>..\engineer\Lib\engg_gpio.h</FilePath>
             </File>
+            <File>
+              <FileName>arduino.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\engineer\Lib\arduino.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

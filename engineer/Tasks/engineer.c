@@ -21,11 +21,11 @@ static void engineer_state_handler(rc_device_t prc_dev, rc_info_t prc_info) {
 	if (rc_device_get_state(prc_dev, RC_S1_UP)) {
 		engg.ENGINEER_BIG_STATE = UPPERPART;
 		if (rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK)
-			engg.ENGINEER_SMALL_STATE = MULTI_LOCATE;
+			engg.ENGINEER_SMALL_STATE = FIVE_LOCATE;
 		if (rc_device_get_state(prc_dev, RC_S2_MID) == RM_OK)
 			engg.ENGINEER_SMALL_STATE = SINGLE_LOCATE;
 		if (rc_device_get_state(prc_dev, RC_S2_DOWN) == RM_OK)
-			engg.ENGINEER_SMALL_STATE = MANUAL_LOCATE;
+			engg.ENGINEER_SMALL_STATE = THREE_LOCATE;
 	}
 	if (rc_device_get_state(prc_dev, RC_S1_MID) == RM_OK) {
 		engg.ENGINEER_BIG_STATE = LOWERPART;
@@ -74,7 +74,7 @@ void engineer_task(void const *argument)
 	for(;;) {
 		engineer_state_handler(prc_dev, prc_info);
 		
-		osDelayUntil(&period, 2);
+		osDelayUntil(&period, 2); // Run the task every 2 ms
 	}
 }
 /* END of RTOS: ENGINEER - related */

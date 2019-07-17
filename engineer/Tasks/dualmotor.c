@@ -3,9 +3,13 @@
 #include "pid.h"
 #include "math.h"
 #include "dbus.h"
+#include "arduino.h"
+
+#define MINI_TOLERANCE 2.0f
 
 /* VARIABLES: DUALMOTOR - related */
 extern Engineer engg;
+extern Ard_Tx tran_data;
 /* END of VARIABLES: DUALMOTOR - related */
 
 /* FUNCTIONS: DUALMOTOR - related */
@@ -118,7 +122,28 @@ int32_t dualmotor_execute(Engineer* engineer) {
 	
   motor_device_set_current(&(engineer->motor[LEFT_DUALMOTOR_INDEX]), (int16_t)motor_out_lm);
 	motor_device_set_current(&(engineer->motor[RIGHT_DUALMOTOR_INDEX]), (int16_t)-motor_out_rm);
-	
+	//Implement an error range checking mechanism
+	//If the error smaller than a certain number Report the task is Done
+	if(fabs(engineer->cascade_fdb->outer_fdb - ecd_target_angle) < MINI_TOLERANCE)
+	{
+		if(engineer->dualMotor.DUALMOTOR_STATE == CLAW_FALL)
+		{
+			tran_data.rotation_flag[0] = ROTATION_DONE;
+			tran_data.rotation_flag[1] = ROTATION_BUSY;
+		}
+		else if(engineer->dualMotor.DUALMOTOR_STATE == CLAW_RISE)
+		{	
+			tran_data.rotation_flag[1] = ROTATION_DONE;
+			tran_data.rotation_flag[0] = ROTATION_BUSY;
+		}
+	}
+	else
+	{
+		tran_data.rotation_flag[0] = ROTATION_BUSY;
+		tran_data.rotation_flag[1] = ROTATION_BUSY;
+	}
+		
+		
 	return RM_OK;
 }
 

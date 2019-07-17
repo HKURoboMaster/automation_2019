@@ -12,7 +12,8 @@ struct dualMotor {
 	float right_ecd_velocity;
 	int init;
 	float current_target_angle;
-	float DUALMOTOR_STATE;
+	//Eric Edited float -> int for better state showcase
+	int DUALMOTOR_STATE;
 };
 
 typedef struct Engineer Engineer;

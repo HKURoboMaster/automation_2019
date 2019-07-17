@@ -35,9 +35,11 @@
 #define CHASSIS 0
 #define REVERSE_CHASSIS 1
 #define UNLOAD 2
-#define MULTI_LOCATE 3
+// SINGLE_LOCATE MEANS MANUAL STATE
+#define FIVE_LOCATE 3
 #define SINGLE_LOCATE 4
-#define MANUAL_LOCATE 5
+#define THREE_LOCATE 5
+// THREE_LOCATE means on the island Get 3 continous boxes.
 #define RESET 6
 #define CHASSIS_ONLY 7
 #define OFF 8
@@ -52,6 +54,7 @@
 /* DUALMOTOR STATES: DUALMOTOR - related */
 #define CLAW_FALL 0
 #define CLAW_RISE 1
+#define CLAW_IDLE 2
 /* END of DUALMOTOR STATES: DUALMOTOR - related */
 
 /* RELOADER STATES: RELOADER - related */
