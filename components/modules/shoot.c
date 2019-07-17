@@ -48,7 +48,7 @@ int32_t shoot_pid_register2(struct shoot *shoot, const char *name, enum device_c
 
   memcpy(&motor_name, name, name_len);
   shoot->motor.can_periph = can;
-  shoot->motor.can_id = 0x207;//?
+  shoot->motor.can_id = 0x208;//?
   shoot->motor.init_offset_f = 1;//?
 
   shoot->ctrl.convert_feedback = shoot_pid_input_convert;
@@ -60,6 +60,8 @@ int32_t shoot_pid_register2(struct shoot *shoot, const char *name, enum device_c
   shoot->param.block_timeout = BLOCK_TIMEOUT_DEFAULT;
   shoot->param.turn_speed = TURN_SPEED_DEFAULT;
   shoot->param.check_timeout = BLOCK_CHECK_TIMEOUT_DEFAULT;
+	shoot->fric_spd[0] = FRIC_MIN_SPEED;
+  shoot->fric_spd[1] = FRIC_MIN_SPEED;
 
   memcpy(&motor_name[name_len], "_TURN\0", 6);
 
@@ -416,7 +418,8 @@ static int32_t shoot_fric_ctrl(struct shoot *shoot)
   VAL_LIMIT(shoot->fric_spd[1], FIRC_STOP_SPEED, FIRC_MAX_SPEED);
 
 	fric_set_output((uint16_t)shoot->fric_spd[0], (uint16_t)shoot->fric_spd[1]);
-  return RM_OK;
+  if(strncmp(shoot->parent.name, "shoot2",OBJECT_NAME_MAX_LEN))
+	return RM_OK;
 }
 
 static int32_t shoot_pid_input_convert(struct controller *ctrl, void *input)
