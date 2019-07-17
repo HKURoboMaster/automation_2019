@@ -48,7 +48,9 @@ void shoot_task(void const *argument)
   rc_device_t prc_dev = NULL;
 
   shoot_t pshoot = NULL;
+	shoot_t pshoot2 = NULL;
   pshoot = shoot_find("shoot");
+	pshoot2 = shoot_find("shoot2");//Leo
   prc_dev = rc_device_find("can_rc");
 
   if (prc_dev == NULL)
@@ -66,6 +68,7 @@ void shoot_task(void const *argument)
     if (rc_device_get_state(prc_dev, RC_S1_MID2UP) == RM_OK)
     {
       shoot_firction_toggle(pshoot, fric_on);
+      shoot_firction_toggle(pshoot2, fric_on);
       fric_on = ~fric_on;
     }
     // if (rc_device_get_state(prc_dev, RC_S1_MID2DOWN) == RM_OK)
@@ -77,11 +80,13 @@ void shoot_task(void const *argument)
      (prc_dev->rc_info.kb.bit.R && !prc_dev->last_rc_info.kb.bit.R))
     {
       shoot_lid_toggle(pshoot, 0);
+      shoot_lid_toggle(pshoot2, 0);
     }
     if(rc_device_get_state(prc_dev, RC_S1_DOWN2MID) == RM_OK ||(
      !prc_dev->rc_info.kb.bit.R && prc_dev->last_rc_info.kb.bit.R))
     {
       shoot_lid_toggle(pshoot, 1);
+      shoot_lid_toggle(pshoot2, 1);
     }
 
     /*------ implement the keyboard controlling over shooting ------*/
@@ -90,7 +95,8 @@ void shoot_task(void const *argument)
       if(prc_dev->rc_info.kb.bit.F && !prc_dev->last_rc_info.kb.bit.F) //turn off the fric regardless the situation
       {
         shoot_firction_toggle(pshoot,1); //assume that currently the fric is on
-        fric_on &= ~fric_on; //set fric_on to be 0x00 i.e. off
+        shoot_firction_toggle(pshoot2,1); //Leo assume that currently the fric is on
+				fric_on &= ~fric_on; //set fric_on to be 0x00 i.e. off
       }
     }
     else
@@ -98,7 +104,8 @@ void shoot_task(void const *argument)
       if(prc_dev->rc_info.kb.bit.F && !prc_dev->last_rc_info.kb.bit.F) //turn on the fric regardless the situation
       {
         shoot_firction_toggle(pshoot,0); //assume that currently the fric is off
-        fric_on |= ~fric_on; //set fric_on to be 0xFF i.e. on
+        shoot_firction_toggle(pshoot2,0); //Leo assume that currently the fric is off
+				fric_on |= ~fric_on; //set fric_on to be 0xFF i.e. on
       }
     }
     
@@ -116,7 +123,7 @@ void shoot_task(void const *argument)
         // {
         //   shoot_set_cmd(pshoot, SHOOT_CONTINUOUS_CMD, 0);
         // }
-        shoot_set_cmd(pshoot, SHOOT_CONTINUOUS_CMD, CONTIN_BULLET_NUM);
+        shoot_set_cmd(pshoot, SHOOT_CONTINUOUS_CMD, CONTIN_BULLET_NUM);				
       }
       else if ((rc_device_get_state(prc_dev, RC_WHEEL_DOWN) == RM_OK && prc_dev->last_rc_info.wheel > -300)
             || mouse_shoot_control(prc_dev)==click)
@@ -134,20 +141,24 @@ void shoot_task(void const *argument)
       if (rc_device_get_state(prc_dev, RC_WHEEL_UP) == RM_OK && prc_dev->last_rc_info.wheel < 300)
       {
         shoot_set_cmd(pshoot, SHOOT_ONCE_CMD, 1);
+				shoot_set_cmd(pshoot2, SHOOT_ONCE_CMD, 1);//Leo
       }
       else if ((rc_device_get_state(prc_dev, RC_WHEEL_DOWN) == RM_OK && prc_dev->last_rc_info.wheel > -300)
             || mouse_shoot_control(prc_dev)==click )
       {
         shoot_set_cmd(pshoot, SHOOT_ONCE_CMD, 1);
+				shoot_set_cmd(pshoot2, SHOOT_ONCE_CMD, 1);//Leo
+
       }
       else
       {
         shoot_set_cmd(pshoot, SHOOT_STOP_CMD, 0);
+				shoot_set_cmd(pshoot2, SHOOT_STOP_CMD, 0);//Leo
       }
     }
     #endif
-    
     shoot_execute(pshoot);
+		shoot_execute(pshoot2);//Leo
     osDelayUntil(&period, 5);
 
     /*-------- For shoot_task debug --------*/
@@ -171,11 +182,15 @@ int32_t shoot_firction_toggle(shoot_t pshoot, uint8_t toggled)
   {
     shoot_set_fric_speed(pshoot, 100, 100);
     turn_off_laser();
+	if(!strncmp(pshoot->parent.name, "shoot2",OBJECT_NAME_MAX_LEN))//Leo
+		shoot_set_cmd(pshoot, SHOOT_STOP_CMD, 0);			//Leo	
   }
   else
   {
     shoot_set_fric_speed(pshoot, 175, 175);
     turn_on_laser();
+  if(!strncmp(pshoot->parent.name, "shoot2",OBJECT_NAME_MAX_LEN))//Leo
+		shoot_set_cmd(pshoot, SHOOT_CONTINUOUS_CMD, CONTIN_BULLET_NUM);	//Leo			
   }
   return 0;
 }
