@@ -25,6 +25,7 @@
 #include "offline_check.h"
 #include "param.h"
 #include "ramp.h"
+#include "angle_queue.h"
 
 #define DEFAULT_IMU_TEMP 50
 
@@ -75,6 +76,16 @@ void gimbal_task(void const *argument)
   pgimbal = gimbal_find("gimbal");
   prc_dev = rc_device_find("can_rc");
   pparam = get_cali_param();
+  
+  /**Added by Y.H. Liu
+   * @Jul 17, 2019: Define a queue for auto aimming
+   * 
+   * Use a queue to implement the speed mode of auto aimming
+   */
+  struct angle_queue yawQ;
+  struct angle_queue pitQ; 
+  queue_init(&yawQ);
+  queue_init(&pitQ);
 
   if (pparam->gim_cali_data.calied_done == CALIED_FLAG)
   {
@@ -99,41 +110,8 @@ void gimbal_task(void const *argument)
   soft_timer_register(gimbal_push_info, (void *)pgimbal, 10);
 
   imu_temp_ctrl_init();
-
   while (1)
   {
-    /*
-    if (rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK)
-    {
-      gimbal_set_yaw_mode(pgimbal, GYRO_MODE);
-      pit_delta = -(float)prc_info->ch4 * 0.0007f;
-      yaw_delta = -(float)prc_info->ch3 * 0.0007f;
-      gimbal_set_pitch_delta(pgimbal, pit_delta);
-      gimbal_set_yaw_delta(pgimbal, yaw_delta);
-    }
-
-    if (rc_device_get_state(prc_dev, RC_S2_MID) == RM_OK)
-    {
-      gimbal_set_yaw_mode(pgimbal, ENCODER_MODE);
-      pit_delta = -(float)prc_info->ch4 * 0.0007f;
-      gimbal_set_pitch_delta(pgimbal, pit_delta);
-
-      if (rc_device_get_state(prc_dev, RC_S2_UP2MID) == RM_OK)
-      {
-        gimbal_set_yaw_angle(pgimbal, 0, 0);
-      }
-    }
-
-    if (rc_device_get_state(prc_dev, RC_S2_DOWN2MID) == RM_OK)
-    {
-      gimbal_set_yaw_angle(pgimbal, 0, 0);
-    }
-
-    if (rc_device_get_state(prc_dev, RC_S2_DOWN) == RM_OK)
-    {
-      gimbal_set_yaw_mode(pgimbal, ENCODER_MODE);
-    }
-    */
     if(rc_device_get_state(prc_dev, RC_S2_DOWN2MID) == RM_OK)
     {
       //switched out disabled mode
@@ -149,13 +127,31 @@ void gimbal_task(void const *argument)
     ||  rc_device_get_state(prc_dev, RC_S2_MID2UP) == RM_OK || rc_device_get_state(prc_dev,RC_S2_UP2MID == RM_OK))
     {
       //manual control mode i.e. chassis follow gimbal
+      float yaw_autoaim_offset = 0.0f;
+      float pitch_autoaim_offset = 0.0f;
+      if(yawQ.len>=DELAY)
+      {
+        do
+        {
+          yaw_autoaim_offset = pgimbal->ecd_angle.yaw - deQueue(&yawQ);
+        }while(yawQ.len>=DELAY);
+      }
+      if(pitQ.len>=DELAY)
+      {
+        do
+        {
+          pitch_autoaim_offset = pgimbal->ecd_angle.pitch - deQueue(&pitQ);
+        }while(pitQ.len>=DELAY);
+      }
       if(prc_info->kb.bit.X != 1)
       {
         //auto_aimming
         if(prc_info->mouse.r || rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK)
         {
-          gimbal_set_pitch_delta(pgimbal, auto_aiming_pitch);
-          gimbal_set_yaw_delta(pgimbal, auto_aiming_yaw);
+          if(auto_aiming_yaw!=0)
+            gimbal_set_pitch_delta(pgimbal, auto_aiming_pitch-pitch_autoaim_offset);
+          if(auto_aiming_pitch!=0)
+            gimbal_set_yaw_delta(pgimbal, auto_aiming_yaw-yaw_autoaim_offset);
           auto_aiming_pitch = 0;
           auto_aiming_yaw = 0;
         }
@@ -243,6 +239,8 @@ void gimbal_task(void const *argument)
 		
     gimbal_imu_update(pgimbal);
     gimbal_execute(pgimbal);
+    enQueue(&yawQ, pgimbal->ecd_angle.yaw);
+    enQueue(&pitQ, pgimbal->ecd_angle.pitch);
     osDelayUntil(&period, 2);
   }
 }
@@ -327,7 +325,7 @@ static void auto_gimbal_adjust(gimbal_t pgimbal)
       pid_calculate(&pid_pit, -pgimbal->sensor.gyro_angle.pitch, -85);
       pid_calculate(&pid_pit_spd, -pgimbal->sensor.rate.pitch_rate, pid_pit.out);
 
-      send_gimbal_current(0, -pid_pit_spd.out, 0);
+      send_gimbal_current(0, PITCH_MOTOR_POSITIVE_DIR*pid_pit_spd.out, 0);
 
       HAL_Delay(2);
 
