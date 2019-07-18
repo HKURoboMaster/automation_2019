@@ -62,7 +62,9 @@ void shoot_task(void const *argument)
   static uint8_t fric_on = 0; //0x00 for off, 0xFF for on
   // static uint8_t lid_open = 0; //0x00 for closed, 0xFF for opened
   shoot_firction_toggle(pshoot, 1);
+	shoot_firction_toggle(pshoot2, 1);
   shoot_lid_toggle(pshoot,1);
+	shoot_lid_toggle(pshoot2,1);
   while (1)
   {
     if (rc_device_get_state(prc_dev, RC_S1_MID2UP) == RM_OK)
@@ -156,9 +158,9 @@ void shoot_task(void const *argument)
 				shoot_set_cmd(pshoot2, SHOOT_STOP_CMD, 0);//Leo
       }
     }
+		shoot_execute(pshoot2);//Leo
     #endif
     shoot_execute(pshoot);
-		shoot_execute(pshoot2);//Leo
     osDelayUntil(&period, 5);
 
     /*-------- For shoot_task debug --------*/
