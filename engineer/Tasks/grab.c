@@ -38,7 +38,9 @@ int32_t grab_execute(Engineer* engineer, rc_device_t prc_dev, rc_info_t prc_info
 		get_slave_Info(1);
 		return RM_OK;
 	}
-	
+	// As long as engineer BIG_STATE is upper part it will check whether LOCATE has been done.
+	// 
+	/*
 	if (engineer->ENGINEER_SMALL_STATE == SINGLE_LOCATE || engineer->ENGINEER_SMALL_STATE == THREE_LOCATE  || engineer->ENGINEER_SMALL_STATE == FIVE_LOCATE) 
 		{
 			if (engineer->grabber.GRABBER_STATE == IDLE)
@@ -52,7 +54,18 @@ int32_t grab_execute(Engineer* engineer, rc_device_t prc_dev, rc_info_t prc_info
 				engineer->grabber.GRABBER_STATE = LOCATED;
 			  }
 		}
-		
+		*/
+	if(engineer->ENGINEER_BIG_STATE == UPPERPART)
+	{
+		if(read_sonicL() && read_sonicR())
+		{
+			engineer->grabber.GRABBER_STATE =LOCATED;
+		}
+		else
+		{
+			engineer->grabber.GRABBER_STATE = LOCATING;
+		}
+	}
 	if (engineer->grabber.GRABBER_STATE == LOCATED) 
 	{
 		// Do something to indicate the task is done
@@ -98,17 +111,28 @@ int32_t grab_execute(Engineer* engineer, rc_device_t prc_dev, rc_info_t prc_info
 		tran_data.command_flag = RESET_TASK;
 		comm_flag = 1;
 	}
-	if(prc_dev->rc_info.kb.bit.E == 1)
+	else if(prc_dev->rc_info.kb.bit.E == 1)
 	{
 		// Send Information to Arduino EJECT
 		// EJECT should have pre-request that claw is rotate front / Claw is open.
 		// Claw Eject rotate will be checked here.
 		// Claw open will be checked on Arduino.
+		// Eject task shouldn't be blocking
 		tran_data.command_flag = EJECT_TASK;
 		if(tran_data.rotation_flag[1]==ROTATION_DONE)
 			comm_flag = 1;
 		else
 			comm_flag = 0;
+	}
+	else
+	{
+		//check if task is done.
+		// Once arduino is done no extra task should be ever assigned.
+		if(rec_data.current_task == NULL_TASK)
+		{
+			tran_data.command_flag = NULL_TASK;
+			comm_flag = 1;
+		}
 	}
 	get_slave_Info(comm_flag);
 	//Operation on the dual Motor.
