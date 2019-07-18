@@ -10,7 +10,7 @@
 #define TASK3           2
 #define RESET_TASK      3
 #define EJECT_TASK      4
-#define NULL_TASK       1024
+#define NULL_TASK       64
 
 #define ROTATION_OK			1
 #define ROTATION_IDLE		0
@@ -19,18 +19,19 @@
 
 typedef struct stm2Ard
 {
-	int command_flag;
-	int rotation_flag[2];
+	uint8_t command_flag;
+	uint8_t rotation_flag[2];
 } Ard_Tx;
 
 typedef struct Ard2stm
 {
-	int current_task;
-	int rotation_ok[2];
+	uint8_t current_task;
+	uint8_t rotation_ok[2];
 } Ard_Rx;
 
 int ard_Init(void);
 int ard_send_msg(Ard_Tx msg);
-int ard_receive_msg(Ard_Rx msg);
+int ard_receive_msg(Ard_Rx *msg);
 
 #endif
+

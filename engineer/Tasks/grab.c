@@ -7,8 +7,9 @@
 /* VARIABLES: GRAB - related */
 extern Engineer engg;
 int comm_flag = 0;	// By default the communication is not needed.
-Ard_Rx rec_data  = {1024,0,0};
-Ard_Tx tran_data = {1024,0,0};
+Ard_Rx rec_data  = {64,0,0};
+Ard_Tx tran_data = {64,0,0};
+int debug_js = 0;
 /* END of VARIABLES: GRAB - related */
 
 /* FUNCTIONS: GRAB - related */
@@ -16,7 +17,7 @@ void get_slave_Info(int comm_flag)
 {
 	if(comm_flag == 1)
 		ard_send_msg(tran_data);	// send data from data from Arduino.
-	ard_receive_msg(rec_data);	// Acquire data from Arduino.
+	ard_receive_msg(&rec_data);	// Acquire data from Arduino.
 	
 }
 
@@ -38,23 +39,6 @@ int32_t grab_execute(Engineer* engineer, rc_device_t prc_dev, rc_info_t prc_info
 		get_slave_Info(1);
 		return RM_OK;
 	}
-	// As long as engineer BIG_STATE is upper part it will check whether LOCATE has been done.
-	// 
-	/*
-	if (engineer->ENGINEER_SMALL_STATE == SINGLE_LOCATE || engineer->ENGINEER_SMALL_STATE == THREE_LOCATE  || engineer->ENGINEER_SMALL_STATE == FIVE_LOCATE) 
-		{
-			if (engineer->grabber.GRABBER_STATE == IDLE)
-				engineer->grabber.GRABBER_STATE = LOCATING;
-		}
-		if (engineer->grabber.GRABBER_STATE == LOCATING) 
-		{
-			if (read_sonicL() && read_sonicR()) 
-				{
-				engg.HALT_CHASSIS = 1;
-				engineer->grabber.GRABBER_STATE = LOCATED;
-			  }
-		}
-		*/
 	if(engineer->ENGINEER_BIG_STATE == UPPERPART)
 	{
 		if(read_sonicL() && read_sonicR())

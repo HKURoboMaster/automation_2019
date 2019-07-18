@@ -99,7 +99,7 @@ int32_t dualmotor_execute(Engineer* engineer) {
 		ecd_target_angle = engineer->dualMotor.current_target_angle;
 		float eps = 0.1;
 		if (engineer->dualMotor.current_target_angle > 0 + eps)
-				engineer->dualMotor.current_target_angle -= 0.3;
+				engineer->dualMotor.current_target_angle -= 0.3f;
 	}
 	else {
 		ecd_target_angle = 0;
