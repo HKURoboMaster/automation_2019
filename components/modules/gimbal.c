@@ -75,8 +75,8 @@ int32_t gimbal_cascade_register(struct gimbal *gimbal, const char *name, enum de
 
   gimbal->mode.bit.pitch_mode = ENCODER_MODE;
   gimbal->ctrl[PITCH_MOTOR_INDEX].convert_feedback = pitch_ecd_input_convert;
-  pid_struct_init(&(gimbal->cascade[PITCH_MOTOR_INDEX].outer), 2000, 0, 15, 0.01, 0);
-  pid_struct_init(&(gimbal->cascade[PITCH_MOTOR_INDEX].inter), 3000, 800, 30, 0.15, 0);
+  pid_struct_init(&(gimbal->cascade[PITCH_MOTOR_INDEX].outer), 18500, 0, 80, 0.01, 0);
+  pid_struct_init(&(gimbal->cascade[PITCH_MOTOR_INDEX].inter), 30500, 800, 100, 0.15, 0);
   //pid_struct_init(&(gimbal->cascade[PITCH_MOTOR_INDEX].outer), 2000, 600, 0, 0, 0);
   //pid_struct_init(&(gimbal->cascade[PITCH_MOTOR_INDEX].inter), 1500, 3000, 0, 0, 0);//15
 
