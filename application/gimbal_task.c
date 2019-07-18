@@ -309,7 +309,8 @@ struct pid pid_pit_spd = {0};
 
 /**Modified by Y.H. Liu
  * @Jun 20, 2019: adaption for hero
- * @Jul 8, 2018: use the original methods to calculate the pitch centre
+ * @Jul 8, 2019: use the original methods to calculate the pitch centre
+ * @Jul 17, 2019: use a queue for auto-aimming adaption
  * 
  * Automatically adjust the netural position for gimbal
  */
