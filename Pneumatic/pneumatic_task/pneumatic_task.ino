@@ -1,4 +1,4 @@
-#include "pneumatic_task.h"
+#include "pneumatic_task.hpp"
 
 // For arduino All Communication content are triggered randomly
 // 
@@ -73,10 +73,10 @@ void setup()
 {
     sensors_Init();
     TIM_IRQ_Init();
+    communication_Init();
     //Below are left blank for init communication
 
     //communication init end
-    Ms
     delay(2000);
 }
 // If the upload task  == NULL task
