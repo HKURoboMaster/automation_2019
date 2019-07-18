@@ -418,7 +418,7 @@ static int32_t shoot_fric_ctrl(struct shoot *shoot)
   VAL_LIMIT(shoot->fric_spd[1], FIRC_STOP_SPEED, FIRC_MAX_SPEED);
 
   if(strncmp(shoot->parent.name, "shoot2",OBJECT_NAME_MAX_LEN))
-	fric_set_output((uint16_t)shoot->fric_spd[0], (uint16_t)shoot->fric_spd[1]);
+	  fric_set_output((uint16_t)shoot->fric_spd[0], (uint16_t)shoot->fric_spd[1]);
 	return RM_OK;
 }
 

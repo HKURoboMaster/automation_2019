@@ -86,7 +86,7 @@ void hw_init(void)
     gimbal_cascade_register(&gimbal, "gimbal", DEVICE_CAN1);
 
     shoot_pid_register(&shoot, "shoot", DEVICE_CAN1);
-		shoot_pid_register2(&shoot2, "shoot2", DEVICE_CAN1);//Leo
+		shoot_pid_register2(&shoot2, "shoot2", DEVICE_CAN1);
     gimbal_yaw_disable(&gimbal);
     gimbal_pitch_disable(&gimbal);
     shoot_disable(&shoot);

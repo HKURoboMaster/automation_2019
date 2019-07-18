@@ -32,7 +32,7 @@
 #define SHOOT_CONTINUOUS_CMD (2u)
 
 #define FIRC_STOP_SPEED 100u
-#define FIRC_MAX_SPEED 170u //MAX=200u, for safety set it to be 180
+#define FIRC_MAX_SPEED 160u //MAX=200u, for safety set it to be 160
 #define FRIC_MIN_SPEED 99u
 
 #define BLOCK_CURRENT_DEFAULT 26000.0F
@@ -99,6 +99,7 @@ struct shoot
 
 shoot_t shoot_find(const char *name);
 int32_t shoot_pid_register(struct shoot *shoot, const char *name, enum device_can can);
+int32_t shoot_pid_register2(struct shoot *shoot, const char *name, enum device_can can);
 int32_t shoot_set_fric_speed(struct shoot *shoot, uint16_t fric_spd1, uint16_t fric_spd2);
 int32_t shoot_get_fric_speed(struct shoot *shoot, float *fric_spd1, float *fric_spd2);
 int32_t shoot_set_cmd(struct shoot *shoot, uint8_t cmd, uint32_t shoot_num);

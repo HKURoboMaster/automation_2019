@@ -34,24 +34,29 @@
 /* gimbal back center time (ms) */
 #define BACK_CENTER_TIME 3000
 
+// Aimming related
 float pit_delta, yaw_delta;
-
+static float yaw_autoaim_offset = 0.0f;
+static float pitch_autoaim_offset = 0.0f;
+extern float auto_aiming_pitch;
+extern float auto_aiming_yaw;
+// Function declaration
 static void imu_temp_ctrl_init(void);
 static int32_t gimbal_imu_update(void *argc);
 static int32_t imu_temp_keep(void *argc);
 static void auto_gimbal_adjust(gimbal_t pgimbal);
 static void gimbal_state_init(gimbal_t pgimbal);
-
+// Flags
 uint8_t auto_adjust_f;
 uint8_t auto_init_f;
-
+// Orientation debugging
 int32_t mpu_pit, mpu_yaw, mpu_rol;
 int32_t mpu_wx, mpu_wy, mpu_wz;
 
 /* control ramp parameter */
 static ramp_t yaw_ramp = RAMP_GEN_DAFAULT;
 static ramp_t pitch_ramp = RAMP_GEN_DAFAULT;
-
+// PID debugging
 int32_t yaw_angle_fdb_js, yaw_angle_ref_js;
 int32_t pit_angle_fdb_js, pit_angle_ref_js;
 int32_t yaw_spd_fdb_js, yaw_spd_ref_js;
@@ -63,8 +68,6 @@ int32_t yaw_ecd_angle_js, pit_ecd_angle_js;
  *
  *  Implement the customized control logic and FSM, details in Control.md
  */
-extern float auto_aiming_pitch;
-extern float auto_aiming_yaw;
 void gimbal_task(void const *argument)
 {
   uint32_t period = osKernelSysTick();
@@ -112,6 +115,20 @@ void gimbal_task(void const *argument)
   imu_temp_ctrl_init();
   while (1)
   {
+    if(yawQ.len>=DELAY)
+    {
+      do
+      {
+        yaw_autoaim_offset = pgimbal->ecd_angle.yaw - deQueue(&yawQ);
+      }while(yawQ.len>=DELAY);
+    }
+    if(pitQ.len>=DELAY)
+    {
+      do
+      {
+        pitch_autoaim_offset = pgimbal->ecd_angle.pitch - deQueue(&pitQ);
+      }while(pitQ.len>=DELAY);
+    }
     if(rc_device_get_state(prc_dev, RC_S2_DOWN2MID) == RM_OK)
     {
       //switched out disabled mode
@@ -127,22 +144,6 @@ void gimbal_task(void const *argument)
     ||  rc_device_get_state(prc_dev, RC_S2_MID2UP) == RM_OK || rc_device_get_state(prc_dev,RC_S2_UP2MID == RM_OK))
     {
       //manual control mode i.e. chassis follow gimbal
-      float yaw_autoaim_offset = 0.0f;
-      float pitch_autoaim_offset = 0.0f;
-      if(yawQ.len>=DELAY)
-      {
-        do
-        {
-          yaw_autoaim_offset = pgimbal->ecd_angle.yaw - deQueue(&yawQ);
-        }while(yawQ.len>=DELAY);
-      }
-      if(pitQ.len>=DELAY)
-      {
-        do
-        {
-          pitch_autoaim_offset = pgimbal->ecd_angle.pitch - deQueue(&pitQ);
-        }while(pitQ.len>=DELAY);
-      }
       if(prc_info->kb.bit.X != 1)
       {
         //auto_aimming
@@ -237,10 +238,10 @@ void gimbal_task(void const *argument)
 		
 		
 		
-    gimbal_imu_update(pgimbal);
-    gimbal_execute(pgimbal);
     enQueue(&yawQ, pgimbal->ecd_angle.yaw);
     enQueue(&pitQ, pgimbal->ecd_angle.pitch);
+    gimbal_imu_update(pgimbal);
+    gimbal_execute(pgimbal);
     osDelayUntil(&period, 2);
   }
 }
