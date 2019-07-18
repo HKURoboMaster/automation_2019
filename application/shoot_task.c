@@ -184,14 +184,14 @@ int32_t shoot_firction_toggle(shoot_t pshoot, uint8_t toggled)
   {
     shoot_set_fric_speed(pshoot, 100, 100);
     turn_off_laser();
-	if(!strncmp(pshoot->parent.name, "shoot2",OBJECT_NAME_MAX_LEN))//Leo
+	if(strncmp(pshoot->parent.name, "shoot",OBJECT_NAME_MAX_LEN))//Leo
 		shoot_set_cmd(pshoot, SHOOT_STOP_CMD, 0);			//Leo	
   }
   else
   {
     shoot_set_fric_speed(pshoot, 175, 175);
     turn_on_laser();
-  if(!strncmp(pshoot->parent.name, "shoot2",OBJECT_NAME_MAX_LEN))//Leo
+  if(!strncmp(pshoot->parent.name, "shoot",OBJECT_NAME_MAX_LEN))//Leo
 		shoot_set_cmd(pshoot, SHOOT_CONTINUOUS_CMD, CONTIN_BULLET_NUM);	//Leo			
   }
   return 0;
