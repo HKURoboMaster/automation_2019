@@ -151,9 +151,9 @@ int32_t chassis_set_speed(struct chassis *chassis, float vx, float vy, float vw)
 {
   if (chassis == NULL)
     return -RM_INVAL;
-  chassis->mecanum.speed.vx = vx;
-  chassis->mecanum.speed.vy = vy;
-  chassis->mecanum.speed.vw = vw;
+  chassis->mecanum.speed.vx = chassis_ramp(vx, chassis->mecanum.speed.vx);
+  chassis->mecanum.speed.vy = chassis_ramp(vy, chassis->mecanum.speed.vy);
+  chassis->mecanum.speed.vw = chassis_ramp(vw, chassis->mecanum.speed.vw);
   return RM_OK;
 }
 
@@ -257,4 +257,19 @@ static int32_t motor_pid_input_convert(struct controller *ctrl, void *input)
   pid_fdb->feedback = data->speed_rpm;
 
   return RM_OK;
+}
+
+/**Added by Y.H. Liu
+ * @Jul 16, 2019: Declare the funtion
+ * 
+ * Check whether the chassis is enabled
+ */
+uint8_t chassis_check_enable(struct chassis *chassis)
+{
+  for(int i=0; i< 4; i++)
+  {
+    if(chassis->ctrl[i].enable == 0)
+      return 0; // return 0 if any of the 4 motors is disabled
+  }
+  return 1; // return 1 if all the 4 motors is enabled
 }

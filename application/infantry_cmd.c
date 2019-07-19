@@ -66,6 +66,20 @@ int32_t gimbal_adjust_cmd(uint8_t *buff, uint16_t len)
   return 0;
 }
 
+/**Added by Y.H. Liu
+ * @Jul 13, 2019: define js variables
+ * 
+ * for chassis power debugging via gimbal
+ */
+uint8_t current_excess, low_voltage;
+int32_t current_detecting_js, voltage_detecting_js, buffer_remained_js;
+/** Edited by Y.H. Liu
+ *  @Jun 12, 2019: disbable the auto mode and implement the auto_aiming
+ *
+ *  Implement the customized control logic described in Control.md
+ */
+float auto_aiming_pitch = 0;
+float auto_aiming_yaw   = 0;
 void infantry_cmd_task(void const *argument)
 {
   uint8_t app;
@@ -96,11 +110,12 @@ void infantry_cmd_task(void const *argument)
     protocol_rcv_cmd_register(CMD_SET_FRICTION_SPEED, shoot_firction_ctrl);
     protocol_rcv_cmd_register(CMD_SET_SHOOT_FREQUENTCY, shoot_ctrl);
     protocol_rcv_cmd_register(CMD_GIMBAL_ADJUST, gimbal_adjust_cmd);
+    protocol_rcv_cmd_register(CMD_CHASSIS_POWER, chassis_power_callback);
   }
 
   while (1)
   {
-    if (rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK)
+    if (rc_device_get_state(prc_dev, RC_S2_DOWN) == RM_OK) //S2:DOWN ---- disabled
     {
       memset(&manifold_cmd, 0, sizeof(struct manifold_cmd));
       osDelay(100);
@@ -115,58 +130,61 @@ void infantry_cmd_task(void const *argument)
       {
         if (event.value.signals & MANIFOLD2_CHASSIS_SIGNAL)
         {
-          struct cmd_chassis_speed *pspeed;
-          pspeed = &manifold_cmd.chassis_speed;
-          chassis_set_offset(pchassis, pspeed->rotate_x_offset, pspeed->rotate_x_offset);
-          chassis_set_acc(pchassis, 0, 0, 0);
-          chassis_set_speed(pchassis, pspeed->vx, pspeed->vy, pspeed->vw / 10.0f);
+          //struct cmd_chassis_speed *pspeed;
+          //pspeed = &manifold_cmd.chassis_speed;
+          //chassis_set_offset(pchassis, pspeed->rotate_x_offset, pspeed->rotate_x_offset);
+          //chassis_set_acc(pchassis, 0, 0, 0);
+          //chassis_set_speed(pchassis, pspeed->vx, pspeed->vy, pspeed->vw / 10.0f);
         }
 
         if (event.value.signals & MANIFOLD2_CHASSIS_ACC_SIGNAL)
         {
-          struct cmd_chassis_spd_acc *pacc;
-          pacc = &manifold_cmd.chassis_spd_acc;
-          chassis_set_offset(pchassis, pacc->rotate_x_offset, pacc->rotate_x_offset);
-          chassis_set_acc(pchassis, pacc->ax, pacc->ay, pacc->wz / 10.0f);
-          chassis_set_speed(pchassis, pacc->vx, pacc->vy, pacc->vw / 10.0f);
+          // struct cmd_chassis_spd_acc *pacc;
+          // pacc = &manifold_cmd.chassis_spd_acc;
+          // chassis_set_offset(pchassis, pacc->rotate_x_offset, pacc->rotate_x_offset);
+          // chassis_set_acc(pchassis, pacc->ax, pacc->ay, pacc->wz / 10.0f);
+          // chassis_set_speed(pchassis, pacc->vx, pacc->vy, pacc->vw / 10.0f);
         }
 
-        if (event.value.signals & MANIFOLD2_GIMBAL_SIGNAL)
+        if ((prc_dev->rc_info.mouse.r || rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK)
+          && event.value.signals & MANIFOLD2_GIMBAL_SIGNAL)
         {
           struct cmd_gimbal_angle *pangle;
           pangle = &manifold_cmd.gimbal_angle;
           if (pangle->ctrl.bit.pitch_mode == 0)
           {
-            gimbal_set_pitch_angle(pgimbal, pangle->pitch / 10.0f);
+            gimbal_set_pitch_angle(pgimbal, pangle->pitch / 100.0f);
           }
           else
           {
-            gimbal_set_pitch_speed(pgimbal, pangle->pitch / 10.0f);
+            // gimbal_set_pitch_speed(pgimbal, pangle->pitch / 10.0f);
+            auto_aiming_pitch = pangle->pitch / 10.0f;
           }
           if (pangle->ctrl.bit.yaw_mode == 0)
           {
-            gimbal_set_yaw_angle(pgimbal, pangle->yaw / 10.0f, 0);
+            gimbal_set_yaw_angle(pgimbal, pangle->yaw / 100.0f, 0);
           }
           else
           {
-            gimbal_set_yaw_speed(pgimbal, pangle->yaw / 10.0f);
+            // gimbal_set_yaw_speed(pgimbal, pangle->yaw / 10.0f);
+            auto_aiming_yaw = pangle->yaw / 10.0f;
           }
         }
-
-        if (event.value.signals & MANIFOLD2_SHOOT_SIGNAL)
-        {
-          struct cmd_shoot_num *pctrl;
-          pctrl = &manifold_cmd.shoot_num;
-          shoot_set_cmd(pshoot, pctrl->shoot_cmd, pctrl->shoot_add_num);
-          shoot_set_turn_speed(pshoot, pctrl->shoot_freq);
-        }
-
-        if (event.value.signals & MANIFOLD2_FRICTION_SIGNAL)
-        {
-          struct cmd_firction_speed *pctrl;
-          pctrl = &manifold_cmd.firction_speed;
-          shoot_set_fric_speed(pshoot, pctrl->left, pctrl->right);
-        }
+        //
+        // if (event.value.signals & MANIFOLD2_SHOOT_SIGNAL)
+        // {
+        //   struct cmd_shoot_num *pctrl;
+        //   pctrl = &manifold_cmd.shoot_num;
+        //   shoot_set_cmd(pshoot, pctrl->shoot_cmd, pctrl->shoot_add_num);
+        //   shoot_set_turn_speed(pshoot, pctrl->shoot_freq);
+        // }
+        //
+        // if (event.value.signals & MANIFOLD2_FRICTION_SIGNAL)
+        // {
+        //   struct cmd_firction_speed *pctrl;
+        //   pctrl = &manifold_cmd.firction_speed;
+        //   shoot_set_fric_speed(pshoot, pctrl->left, pctrl->right);
+        // }
       }
       else
       {
@@ -284,4 +302,34 @@ int32_t chassis_push_info(void *argc)
   protocol_send(MANIFOLD2_ADDRESS, CMD_PUSH_CHASSIS_INFO, &cmd_chassis_info, sizeof(cmd_chassis_info));
 
   return 0;
+}
+
+/**Added by Y.H. Liu
+ * @Jul 13, 2019: Declare the function
+ * 
+ * Send the chassis current data
+ */
+int32_t power_data_sent_by_can(uint8_t current_flag, uint8_t voltage_flag, float current, float voltage, float buffer)
+{
+  struct chassis_power_data_t chassis_power_data = {current_flag, voltage_flag, current, voltage, buffer};
+  protocol_send(GIMBAL_ADDRESS, CMD_CHASSIS_POWER, &chassis_power_data, sizeof(struct chassis_power_data_t));
+  return RM_OK;
+}
+/**Added by Y.H. Liu
+ * @Jul 13, 2019: Declare the function
+ * 
+ * Callback for chassis_power info from chassis board
+ */
+int32_t chassis_power_callback(uint8_t *buff, uint16_t len)
+{
+  if(len == sizeof(struct chassis_power_data_t))
+  {
+    struct chassis_power_data_t * pchassis_power = (struct chassis_power_data_t *) buff; 
+    current_excess = pchassis_power->current_flag;
+    low_voltage = pchassis_power->voltage_flag;
+    current_detecting_js = pchassis_power->current;
+    voltage_detecting_js = pchassis_power->voltage;
+    buffer_remained_js = pchassis_power->buffer;
+  }
+	return RM_OK;
 }

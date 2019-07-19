@@ -17,24 +17,33 @@
 
 #ifndef __GIMBAL_H__
 #define __GIMBAL_H__
+// #define HERO_ROBOT
 
 #ifdef GIMBAL_H_GLOBAL
-  #define GIMBAL_H_EXTERN 
+  #define GIMBAL_H_EXTERN
 #else
   #define GIMBAL_H_EXTERN extern
 #endif
 
 /* gimbal relevant */
+#ifndef HERO_ROBOT
 #define PITCH_ANGLE_MAX      20.0f
-#define PITCH_ANGLE_MIN      -20.0f
-#define YAW_ANGLE_MAX      70.0f
-#define YAW_ANGLE_MIN      -70.0f
+#define PITCH_ANGLE_MIN      -15.0f
+#define YAW_ANGLE_MAX        180.0f
+#define YAW_ANGLE_MIN       -179.0f
+#else
+#define PITCH_ANGLE_MAX      -2.5f
+#define PITCH_ANGLE_MIN      17.5f
+#define YAW_ANGLE_MAX        30.0f
+#define YAW_ANGLE_MIN       -30.0f
+#endif
+#define YAW_KB_SPEED        0.17f
 
 /************************** gimbal parameter *****************************/
 /* the ratio of motor encoder value translate to degree */
 #ifndef ENCODER_ANGLE_RATIO
   #define ENCODER_ANGLE_RATIO    (8192.0f/360.0f)
-#endif 
+#endif
 
 #define RAD_TO_DEG 57.3f
 
@@ -43,9 +52,9 @@
 /* the deceleration ratio of yaw axis motor */
 #define YAW_DECELE_RATIO       1.0f
 /* the positive direction of pitch axis motor */
-#define PITCH_MOTOR_POSITIVE_DIR  1.0f
+#define PITCH_MOTOR_POSITIVE_DIR 1.0f
 /* the positive direction of yaw axis motor */
-#define YAW_MOTOR_POSITIVE_DIR  1.0f
+#define YAW_MOTOR_POSITIVE_DIR  -1.0f
 
 #include "motor.h"
 #include "pid_controller.h"
@@ -64,6 +73,9 @@
 #define YAW_CLOCKWISE (1u)
 #define YAW_ANTICLOCKWISE (2u)
 
+#define PITCH_DIRECTI -1
+#define YAW_DIRECT 0
+
 typedef struct gimbal *gimbal_t;
 
 struct gimbal_param
@@ -76,14 +88,14 @@ struct gimbal_p_y
 {
   /* unit: degree */
   float yaw;
-  float pitch;  
+  float pitch;
 };
 
 struct gimbal_rate
 {
   /* unit: degree/s */
   float yaw_rate;
-  float pitch_rate;  
+  float pitch_rate;
 };
 
 struct gimbal_sensor
@@ -106,9 +118,9 @@ struct gimbal
     } bit;
   } mode;
 
-  struct gimbal_sensor sensor;  
+  struct gimbal_sensor sensor;
   struct gimbal_p_y ecd_angle;
-  
+
   struct gimbal_p_y gyro_target_angle;
   struct gimbal_p_y ecd_target_angle;
 

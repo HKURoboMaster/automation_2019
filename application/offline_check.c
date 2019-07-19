@@ -83,24 +83,14 @@ void offline_init(void)
 int32_t offline_check(void *argc)
 {
   detect_device_check(&offline_dev, 0xffffffff);
-  if (detect_device_get_event(&offline_dev) == 0)
-  {
-    offline_beep_set_times(&offline_beep_times[0]);
 
-    gimbal_yaw_enable(pgimbal);
-    gimbal_pitch_enable(pgimbal);
-    shoot_enable(pshoot);
-    chassis_enable(pchassis);
-		
-		LED_R_OFF();
-  }
-  else
-  {
-    gimbal_yaw_disable(pgimbal);
-    gimbal_pitch_disable(pgimbal);
+  if(detect_device_get_event(&offline_dev) & TURN_OFFLINE_EVENT)
     shoot_disable(pshoot);
-    chassis_disable(pchassis);
-  }
+  else
+    shoot_enable(pshoot);
+
+  if(detect_device_get_event(&offline_dev) == 0)
+	  LED_R_OFF();
   return 0;
 }
 
@@ -114,6 +104,9 @@ int32_t rc_offline_callback(void *argc)
   beep_set_times(0);
 	LED_R_ON();
   gimbal_init_state_reset();
+  chassis_disable(pchassis);
+  gimbal_pitch_disable(pgimbal);
+  gimbal_yaw_disable(pgimbal);
   return 0;
 }
 

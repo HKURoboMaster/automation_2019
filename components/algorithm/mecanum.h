@@ -30,12 +30,12 @@
 /* the perimeter of wheel(mm) */
 #define PERIMETER 478
 /* wheel track distance(mm) */
-#define WHEELTRACK 394
+#define WHEELTRACK 445
 /* wheelbase distance(mm) */
-#define WHEELBASE 415
+#define WHEELBASE 345
 
 /* gimbal is relative to chassis center x axis offset(mm) */
-#define ROTATE_X_OFFSET 7
+#define ROTATE_X_OFFSET 0
 /* gimbal is relative to chassis center y axis offset(mm) */
 #define ROTATE_Y_OFFSET 0
 
@@ -45,10 +45,10 @@
 /* single 3508 motor maximum speed, unit is rpm */
 #define MAX_WHEEL_RPM 8500 //8347rpm = 3500mm/s
 /* chassis maximum translation speed, unit is mm/s */
-#define MAX_CHASSIS_VX_SPEED 3300 //8000rpm
+#define MAX_CHASSIS_VX_SPEED 3300
 #define MAX_CHASSIS_VY_SPEED 3300
 /* chassis maximum rotation speed, unit is degree/s */
-#define MAX_CHASSIS_VW_SPEED 300 //5000rpm
+#define MAX_CHASSIS_VW_SPEED 250
 
 #define MOTOR_ENCODER_ACCURACY 8192.0f
 

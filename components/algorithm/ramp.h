@@ -47,5 +47,14 @@ typedef struct ramp_t
 void  ramp_init(ramp_t *ramp, int32_t scale);
 float ramp_calculate(ramp_t *ramp);
 
+/**Added by Y.H. Liu
+ * @Jul 7, 2019: definantion for chassis ramp
+ * @Jul 15, 2019: enlarge the RAMP
+ * 
+ * For chassis ramp
+ */
+#define RAMP_CHASSIS_CO 6.77559185f //(6.100, 7.868565559[Fi-NAER])
+float chassis_ramp(float v_ref, float mec_ref);
+
 #endif // __RAMP_H__
 
