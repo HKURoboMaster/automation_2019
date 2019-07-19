@@ -35,9 +35,6 @@
 #define BACK_CENTER_TIME 3000
 
 // Aimming related
-float pit_delta, yaw_delta;
-static float yaw_autoaim_offset = 0.0f;
-static float pitch_autoaim_offset = 0.0f;
 extern float auto_aiming_pitch;
 extern float auto_aiming_yaw;
 // Function declaration
@@ -49,13 +46,12 @@ static void gimbal_state_init(gimbal_t pgimbal);
 // Flags
 uint8_t auto_adjust_f;
 uint8_t auto_init_f;
-// Orientation debugging
-int32_t mpu_pit, mpu_yaw, mpu_rol;
-int32_t mpu_wx, mpu_wy, mpu_wz;
-
 /* control ramp parameter */
 static ramp_t yaw_ramp = RAMP_GEN_DAFAULT;
 static ramp_t pitch_ramp = RAMP_GEN_DAFAULT;
+// Orientation debugging
+int32_t mpu_pit, mpu_yaw, mpu_rol;
+int32_t mpu_wx, mpu_wy, mpu_wz;
 // PID debugging
 int32_t yaw_angle_fdb_js, yaw_angle_ref_js;
 int32_t pit_angle_fdb_js, pit_angle_ref_js;
@@ -82,9 +78,14 @@ void gimbal_task(void const *argument)
   
   /**Added by Y.H. Liu
    * @Jul 17, 2019: Define a queue for auto aimming
+   * @Jul 19, 2019: Change the global variable to be the local ones
    * 
    * Use a queue to implement the speed mode of auto aimming
    */
+  float yaw_autoaim_offset = 0.0f;
+  float pitch_autoaim_offset = 0.0f;
+  float pit_delta, yaw_delta;
+
   struct angle_queue yawQ;
   struct angle_queue pitQ; 
   queue_init(&yawQ);

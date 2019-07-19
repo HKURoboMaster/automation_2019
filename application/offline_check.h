@@ -32,6 +32,7 @@
 #define YAW_OFFLINE_EVENT    EVENT_5BIT
 #define PITCH_OFFLINE_EVENT  EVENT_6BIT
 #define TURN_OFFLINE_EVENT   EVENT_7BIT
+#define TURN2_OFFLINE_EVENT  EVENT_8BIT
 
 void offline_init(void);
 struct detect_device *get_offline_dev(void);
@@ -39,5 +40,7 @@ int32_t offline_check(void *argc);
 int32_t get_offline_state(void);
 int32_t can1_detect_update(CAN_RxHeaderTypeDef *header, uint8_t *rx_data);
 int32_t can2_detect_update(CAN_RxHeaderTypeDef *header, uint8_t *rx_data);
+
+//#define HERO_ROBOT
 
 #endif // __OFFLINE_CHECK_H__

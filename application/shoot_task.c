@@ -34,6 +34,7 @@ int32_t trigger_wheel_watch;
  * @Jun 20, 2019: adaption for hero
  * @Jul 3, 2019: retrieve the heat data from refree system
  * @Jul 7, 2019: modify the adaption for hero
+ * @Jun 19, 2019: receive the shooter heat data from the referee system
  * 
  * Implement the control logic described in Control.md
  */
@@ -67,6 +68,16 @@ void shoot_task(void const *argument)
 	shoot_lid_toggle(pshoot2,1);
   while (1)
   {
+    if (rc_device_get_state(prc_dev, RC_S2_DOWN) == RM_OK)
+    {
+      shoot_disable(pshoot);
+      shoot_disable(pshoot2);
+      shoot_firction_toggle(pshoot,1); //assume that currently the fric is on
+      shoot_firction_toggle(pshoot2,1); //Leo assume that currently the fric is on
+      continue;
+    }
+    shoot_enable(pshoot);
+    shoot_enable(pshoot2);
     if (rc_device_get_state(prc_dev, RC_S1_MID2UP) == RM_OK)
     {
       shoot_firction_toggle(pshoot, fric_on);
@@ -112,11 +123,11 @@ void shoot_task(void const *argument)
     }
     
     /*------ implement the function of a trigger ------*/
-    extPowerHeatData_t * heatPowerData = get_heat_power();
+    uint16_t * shooter_heat_current = shooter_heat_get();
     uint16_t heatLimit = get_heat_limit();
 
     #ifndef HERO_ROBOT
-    if (heatPowerData->shooterHeat0 < heatLimit && rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK && fric_on) //not in disabled mode
+    if (shooter_heat_current[0] < heatLimit && rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK && fric_on) //not in disabled mode
     {
       if (rc_device_get_state(prc_dev, RC_WHEEL_UP) == RM_OK
         || mouse_shoot_control(prc_dev)==press)
@@ -138,7 +149,7 @@ void shoot_task(void const *argument)
       }
     }
     #else
-    if (heatPowerData->shooterHeat1 < heatLimit && rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK && fric_on) //not in disabled mode
+    if (shooter_heat_current[1] < heatLimit && rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK && fric_on) //not in disabled mode
     {
       if (rc_device_get_state(prc_dev, RC_WHEEL_UP) == RM_OK && prc_dev->last_rc_info.wheel < 300)
       {
