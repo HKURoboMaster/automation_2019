@@ -68,11 +68,13 @@ int32_t gimbal_adjust_cmd(uint8_t *buff, uint16_t len)
 
 /**Added by Y.H. Liu
  * @Jul 13, 2019: define js variables
+ * @Jul 19, 2019: define static array for shooter heat
  * 
- * for chassis power debugging via gimbal
+ * For the values transmitted via wires 
  */
 uint8_t current_excess, low_voltage;
 int32_t current_detecting_js, voltage_detecting_js, buffer_remained_js;
+static shooter_heat[2] = {0};
 /** Edited by Y.H. Liu
  *  @Jun 12, 2019: disbable the auto mode and implement the auto_aiming
  *
@@ -111,6 +113,7 @@ void infantry_cmd_task(void const *argument)
     protocol_rcv_cmd_register(CMD_SET_SHOOT_FREQUENTCY, shoot_ctrl);
     protocol_rcv_cmd_register(CMD_GIMBAL_ADJUST, gimbal_adjust_cmd);
     protocol_rcv_cmd_register(CMD_CHASSIS_POWER, chassis_power_callback);
+    protocol_rcv_cmd_register(CMD_SHOOTER_HEAT, shooter_data_callback);
   }
 
   while (1)
@@ -332,4 +335,40 @@ int32_t chassis_power_callback(uint8_t *buff, uint16_t len)
     buffer_remained_js = pchassis_power->buffer;
   }
 	return RM_OK;
+}
+/**Added by Y.H. Liu
+ * @Jul 19, 2019: Declare the function
+ * 
+ * Send the shooter heat data
+ */
+int32_t shooter_data_sent_by_can(extPowerHeatData_t * heat_power_d)
+{
+  uint16_t shooter_heat_send[2] = {0};
+  uint16_t shooter_heat_send[0] = heat_power_d->shooterHeat0;
+  uint16_t shooter_heat_send[1] = heat_power_d->shooterHeat0;
+  protocol_send(GIMBAL_ADDRESS, CMD_SHOOTER_HEAT, shooter_heat_send, 2*sizeof(uint16_t));
+  return RM_OK;
+}
+/**Added by Y.H. Liu
+ * @Jul 19, 2019: Declare the function
+ * 
+ * Callback for shooter heat data sent by the chassis
+ */
+int32_t shooter_data_callback(uint8_t *buff, uint16_t len)
+{
+  if(len == 2*sizeof(uint16_t))
+  {
+    shooter_heat[0] = *(uint16_t *)buff;
+    shooter_heat[1] = *(uint16_t *)(buff+2);
+  }
+	return RM_OK;
+}
+/**Added by Y.H. Liu
+ * @Jul 19, 2019: Declare the function
+ * 
+ * Callback for shooter heat data sent by the chassis
+ */
+uint16_t * shooter_heat_get(void)
+{
+  return shooter_heat;
 }

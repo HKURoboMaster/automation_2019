@@ -27,7 +27,6 @@
 #define RAD_TO_DEG 57.296f // 180/PI
 #define MAPPING_INDEX_CRT 1.0f
 #define MAPPING_INDEX_VTG 0.005f
-static float vx, vy, wz;
 
 float follow_relative_angle;
 struct pid pid_follow = {0}; //angle control
@@ -81,7 +80,7 @@ void chassis_task(void const *argument)
 
   soft_timer_register(chassis_push_info, (void *)pchassis, 10);
 
-  pid_struct_init(&pid_follow, MAX_CHASSIS_VW_SPEED*0.9f, 50, 8.764f, 0.0f, 2.0f);
+  pid_struct_init(&pid_follow, MAX_CHASSIS_VW_SPEED*0.85f, 50, 8.764f, 0.0f, 2.0f);
 
   chassis_disable(pchassis);
 
@@ -90,6 +89,7 @@ void chassis_task(void const *argument)
   #endif
   while (1)
   {
+    float vx, vy, wz;
     if (rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK || rc_device_get_state(prc_dev, RC_S2_MID) == RM_OK)
     { //not disabled
       chassis_enable(pchassis);
@@ -118,7 +118,7 @@ void chassis_task(void const *argument)
       if(km_dodge)
       {
         #ifndef HERO_ROBOT
-        wz = 1.1f * MAX_CHASSIS_VW_SPEED;
+        wz = MAX_CHASSIS_VW_SPEED;
         #else
           if(fabsf(follow_relative_angle) >= DODGING_TH)
             twist_sign *= -1;
@@ -166,6 +166,7 @@ void chassis_task(void const *argument)
         /*-------- Then, adjust the power --------*/
       //get the buffer
         extPowerHeatData_t * referee_power = get_heat_power();
+        shooter_data_sent_by_can(referee_power);
       //set the current & voltage flags
         if(referee_power->chassisPowerBuffer > LOW_BUFFER && chassis_power.voltage>LOW_VOLTAGE && 
            chassis_power.power > (CHASSIS_POWER_TH+LOW_BUFFER)/WORKING_VOLTAGE)
