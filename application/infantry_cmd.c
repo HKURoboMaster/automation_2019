@@ -73,7 +73,7 @@ int32_t gimbal_adjust_cmd(uint8_t *buff, uint16_t len)
  */
 uint8_t current_excess, low_voltage;
 int32_t current_detecting_js, voltage_detecting_js, buffer_remained_js;
-uint16_t shooter_heat[2] = {0};
+uint16_t shooter_heat[2] = {0}; //TODO: make it static
 /** Edited by Y.H. Liu
  *  @Jun 12, 2019: disbable the auto mode and implement the auto_aiming
  *
