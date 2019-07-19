@@ -25,6 +25,7 @@
 #endif
 
 #include "sys.h"
+#include "referee_system.h"
 
 #define FIRMWARE_VERSION_0 6u
 #define FIRMWARE_VERSION_1 1u

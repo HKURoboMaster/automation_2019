@@ -27,7 +27,6 @@
 #include "gimbal_task.h"
 
 #include "protocol.h"
-#include "referee_system.h"
 
 #define MANIFOLD2_CHASSIS_SIGNAL (1 << 0)
 #define MANIFOLD2_GIMBAL_SIGNAL (1 << 1)
@@ -74,7 +73,7 @@ int32_t gimbal_adjust_cmd(uint8_t *buff, uint16_t len)
  */
 uint8_t current_excess, low_voltage;
 int32_t current_detecting_js, voltage_detecting_js, buffer_remained_js;
-static shooter_heat[2] = {0};
+uint16_t shooter_heat[2] = {0};
 /** Edited by Y.H. Liu
  *  @Jun 12, 2019: disbable the auto mode and implement the auto_aiming
  *
@@ -344,8 +343,8 @@ int32_t chassis_power_callback(uint8_t *buff, uint16_t len)
 int32_t shooter_data_sent_by_can(extPowerHeatData_t * heat_power_d)
 {
   uint16_t shooter_heat_send[2] = {0};
-  uint16_t shooter_heat_send[0] = heat_power_d->shooterHeat0;
-  uint16_t shooter_heat_send[1] = heat_power_d->shooterHeat0;
+  shooter_heat_send[0] = heat_power_d->shooterHeat0;
+  shooter_heat_send[1] = heat_power_d->shooterHeat0;
   protocol_send(GIMBAL_ADDRESS, CMD_SHOOTER_HEAT, shooter_heat_send, 2*sizeof(uint16_t));
   return RM_OK;
 }
