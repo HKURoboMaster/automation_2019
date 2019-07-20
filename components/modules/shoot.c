@@ -48,12 +48,12 @@ int32_t shoot_pid_register2(struct shoot *shoot, const char *name, enum device_c
 
   memcpy(&motor_name, name, name_len);
   shoot->motor.can_periph = can;
-  shoot->motor.can_id = 0x208;//?
-  shoot->motor.init_offset_f = 1;//?
+  shoot->motor.can_id = 0x208; 
+  shoot->motor.init_offset_f = 1; 
 
   shoot->ctrl.convert_feedback = shoot_pid_input_convert;
 
-  pid_struct_init(&(shoot->motor_pid), 30000, 10000, 10, 0.3, 0);//?
+  pid_struct_init(&(shoot->motor_pid), 30000, 10000, 10, 0.3, 0); 
 
   shoot->param.block_current = BLOCK_CURRENT_DEFAULT;
   shoot->param.block_speed = BLOCK_SPEED_DEFAULT;

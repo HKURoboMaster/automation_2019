@@ -20,7 +20,6 @@
 #include "dbus.h"
 #include "shoot_task.h"
 #include "referee_system.h"
-#include "infantry_cmd.h"
 
 int32_t shoot_firction_toggle(shoot_t pshoot, uint8_t toggled);
 int32_t shoot_lid_toggle(shoot_t pshoot, uint8_t toggled);
@@ -35,7 +34,6 @@ int32_t trigger_wheel_watch;
  * @Jun 20, 2019: adaption for hero
  * @Jul 3, 2019: retrieve the heat data from refree system
  * @Jul 7, 2019: modify the adaption for hero
- * @Jun 19, 2019: receive the shooter heat data from the referee system
  * 
  * Implement the control logic described in Control.md
  */
@@ -64,9 +62,7 @@ void shoot_task(void const *argument)
   static uint8_t fric_on = 0; //0x00 for off, 0xFF for on
   // static uint8_t lid_open = 0; //0x00 for closed, 0xFF for opened
   shoot_firction_toggle(pshoot, 1);
-	shoot_firction_toggle(pshoot2, 1);
   shoot_lid_toggle(pshoot,1);
-	shoot_lid_toggle(pshoot2,1);
   while (1)
   {
     if (rc_device_get_state(prc_dev, RC_S2_DOWN) == RM_OK)
@@ -128,11 +124,11 @@ void shoot_task(void const *argument)
     }
     
     /*------ implement the function of a trigger ------*/
-    uint16_t * shooter_heat_current = shooter_heat_get();
+    extPowerHeatData_t * heatPowerData = get_heat_power();
     uint16_t heatLimit = get_heat_limit();
 
     #ifndef HERO_ROBOT
-    if (shooter_heat_current[0] < heatLimit && rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK && fric_on) //not in disabled mode
+    if (heatPowerData->shooterHeat0 < heatLimit && rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK && fric_on) //not in disabled mode
     {
       if (rc_device_get_state(prc_dev, RC_WHEEL_UP) == RM_OK
         || mouse_shoot_control(prc_dev)==press)
@@ -154,7 +150,7 @@ void shoot_task(void const *argument)
       }
     }
     #else
-    if (shooter_heat_current[1] < heatLimit && rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK && fric_on) //not in disabled mode
+    if (heatPowerData->shooterHeat1 < heatLimit && rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK && fric_on) //not in disabled mode
     {
       if (rc_device_get_state(prc_dev, RC_WHEEL_UP) == RM_OK && prc_dev->last_rc_info.wheel < 300)
       {
@@ -174,9 +170,9 @@ void shoot_task(void const *argument)
 				shoot_set_cmd(pshoot2, SHOOT_STOP_CMD, 0);//Leo
       }
     }
-		shoot_execute(pshoot2);//Leo
     #endif
     shoot_execute(pshoot);
+		shoot_execute(pshoot2);//Leo
     osDelayUntil(&period, 5);
 
     /*-------- For shoot_task debug --------*/
