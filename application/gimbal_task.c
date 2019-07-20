@@ -73,7 +73,7 @@ void gimbal_task(void const *argument)
   cali_sys_t *pparam = NULL;
 
   pgimbal = gimbal_find("gimbal");
-  prc_dev = rc_device_find("can_rc");
+  prc_dev = rc_device_find("uart_rc");
   pparam = get_cali_param();
   
   /**Added by Y.H. Liu
@@ -255,9 +255,9 @@ static int32_t gimbal_imu_update(void *argc)
   mpu_get_data(&mpu_sensor);
   mahony_ahrs_updateIMU(&mpu_sensor, &mahony_atti);
 
-  gimbal_pitch_gyro_update(pgimbal, -mahony_atti.roll);
+  gimbal_pitch_gyro_update(pgimbal, -mahony_atti.pitch);
   gimbal_yaw_gyro_update(pgimbal, -mahony_atti.yaw);
-  gimbal_rate_update(pgimbal, mpu_sensor.wy * RAD_TO_DEG, -mpu_sensor.wx * RAD_TO_DEG);
+  gimbal_rate_update(pgimbal, mpu_sensor.wz * RAD_TO_DEG, -mpu_sensor.wy * RAD_TO_DEG);
   
   mpu_pit = mahony_atti.pitch * 1000;
   mpu_yaw = mahony_atti.yaw   * 1000;
@@ -314,7 +314,7 @@ struct pid pid_pit_spd = {0};
  * @Jul 8, 2019: use the original methods to calculate the pitch centre
  * @Jul 17, 2019: use a queue for auto-aimming adaption
  * 
- * Automatically adjust the netural position for gimbal
+ * Automatically adjust the neutral position for gimbal
  */
 static void auto_gimbal_adjust(gimbal_t pgimbal)
 {
