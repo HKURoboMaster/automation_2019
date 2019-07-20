@@ -28,7 +28,7 @@ enum shoot_state shoot_state_watch;
 uint8_t shoot_cmd_watch;
 uint8_t trigger_state_watch;
 int32_t trigger_wheel_watch;
-
+int delta;
 /**Edited by Y.H. Liu
  * @Jun 13, 2019: change the FSM for shooting
  * @Jun 20, 2019: adaption for hero
@@ -143,19 +143,15 @@ void shoot_task(void const *argument)
       if (rc_device_get_state(prc_dev, RC_WHEEL_UP) == RM_OK && prc_dev->last_rc_info.wheel < 300)
       {
         shoot_set_cmd(pshoot, SHOOT_ONCE_CMD, 1);
-				shoot_set_cmd(pshoot2, SHOOT_ONCE_CMD, 1);//Leo
       }
       else if ((rc_device_get_state(prc_dev, RC_WHEEL_DOWN) == RM_OK && prc_dev->last_rc_info.wheel > -300)
             || mouse_shoot_control(prc_dev)==click )
       {
         shoot_set_cmd(pshoot, SHOOT_ONCE_CMD, 1);
-				shoot_set_cmd(pshoot2, SHOOT_ONCE_CMD, 1);//Leo
-
       }
       else
       {
         shoot_set_cmd(pshoot, SHOOT_STOP_CMD, 0);
-				shoot_set_cmd(pshoot2, SHOOT_STOP_CMD, 0);//Leo
       }
     }
 		shoot_execute(pshoot2);//Leo
@@ -180,6 +176,7 @@ void shoot_task(void const *argument)
  */
 int32_t shoot_firction_toggle(shoot_t pshoot, uint8_t toggled)
 {
+	delta = strncmp(pshoot->parent.name, "shoot",OBJECT_NAME_MAX_LEN);
   if (toggled)
   {
     shoot_set_fric_speed(pshoot, 100, 100);
