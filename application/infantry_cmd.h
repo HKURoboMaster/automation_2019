@@ -25,6 +25,7 @@
 #endif
 
 #include "sys.h"
+#include "referee_system.h"
 
 #define FIRMWARE_VERSION_0 6u
 #define FIRMWARE_VERSION_1 1u
@@ -61,6 +62,7 @@
 #define CMD_PUSH_UWB_INFO                   (0x0402u)
 #define CMD_GIMBAL_ADJUST                   (0x0403u)
 #define CMD_CHASSIS_POWER                   (0x0404u)
+#define CMD_SHOOTER_HEAT                    (0x0405u)
 
 #pragma pack(push,1)
 
@@ -177,5 +179,9 @@ struct chassis_power_data_t
 #pragma pack(pop)
 /*-------- For chassis power receiver --------*/
 int32_t chassis_power_callback(uint8_t * buff, uint16_t len);
+/*-------- For shooter heat communication --------*/
+int32_t shooter_data_sent_by_can(extPowerHeatData_t * heat_power_d);
+int32_t shooter_data_callback(uint8_t *buff, uint16_t len);
+uint16_t * shooter_heat_get(void);
 
 #endif // __INFANTRY_H__
