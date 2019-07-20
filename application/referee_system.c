@@ -28,7 +28,7 @@ static unpack_data_t referee_unpack_obj;
 static fifo_s_t  referee_rxdata_fifo;
 static uint8_t   referee_rxdata_buf[REFEREE_FIFO_BUFLEN];
 
-ref_send_handler_t ref_protocol_send; //TODO: Make it static
+static ref_send_handler_t ref_protocol_send; 
 static uint8_t ref_seq_num;
 
 /**Added by Y.H. Liu

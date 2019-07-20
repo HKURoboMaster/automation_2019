@@ -89,8 +89,6 @@ int32_t offline_check(void *argc)
 
   if(detect_device_get_event(&offline_dev) & TURN_OFFLINE_EVENT)
     shoot_disable(pshoot);
-  else
-    shoot_enable(pshoot);
 
   if(detect_device_get_event(&offline_dev) == 0)
 	  LED_R_OFF();
@@ -110,6 +108,7 @@ int32_t rc_offline_callback(void *argc)
   chassis_disable(pchassis);
   gimbal_pitch_disable(pgimbal);
   gimbal_yaw_disable(pgimbal);
+  shoot_disable(pshoot);
   return 0;
 }
 

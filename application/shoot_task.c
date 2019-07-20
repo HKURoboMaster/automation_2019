@@ -78,7 +78,11 @@ void shoot_task(void const *argument)
       continue;
     }
     shoot_enable(pshoot);
+    #ifdef HERO_ROBOT
     shoot_enable(pshoot2);
+    #else
+    shoot_disable(pshoot2);
+    #endif
     if (rc_device_get_state(prc_dev, RC_S1_MID2UP) == RM_OK)
     {
       shoot_firction_toggle(pshoot, fric_on);
@@ -194,17 +198,17 @@ int32_t shoot_firction_toggle(shoot_t pshoot, uint8_t toggled)
 {
   if (toggled)
   {
-    shoot_set_fric_speed(pshoot, 100, 100);
+    shoot_set_fric_speed(pshoot, FIRC_STOP_SPEED, FIRC_STOP_SPEED);
     turn_off_laser();
-	if(strncmp(pshoot->parent.name, "shoot",OBJECT_NAME_MAX_LEN))//Leo
-		shoot_set_cmd(pshoot, SHOOT_STOP_CMD, 0);			//Leo	
+	  if(0==strncmp(pshoot->parent.name, "shoot2",OBJECT_NAME_MAX_LEN))//Leo: If the given struct is shoot2
+		  shoot_set_cmd(pshoot, SHOOT_STOP_CMD, 0);		 //Leo: Stop the trigger motor
   }
   else
   {
-    shoot_set_fric_speed(pshoot, 160, 160);
+    shoot_set_fric_speed(pshoot, FIRC_MAX_SPEED, FIRC_MAX_SPEED);
     turn_on_laser();
-  if(strncmp(pshoot->parent.name, "shoot",OBJECT_NAME_MAX_LEN))//Leo
-		shoot_set_cmd(pshoot, SHOOT_CONTINUOUS_CMD, CONTIN_BULLET_NUM);	//Leo			
+    if(0==strncmp(pshoot->parent.name, "shoot2",OBJECT_NAME_MAX_LEN) && pshoot->ctrl.enable)//Leo: If the given struct is shoot2
+		  shoot_set_cmd(pshoot, SHOOT_CONTINUOUS_CMD, CONTIN_BULLET_NUM);	    //Leo: Continue to shoot the bullets
   }
   return 0;
 }
