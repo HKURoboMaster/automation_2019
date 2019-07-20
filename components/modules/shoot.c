@@ -23,7 +23,6 @@ static int32_t shoot_pid_input_convert(struct controller *ctrl, void *input);
 static int32_t shoot_fric_ctrl(struct shoot *shoot);
 static int32_t shoot_cmd_ctrl(struct shoot *shoot);
 static int32_t shoot_block_check(struct shoot *shoot);
-
 //Leo starts
 int32_t shoot_pid_register2(struct shoot *shoot, const char *name, enum device_can can)
 {
@@ -99,7 +98,6 @@ int32_t shoot_pid_register(struct shoot *shoot, const char *name, enum device_ca
   object_init(&(shoot->parent), Object_Class_Shoot, name);
 
   name_len = strlen(name);
-
   if (name_len > OBJECT_NAME_MAX_LEN / 2)
   {
     name_len = OBJECT_NAME_MAX_LEN / 2;

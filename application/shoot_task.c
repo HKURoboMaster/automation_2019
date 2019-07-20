@@ -188,19 +188,19 @@ void shoot_task(void const *argument)
  */
 int32_t shoot_firction_toggle(shoot_t pshoot, uint8_t toggled)
 {
-	delta = strncmp(pshoot->parent.name, "shoot",OBJECT_NAME_MAX_LEN);
+	delta = strncmp(pshoot->parent.name, "shoot2",OBJECT_NAME_MAX_LEN);
   if (toggled)
   {
     shoot_set_fric_speed(pshoot, 100, 100);
     turn_off_laser();
-	if(strncmp(pshoot->parent.name, "shoot",OBJECT_NAME_MAX_LEN))//Leo
+	if(strlen(pshoot->parent.name)==6)//Leo
 		shoot_set_cmd(pshoot, SHOOT_STOP_CMD, 0);			//Leo	
   }
   else
   {
     shoot_set_fric_speed(pshoot, 160, 160);
     turn_on_laser();
-  if(strncmp(pshoot->parent.name, "shoot",OBJECT_NAME_MAX_LEN))//Leo
+  if(strlen(pshoot->parent.name)==6)//Leo
 		shoot_set_cmd(pshoot, SHOOT_CONTINUOUS_CMD, CONTIN_BULLET_NUM);	//Leo			
   }
   return 0;
