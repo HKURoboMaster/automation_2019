@@ -33,6 +33,7 @@
 #define GIMBAL_PERIOD 2
 /* gimbal back center time (ms) */
 #define BACK_CENTER_TIME 3000
+#define MAX_TRACK_ANGLE 35
 
 //Kalman filter related define
 kalman_filter_init_t yaw_kalman_filter_para = {
@@ -57,6 +58,9 @@ kalman_filter_t pit_kalman_filter;
 uint32_t   gim_tim_ms = 0; 
 uint32_t   gim_last_tim = 0;
 
+float yaw_angle_raw = 0;
+float pit_angle_raw = 0;
+
 typedef struct  // speed_calc_data_t
 {
   int delay_cnt;
@@ -73,8 +77,12 @@ speed_calc_data_t pit_speed_struct;
 
 static float yaw_speed_raw;
 static float pit_speed_raw;
+float *yaw_kf_data;
+float *pit_kf_data;
 
 float target_speed_calc(speed_calc_data_t *S,uint32_t time,float position);
+
+#define KALMAN
 // Aimming related
 extern float auto_aiming_pitch;
 extern float auto_aiming_yaw;
@@ -130,13 +138,15 @@ void gimbal_task(void const *argument)
   float pitch_autoaim_offset = 0.0f;
   float pit_delta, yaw_delta;
   // Added By Eric Chen : Init Kalman filter params
+	//#ifdef KALMAN
   kalman_filter_init(&yaw_kalman_filter,&yaw_kalman_filter_para);
   kalman_filter_init(&pit_kalman_filter,&pit_kalman_filter_para);
+	//#else
   struct angle_queue yawQ;
   struct angle_queue pitQ; 
   queue_init(&yawQ);
   queue_init(&pitQ);
-
+	//#endif
   if (pparam->gim_cali_data.calied_done == CALIED_FLAG)
   {
     gimbal_set_offset(pgimbal, pparam->gim_cali_data.yaw_offset, pparam->gim_cali_data.pitch_offset);
@@ -162,17 +172,21 @@ void gimbal_task(void const *argument)
   imu_temp_ctrl_init();
   while (1)
   {
+		#ifdef KALMAN
     // Added By Eric Chen: Enable Kalman filter function
     gim_tim_ms = HAL_GetTick() - gim_last_tim;  // For speed calculation
     gim_last_tim = HAL_GetTick();
     // Eric Chen Edition End.
-
+		
 
     mat_init(&yaw_kalman_filter.Q,2,2,yaw_kalman_filter_para.Q_data);
     mat_init(&pit_kalman_filter.Q,2,2,pit_kalman_filter_para.Q_data);
-
-
-
+		//Each time update
+    #endif
+		// The reason using a queue is : Make a 10 ms delay when receive the data;
+		// Since each 10 ms the data will be updated from PC
+		// Encoder angle will be enqueue.each time and the encoder
+		//#ifndef KALMAN
     if(yawQ.len>=DELAY)
     {
       do
@@ -187,6 +201,7 @@ void gimbal_task(void const *argument)
         pitch_autoaim_offset = pgimbal->ecd_angle.pitch - deQueue(&pitQ);
       }while(pitQ.len>=DELAY);
     }
+		//#endif
     if(rc_device_get_state(prc_dev, RC_S2_DOWN2MID) == RM_OK)
     {
       //switched out disabled mode
@@ -205,16 +220,40 @@ void gimbal_task(void const *argument)
       if(prc_info->kb.bit.X != 1)
       {
         //auto_aimming
+				#ifndef KALMAN
         if(prc_info->mouse.r || rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK)
         {
           if(auto_aiming_yaw!=0)
             gimbal_set_pitch_delta(pgimbal, auto_aiming_pitch-pitch_autoaim_offset);
           if(auto_aiming_pitch!=0)
             gimbal_set_yaw_delta(pgimbal, auto_aiming_yaw-yaw_autoaim_offset);
-          auto_aiming_pitch = 0;
+          auto_aiming_pitch = 0;	// Make sure the only data sent by pc will be used
           auto_aiming_yaw = 0;
         }
-
+				#endif
+				// Auto aiming kalman testing
+				// PC data toggle
+				int speed_calc_time=0;
+				int speed_calc_last_time=0;
+				if(auto_aiming_yaw != 0 && auto_aiming_pitch != 0)
+				{
+					speed_calc_time = HAL_GetTick() - speed_calc_last_time;
+					speed_calc_last_time = HAL_GetTick();
+					yaw_angle_raw = auto_aiming_yaw + yaw_autoaim_offset;
+					pit_angle_raw = auto_aiming_pitch;
+					auto_aiming_pitch = 0;
+					auto_aiming_yaw = 0;
+				}
+				yaw_speed_raw = target_speed_calc(&yaw_speed_struct,speed_calc_time/1000,yaw_angle_raw);
+				pit_speed_raw = target_speed_calc(&pit_speed_struct,speed_calc_time/1000,pit_angle_raw);
+				// Pure auto aiming.........
+				if(prc_info->mouse.r || rc_device_get_state(prc_dev,RC_S2_UP)==RM_OK)
+				{
+					yaw_kf_data = kalman_filter_calc(&yaw_kalman_filter,yaw_angle_raw,yaw_speed_raw);
+					pit_kf_data = kalman_filter_calc(&pit_kalman_filter,pit_angle_raw,pit_speed_raw);
+					gimbal_set_yaw_delta(pgimbal,yaw_kf_data[0]);
+					gimbal_set_pitch_delta(pgimbal,pit_kf_data[0]);
+				}
         float square_ch1 = (float)prc_info->ch1 * abs(prc_info->ch1) / RC_CH_SCALE;
         /*-------- Map mouse coordinates into polar coordiantes --------*/
         int16_t yaw_mouse,pit_mouse;

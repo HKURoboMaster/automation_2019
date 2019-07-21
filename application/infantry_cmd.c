@@ -147,7 +147,7 @@ void infantry_cmd_task(void const *argument)
           // chassis_set_acc(pchassis, pacc->ax, pacc->ay, pacc->wz / 10.0f);
           // chassis_set_speed(pchassis, pacc->vx, pacc->vy, pacc->vw / 10.0f);
         }
-
+				// PC auto aiming mode is enabled
         if ((prc_dev->rc_info.mouse.r || rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK)
           && event.value.signals & MANIFOLD2_GIMBAL_SIGNAL)
         {
@@ -160,7 +160,7 @@ void infantry_cmd_task(void const *argument)
           else
           {
             // gimbal_set_pitch_speed(pgimbal, pangle->pitch / 10.0f);
-            auto_aiming_pitch = pangle->pitch / 10.0f;
+            auto_aiming_pitch = pangle->pitch / 10.0f; // Use the absolute angle
           }
           if (pangle->ctrl.bit.yaw_mode == 0)
           {
@@ -169,7 +169,7 @@ void infantry_cmd_task(void const *argument)
           else
           {
             // gimbal_set_yaw_speed(pgimbal, pangle->yaw / 10.0f);
-            auto_aiming_yaw = pangle->yaw / 10.0f;
+            auto_aiming_yaw = pangle->yaw / 10.0f;	// Divide by 10 is a unit transfer.
           }
         }
         //
