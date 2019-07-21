@@ -53,7 +53,7 @@ void shoot_task(void const *argument)
 	shoot_t pshoot2 = NULL;
   pshoot = shoot_find("shoot");
 	pshoot2 = shoot_find("shoot2");//Leo
-  prc_dev = rc_device_find("can_rc");
+  prc_dev = rc_device_find("uart_rc");
 
   if (prc_dev == NULL)
   {
@@ -66,7 +66,6 @@ void shoot_task(void const *argument)
   shoot_firction_toggle(pshoot, 1);
 	shoot_firction_toggle(pshoot2, 1);
   shoot_lid_toggle(pshoot,1);
-	shoot_lid_toggle(pshoot2,1);
   while (1)
   {
     if (rc_device_get_state(prc_dev, RC_S2_DOWN) == RM_OK)
@@ -94,13 +93,11 @@ void shoot_task(void const *argument)
      (prc_dev->rc_info.kb.bit.R && !prc_dev->last_rc_info.kb.bit.R))
     {
       shoot_lid_toggle(pshoot, 0);
-      shoot_lid_toggle(pshoot2, 0);
     }
     if(rc_device_get_state(prc_dev, RC_S1_DOWN2MID) == RM_OK ||(
      !prc_dev->rc_info.kb.bit.R && prc_dev->last_rc_info.kb.bit.R))
     {
       shoot_lid_toggle(pshoot, 1);
-      shoot_lid_toggle(pshoot2, 1);
     }
 
     /*------ implement the keyboard controlling over shooting ------*/
@@ -193,15 +190,15 @@ int32_t shoot_firction_toggle(shoot_t pshoot, uint8_t toggled)
   {
     shoot_set_fric_speed(pshoot, 100, 100);
     turn_off_laser();
-	if(strlen(pshoot->parent.name)==6)//Leo
-		shoot_set_cmd(pshoot, SHOOT_STOP_CMD, 0);			//Leo	
+		if(strlen(pshoot->parent.name)==6)//Leo
+			shoot_set_cmd(pshoot, SHOOT_STOP_CMD, 0);			//Leo	
   }
   else
   {
     shoot_set_fric_speed(pshoot, 160, 160);
     turn_on_laser();
-  if(strlen(pshoot->parent.name)==6)//Leo
-		shoot_set_cmd(pshoot, SHOOT_CONTINUOUS_CMD, CONTIN_BULLET_NUM);	//Leo			
+		if(strlen(pshoot->parent.name)==6)//Leo
+			shoot_set_cmd(pshoot, SHOOT_CONTINUOUS_CMD, CONTIN_BULLET_NUM);	//Leo			
   }
   return 0;
 }
