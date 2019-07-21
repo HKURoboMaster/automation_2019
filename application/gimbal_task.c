@@ -72,6 +72,18 @@ typedef struct  // speed_calc_data_t
   float processed_speed;
 } speed_calc_data_t;
 
+// Acceleration typedef
+typedef struct
+{
+	int delay_cnt;
+	int freq;
+	int last_time;
+	float last_speed;
+	float acceleration;
+	float last_acceleration;
+	float processed_acceleration;
+}acc_calc_data_t;
+
 speed_calc_data_t yaw_speed_struct;
 speed_calc_data_t pit_speed_struct;
 
@@ -81,7 +93,7 @@ float *yaw_kf_data;
 float *pit_kf_data;
 
 float target_speed_calc(speed_calc_data_t *S,uint32_t time,float position);
-
+float target_accele_calc(acc_calc_data_t *A,uint32_t time, float speed);
 #define KALMAN
 // Aimming related
 extern float auto_aiming_pitch;
@@ -116,8 +128,8 @@ int32_t yaw_ecd_angle_js, pit_ecd_angle_js;
 void gimbal_task(void const *argument)
 {
   // Edited By Eric Chen 2019.7.20
-  gim_tim_ms = HAL_GetTick() - gim_last_tim;  // For speed calculation
-  gim_last_tim = HAL_GetTick();
+  //gim_tim_ms = HAL_GetTick() - gim_last_tim;  // For speed calculation
+  //gim_last_tim = HAL_GetTick();
   uint32_t period = osKernelSysTick();
   rc_device_t prc_dev = NULL;
   rc_info_t prc_info = NULL;
@@ -252,7 +264,7 @@ void gimbal_task(void const *argument)
 				{
 					yaw_kf_data = kalman_filter_calc(&yaw_kalman_filter,yaw_angle_raw,yaw_speed_raw);
 					pit_kf_data = kalman_filter_calc(&pit_kalman_filter,pit_angle_raw,pit_speed_raw);
-					gimbal_set_yaw_delta(pgimbal,yaw_kf_data[0]);
+					gimbal_set_yaw_delta(pgimbal,yaw_kf_data[0]);	
 					gimbal_set_pitch_delta(pgimbal,pit_kf_data[0]);
 				}
 				#endif
@@ -533,5 +545,41 @@ float target_speed_calc(speed_calc_data_t *S, uint32_t time, float position)
   }
 
   return S->processed_speed;
+}
+
+float acc_threshold = 10.0f;
+
+float acc_speed_calc(acc_calc_data_t *A, uint32_t time, float speed)
+{
+  A->delay_cnt++;
+
+  if (time != A->last_time)
+  {
+    A->acceleration = (speed - A->last_speed) / (time - A->last_time) * 1000;
+#if 1
+    if ((A->acceleration - A->processed_acceleration) < -acc_threshold)
+    {
+        A->processed_acceleration = A->processed_acceleration - acc_threshold;
+    }
+    else if ((A->acceleration - A->processed_acceleration) > acc_threshold)
+    {
+        A->processed_acceleration = A->processed_acceleration + acc_threshold;
+    }
+    else 
+#endif
+      A->processed_acceleration = A->acceleration;
+    
+    A->last_time = time;
+    A->last_acceleration = A->acceleration;
+    A->last_acceleration = A->acceleration;
+    A->delay_cnt = 0;
+  }
+  
+  if(A->delay_cnt > 200) // delay 200ms speed = 0
+  {
+    A->processed_acceleration = 0;
+  }
+
+  return A->processed_acceleration;
 }
 
