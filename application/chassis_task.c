@@ -166,7 +166,7 @@ void chassis_task(void const *argument)
         /*-------- Then, adjust the power --------*/
       //get the buffer
         extPowerHeatData_t * referee_power = get_heat_power();
-        shooter_data_sent_by_can(referee_power);
+      // shooter_data_sent_by_can(referee_power);
       //set the current & voltage flags
         if(referee_power->chassisPowerBuffer > LOW_BUFFER && chassis_power.voltage>LOW_VOLTAGE && 
            chassis_power.power > (CHASSIS_POWER_TH+LOW_BUFFER)/WORKING_VOLTAGE)

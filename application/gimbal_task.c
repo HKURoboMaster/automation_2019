@@ -34,6 +34,47 @@
 /* gimbal back center time (ms) */
 #define BACK_CENTER_TIME 3000
 
+//Kalman filter related define
+kalman_filter_init_t yaw_kalman_filter_para = {
+  .P_data = {2, 0, 0, 2},					// Co-variance Matrix
+  .A_data = {1, 0.002, 0, 1},			// Predict function Transfer parameter 1000Hz?
+  .H_data = {1, 0, 0, 1},					// Measurement transfer parameter
+  .Q_data = {1, 0, 0, 1},					// Co-variance of progress matrix
+  .R_data = {1000, 0, 0, 2000}		// Co-Variance of Measurement Observe matrix.
+};
+
+kalman_filter_init_t pit_kalman_filter_para = 
+{
+  .P_data = {2, 0, 0, 2},
+  .A_data = {1, 0.002, 0, 1},
+  .H_data = {1, 0, 0, 1},
+  .Q_data = {1, 0, 0, 1},
+  .R_data = {2000, 0, 0, 5000}		// Basic Idea is kalman filter uses co-variance data.
+};	// Only consider the variance instead of co-variance.
+// Kalman Filter
+kalman_filter_t yaw_kalman_filter;
+kalman_filter_t pit_kalman_filter;
+uint32_t   gim_tim_ms = 0; 
+uint32_t   gim_last_tim = 0;
+
+typedef struct  // speed_calc_data_t
+{
+  int delay_cnt;
+  int freq;
+  int last_time;
+  float last_position;
+  float speed;
+  float last_speed;
+  float processed_speed;
+} speed_calc_data_t;
+
+speed_calc_data_t yaw_speed_struct;
+speed_calc_data_t pit_speed_struct;
+
+static float yaw_speed_raw;
+static float pit_speed_raw;
+
+float target_speed_calc(speed_calc_data_t *S,uint32_t time,float position);
 // Aimming related
 extern float auto_aiming_pitch;
 extern float auto_aiming_yaw;
@@ -66,6 +107,9 @@ int32_t yaw_ecd_angle_js, pit_ecd_angle_js;
  */
 void gimbal_task(void const *argument)
 {
+  // Edited By Eric Chen 2019.7.20
+  gim_tim_ms = HAL_GetTick() - gim_last_tim;  // For speed calculation
+  gim_last_tim = HAL_GetTick();
   uint32_t period = osKernelSysTick();
   rc_device_t prc_dev = NULL;
   rc_info_t prc_info = NULL;
@@ -85,7 +129,9 @@ void gimbal_task(void const *argument)
   float yaw_autoaim_offset = 0.0f;
   float pitch_autoaim_offset = 0.0f;
   float pit_delta, yaw_delta;
-
+  // Added By Eric Chen : Init Kalman filter params
+  kalman_filter_init(&yaw_kalman_filter,&yaw_kalman_filter_para);
+  kalman_filter_init(&pit_kalman_filter,&pit_kalman_filter_para);
   struct angle_queue yawQ;
   struct angle_queue pitQ; 
   queue_init(&yawQ);
@@ -116,6 +162,17 @@ void gimbal_task(void const *argument)
   imu_temp_ctrl_init();
   while (1)
   {
+    // Added By Eric Chen: Enable Kalman filter function
+    gim_tim_ms = HAL_GetTick() - gim_last_tim;  // For speed calculation
+    gim_last_tim = HAL_GetTick();
+    // Eric Chen Edition End.
+
+
+    mat_init(&yaw_kalman_filter.Q,2,2,yaw_kalman_filter_para.Q_data);
+    mat_init(&pit_kalman_filter.Q,2,2,pit_kalman_filter_para.Q_data);
+
+
+
     if(yawQ.len>=DELAY)
     {
       do
@@ -401,3 +458,39 @@ static void gimbal_state_init(gimbal_t pgimbal)
     }
   }
 }
+
+float speed_threshold = 10.0f;
+float target_speed_calc(speed_calc_data_t *S, uint32_t time, float position)
+{
+  S->delay_cnt++;
+
+  if (time != S->last_time)
+  {
+    S->speed = (position - S->last_position) / (time - S->last_time) * 1000;
+#if 1
+    if ((S->speed - S->processed_speed) < -speed_threshold)
+    {
+        S->processed_speed = S->processed_speed - speed_threshold;
+    }
+    else if ((S->speed - S->processed_speed) > speed_threshold)
+    {
+        S->processed_speed = S->processed_speed + speed_threshold;
+    }
+    else 
+#endif
+      S->processed_speed = S->speed;
+    
+    S->last_time = time;
+    S->last_position = position;
+    S->last_speed = S->speed;
+    S->delay_cnt = 0;
+  }
+  
+  if(S->delay_cnt > 200) // delay 200ms speed = 0
+  {
+    S->processed_speed = 0;
+  }
+
+  return S->processed_speed;
+}
+
