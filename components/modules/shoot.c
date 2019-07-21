@@ -53,7 +53,7 @@ int32_t shoot_pid_register2(struct shoot *shoot, const char *name, enum device_c
 
   shoot->ctrl.convert_feedback = shoot_pid_input_convert;
 
-  pid_struct_init(&(shoot->motor_pid), 30000, 10000, 10, 0.3, 0); 
+  pid_struct_init(&(shoot->motor_pid), 20000, 10000, 10, 0.3, 0); 
 
   shoot->param.block_current = BLOCK_CURRENT_DEFAULT;
   shoot->param.block_speed = BLOCK_SPEED_DEFAULT;
@@ -112,7 +112,7 @@ int32_t shoot_pid_register(struct shoot *shoot, const char *name, enum device_ca
 
   shoot->ctrl.convert_feedback = shoot_pid_input_convert;
 
-  pid_struct_init(&(shoot->motor_pid), 30000, 10000, 10, 0.3, 0);
+  pid_struct_init(&(shoot->motor_pid), 20000, 10000, 10, 0.3, 0);
 
   shoot->param.block_current = BLOCK_CURRENT_DEFAULT;
   shoot->param.block_speed = BLOCK_SPEED_DEFAULT;

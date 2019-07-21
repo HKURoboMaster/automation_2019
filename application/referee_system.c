@@ -117,48 +117,92 @@ void referee_data_handler(uint8_t *p_frame)
   protocol_send(MANIFOLD2_ADDRESS, cmd_id + 0x4000, data_addr, data_length);
 
   /*------ Unpack the data ------*/
-  cmdID_t unpack_cmd = (cmdID_t) (cmd_id-0x0200);
+  cmdID_t unpack_cmd = (cmdID_t)cmd_id;
   switch (unpack_cmd)
   {
-    case gameRobotState: // 8bytes 
-      referee_data.gameRobotState.stageRemianTime = *(uint16_t *)(data_addr);
-      referee_data.gameRobotState.gameProgress = *(uint8_t *)(data_addr+2);
-      referee_data.gameRobotState.robotLevel = *(uint8_t *)(data_addr+3);
-      referee_data.gameRobotState.remainHP = *(uint16_t *)(data_addr+4);
-      referee_data.gameRobotState.maxHP = *(uint16_t *)(data_addr+6);
+    case gameState:
+      referee_data.game_state.game_type = *(uint8_t *)(data_addr);
+      referee_data.game_state.game_progress = *(uint8_t *)(data_addr+1);
+      referee_data.game_state.stage_remain_time = *(uint16_t *)(data_addr+2);
       break;
-    case robotHurt:
-      referee_data.robotHurt.armorType = *(uint8_t *)(data_addr) & 15;
-      referee_data.robotHurt.hurtType = *(uint8_t *)(data_addr) >> 4;
+    case gameResult:
+      referee_data.game_result.winner = *(uint8_t *)(data_addr);
       break;
-    case shootData:
-      referee_data.shootData.bulletType = *(uint8_t *)(data_addr);
-      referee_data.shootData.bulletFreq = *(uint8_t *)(data_addr+1);
-      referee_data.shootData.bulletSpeed = *(float *)(data_addr+2);
+    case robotSurvivors:
+      referee_data.game_robot_survivors.red_1_HP = *(uint16_t *)(data_addr);
+      referee_data.game_robot_survivors.red_2_HP = *(uint16_t *)(data_addr+2);
+      referee_data.game_robot_survivors.red_3_HP = *(uint16_t *)(data_addr+4);
+      referee_data.game_robot_survivors.red_4_HP = *(uint16_t *)(data_addr+6);
+      referee_data.game_robot_survivors.red_5_HP = *(uint16_t *)(data_addr+8);
+      referee_data.game_robot_survivors.red_7_HP = *(uint16_t *)(data_addr+10);
+      referee_data.game_robot_survivors.red_base_HP = *(uint16_t *)(data_addr+12);
+      referee_data.game_robot_survivors.blue_1_HP = *(uint16_t *)(data_addr+14);
+      referee_data.game_robot_survivors.blue_2_HP = *(uint16_t *)(data_addr+16);
+      referee_data.game_robot_survivors.blue_3_HP = *(uint16_t *)(data_addr+18);
+      referee_data.game_robot_survivors.blue_4_HP = *(uint16_t *)(data_addr+20);
+      referee_data.game_robot_survivors.blue_5_HP = *(uint16_t *)(data_addr+22);
+      referee_data.game_robot_survivors.blue_7_HP = *(uint16_t *)(data_addr+24);
+      referee_data.game_robot_survivors.blue_base_HP = *(uint16_t *)(data_addr+26);
       break;
-    case powerHeatData:
-      referee_data.powerHeatData.chassisVolt = *(float *)(data_addr);
-      referee_data.powerHeatData.chassisCurrent = *(float *)(data_addr+4);
-      referee_data.powerHeatData.chassisPower = *(float *)(data_addr+8);
-      referee_data.powerHeatData.chassisPowerBuffer = *(float *)(data_addr+12);
-      referee_data.powerHeatData.shooterHeat0 = *(uint16_t *)(data_addr+16);
-      referee_data.powerHeatData.shooterHeat1 = *(uint16_t *)(data_addr+18);
+    case gameEvent:
+      referee_data.event_data.event_type = *(uint32_t *)(data_addr);
       break;
-    case rfidDetect: 
-      referee_data.rfidDetect.cardType = *(data_addr);
-      referee_data.rfidDetect.cardIdx = *(data_addr+1);
+    case supplierInfo:
+      referee_data.supply_action.supply_projectile_id = *(uint8_t *)(data_addr);
+      referee_data.supply_action.supply_robot_id = *(uint8_t *)(data_addr+1);
+      referee_data.supply_action.supply_projectile_step = *(uint8_t *)(data_addr+2);
+      referee_data.supply_action.supply_projectile_num = *(uint8_t *)(data_addr+3);
       break;
-    case result:
-      referee_data.result.winner = *data_addr;
+    case bulletSupply:
+      referee_data.supply_booking.supply_projectile_id = *(uint8_t *)(data_addr);
+      referee_data.supply_booking.supply_robot_id = *(uint8_t *)(data_addr+1);
+      referee_data.supply_booking.supply_num = *(uint8_t *)(data_addr+2);
       break;
-    case buffMusk:
-      referee_data.buffMusk.buffMusk = *(uint16_t *)(data_addr);
+    case refereeWarning:
+      referee_data.referee_warning.level = *(uint8_t *)(data_addr);
+      referee_data.referee_warning.id = *(uint8_t *)(data_addr+1);
+      break;
+    case robotState:
+      referee_data.game_robot_state.robot_id = *(uint8_t *)(data_addr);
+      referee_data.game_robot_state.robot_level = *(uint8_t *)(data_addr+1);
+      referee_data.game_robot_state.remain_HP = *(uint16_t *)(data_addr+2);
+      referee_data.game_robot_state.max_HP = *(uint16_t *)(data_addr+4);
+      referee_data.game_robot_state.shooter_heat0_cooling_rate = *(uint16_t *)(data_addr+6);
+      referee_data.game_robot_state.shooter_heat0_cooling_limit = *(uint16_t *)(data_addr+8);
+      referee_data.game_robot_state.shooter_heat1_cooling_rate = *(uint16_t *)(data_addr+10);
+      referee_data.game_robot_state.mains_power_gimbal_output = *(uint8_t *)(data_addr+12)&0x80u;
+      referee_data.game_robot_state.mains_power_chassis_output = *(uint8_t *)(data_addr+12)&0x40u;
+      referee_data.game_robot_state.mains_power_shooter_output = *(uint8_t *)(data_addr+12)&0x20u;
+      break;
+    case powerHeat:
+      referee_data.power_heat_data.chassis_volt = *(uint16_t *)(data_addr);
+      referee_data.power_heat_data.chassis_current = *(uint16_t *)(data_addr+2);
+      referee_data.power_heat_data.chassis_power = *(float *)(data_addr+4);
+      referee_data.power_heat_data.chassis_power_buffer = *(uint16_t *)(data_addr+8);
+      referee_data.power_heat_data.shooter_heat0 = *(uint16_t *)(data_addr+10);
+      referee_data.power_heat_data.shooter_heat1 = *(uint16_t *)(data_addr+12);
       break;
     case robotPos:
-      referee_data.robotPos.x = *(float *)(data_addr+0);
-      referee_data.robotPos.y = *(float *)(data_addr+4);
-      referee_data.robotPos.z = *(float *)(data_addr+8);
-      referee_data.robotPos.yaw = *(float *)(data_addr+12);
+      referee_data.game_robot_pos.x = *(float *)(data_addr);
+      referee_data.game_robot_pos.y = *(float *)(data_addr+4);
+      referee_data.game_robot_pos.z = *(float *)(data_addr+8);
+      referee_data.game_robot_pos.yaw = *(float *)(data_addr+12);
+      break;
+    case buffMusk:
+      referee_data.buff_musk.power_rune_buff = *(uint8_t *)(data_addr);
+      break;
+    case aerialEnengy:
+      referee_data.aerial_energy.energy_point = *(uint8_t *)(data_addr);
+      referee_data.aerial_energy.attack_time = *(uint8_t *)(data_addr+1);
+      break;
+    case robotHurt:
+      referee_data.robot_hurt.armor_id = *(uint8_t *)(data_addr)&0xF0u;
+      referee_data.robot_hurt.hurt_type = *(uint8_t *)(data_addr)&0x0Fu;
+      break;
+    case shootData:
+      referee_data.shoot_data.bullet_type = *(uint8_t *)(data_addr);
+      referee_data.shoot_data.bullet_freq = *(uint8_t *)(data_addr+1);
+      referee_data.shoot_data.bullet_speed = *(float *)(data_addr+2);
       break;
     default:
       break;
@@ -437,25 +481,25 @@ void ref_append_crc16(uint8_t* p_msg, uint32_t len)
  * 
  * @ Ret: address of the struct powerHeatData
  */
-extPowerHeatData_t * get_heat_power(void)
+ext_power_heat_data_t  * get_heat_power(void)
 {
-  return &referee_data.powerHeatData;
+  return &referee_data.power_heat_data;
 }
 /** Added by Y.H. Liu
  * @Jul 3, 2019: retrieve the struct storing the robot states
  * 
  * @ Ret: address of the struct gameRobotState
  */
-extGameRobotState_t * get_robot_state(void)
+ext_game_robot_state_t * get_robot_state(void)
 {
-  return &referee_data.gameRobotState;
+  return &referee_data.game_robot_state;
 }
 /** Added by Y.H. Liu
  * @Jul 3, 2019: retrieve the struct storing the RFID card message
  * 
  * @ Ret: address of the struct rfidDetect
  */
-extRfidDetect_t * get_rfid_data(void)
+ext_event_data_t * get_rfid_data(void)
 {
-  return &referee_data.rfidDetect;
+  return &referee_data.event_data;
 }

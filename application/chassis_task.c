@@ -55,7 +55,6 @@ uint8_t current_excess_flag_js;
 #ifdef CHASSIS_POWER_CTRL
   #include "referee_system.h"
   static uint8_t superCapacitor_Ctrl(chassis_t pchassis, uint8_t low_cap_flag);
-//TODO
 #endif
 
 #define km_dodge          prc_info->kb.bit.V == 1
@@ -165,10 +164,10 @@ void chassis_task(void const *argument)
         osDelayUntil(&period, 2);
         /*-------- Then, adjust the power --------*/
       //get the buffer
-        extPowerHeatData_t * referee_power = get_heat_power();
+        ext_power_heat_data_t * referee_power = get_heat_power();
         shooter_data_sent_by_can(referee_power);
       //set the current & voltage flags
-        if(referee_power->chassisPowerBuffer > LOW_BUFFER && chassis_power.voltage>LOW_VOLTAGE && 
+        if(referee_power->chassis_power_buffer > LOW_BUFFER && chassis_power.voltage>LOW_VOLTAGE && 
            chassis_power.power > (CHASSIS_POWER_TH+LOW_BUFFER)/WORKING_VOLTAGE)
         {
           current_excess_flag = 2;
@@ -187,6 +186,10 @@ void chassis_task(void const *argument)
           low_volatge_flag = 0;
       //control the supercap
         uint8_t sw = superCapacitor_Ctrl(pchassis,low_volatge_flag);
+        if(sw)
+          WRITE_HIGH_CAPACITOR();
+        else
+          WRITE_LOW_CAPACITOR();
       //control the speed ref if necessary
         if(current_excess_flag)
         {
@@ -201,7 +204,7 @@ void chassis_task(void const *argument)
         }
         //Share the flags and data with the gimbal
         current_excess_flag_js = current_excess_flag;
-        power_data_sent_by_can(current_excess_flag, low_volatge_flag, chassis_power.power, chassis_power.voltage, referee_power->chassisPowerBuffer);
+        power_data_sent_by_can(current_excess_flag, low_volatge_flag, chassis_power.power, chassis_power.voltage, referee_power->chassis_power_buffer);
       }while(current_excess_flag);
     #else
       chassis_imu_update(pchassis);

@@ -20,6 +20,7 @@
 #include "dbus.h"
 #include "shoot_task.h"
 #include "referee_system.h"
+#include "infantry_cmd.h"
 
 int32_t shoot_firction_toggle(shoot_t pshoot, uint8_t toggled);
 int32_t shoot_lid_toggle(shoot_t pshoot, uint8_t toggled);
@@ -124,11 +125,11 @@ void shoot_task(void const *argument)
     }
     
     /*------ implement the function of a trigger ------*/
-    extPowerHeatData_t * heatPowerData = get_heat_power();
+    uint16_t * shooter_heat_ptr = shooter_heat_get_via_can();
     uint16_t heatLimit = get_heat_limit();
 
     #ifndef HERO_ROBOT
-    if (heatPowerData->shooterHeat0 < heatLimit && rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK && fric_on) //not in disabled mode
+    if (shooter_heat_ptr[0]< heatLimit && rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK && fric_on) //not in disabled mode
     {
       if (rc_device_get_state(prc_dev, RC_WHEEL_UP) == RM_OK
         || mouse_shoot_control(prc_dev)==press)
@@ -150,7 +151,7 @@ void shoot_task(void const *argument)
       }
     }
     #else
-    if (heatPowerData->shooterHeat1 < heatLimit && rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK && fric_on) //not in disabled mode
+    if (shooter_heat_ptr[1] < heatLimit && rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK && fric_on) //not in disabled mode
     {
       if (rc_device_get_state(prc_dev, RC_WHEEL_UP) == RM_OK && prc_dev->last_rc_info.wheel < 300)
       {
@@ -270,14 +271,14 @@ mouse_cmd_e mouse_shoot_control(rc_device_t rc_dev)
  */
 static uint16_t get_heat_limit(void)
 {
-  extGameRobotState_t * robotState = get_robot_state();
+  uint8_t robot_level = get_robot_level(); 
   uint16_t limit = 4096;
-  if(robotState->robotLevel != 0)
+  if(robot_level<=4)
   {
     #ifndef HERO_ROBOT
-    limit = robotState->robotLevel * 120 + 120;
+    limit = robot_level * 120 + 120;
     #else
-    limit = robotState->robotLevel * 100 + 100;
+    limit = robotLevel * 100 + 100;
     #endif
   }
   return limit; 
