@@ -35,10 +35,10 @@
 #define FIRC_MAX_SPEED 160u //MAX=200u, for safety set it to be 160
 #define FRIC_MIN_SPEED 99u
 
-#define BLOCK_CURRENT_DEFAULT 26000.0F
-#define BLOCK_SPEED_DEFAULT -1650
-#define BLOCK_TIMEOUT_DEFAULT 200
-#define BLOCK_CHECK_TIMEOUT_DEFAULT 80
+#define BLOCK_CURRENT_DEFAULT 7000.0F 	// Max a little smaller than max allowed output. To be adjusted.
+#define BLOCK_SPEED_DEFAULT -1650				// If the bullet is blocked the handler need it retrive at a certain speed.
+#define BLOCK_TIMEOUT_DEFAULT 200				// If the feed back didn't change to certain amount in this time bullet block will be reported.
+#define BLOCK_CHECK_TIMEOUT_DEFAULT 80	// Each 80ms check the bullet block condition.
 #define TURN_SPEED_DEFAULT 1200
 
 
