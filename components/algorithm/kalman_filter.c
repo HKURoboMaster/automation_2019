@@ -38,6 +38,10 @@
 float matrix_value1;
 float matrix_value2;
 
+// For 3d kalman
+float mat_value1,mat_value2,mat_value3;
+//Eric Chen's Edition end
+
 void kalman_filter_init(kalman_filter_t *F, kalman_filter_init_t *I)
 {
   mat_init(&F->xhat,2,1,(float *)I->xhat_data);
@@ -57,7 +61,25 @@ void kalman_filter_init(kalman_filter_t *F, kalman_filter_init_t *I)
 //  matrix_value2 = F->A.pData[1];
 }
 
+void kalman_filter_3d_init(kalman_filter_3d_t *F, kalman_filter_3d_init_t *I)
+{
+	mat_init(&F->xhat,3,1,(float *)I->xhat_data);
+  mat_init(&F->xhatminus,3,1,(float *)I->xhatminus_data);
+  mat_init(&F->z,3,1,(float *)I->z_data);
+  mat_init(&F->A,3,3,(float *)I->A_data);
+  mat_init(&F->H,3,3,(float *)I->H_data);
+  mat_init(&F->Q,3,3,(float *)I->Q_data);
+  mat_init(&F->R,3,3,(float *)I->R_data);
+  mat_init(&F->P,3,3,(float *)I->P_data);
+  mat_init(&F->Pminus,3,3,(float *)I->Pminus_data);
+  mat_init(&F->K,3,3,(float *)I->K_data);
+  mat_init(&F->AT,3,3,(float *)I->AT_data);
+  mat_trans(&F->A, &F->AT);
+  mat_init(&F->HT,3,3,(float *)I->HT_data);
+  mat_trans(&F->H, &F->HT);
+}
 
+// Eric Chen's edition end
 
 float *kalman_filter_calc(kalman_filter_t *F, float signal1, float signal2)
 {
@@ -107,6 +129,56 @@ float *kalman_filter_calc(kalman_filter_t *F, float signal1, float signal2)
   return F->filtered_value;
 }
 
+float *kalman_filter_3d_calc(kalman_filter_3d_t *F, float signal1 ,float signal2,float signal3)
+{
+	float TEMP_data[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+  float TEMP_data21[3] = {0, 0, 0};
+  mat TEMP,TEMP21;	// Don't know TEMP 21 
+
+  mat_init(&TEMP,3,3,(float *)TEMP_data);
+  mat_init(&TEMP21,3,1,(float *)TEMP_data21);
+
+  F->z.pData[0] = signal1; 	// The measurement is alway the data sent by the computer.
+  F->z.pData[1] = signal2;
+	F->z.pData[2] = signal3;
+
+  //1. xhat'(k)= A xhat(k-1)
+  mat_mult(&F->A, &F->xhat, &F->xhatminus);
+
+  //2. P'(k) = A P(k-1) AT + Q
+  mat_mult(&F->A, &F->P, &F->Pminus);
+  mat_mult(&F->Pminus, &F->AT, &TEMP);
+  mat_add(&TEMP, &F->Q, &F->Pminus);
+
+  //3. K(k) = P'(k) HT / (H P'(k) HT + R)
+  mat_mult(&F->H, &F->Pminus, &F->K);
+  mat_mult(&F->K, &F->HT, &TEMP);
+  mat_add(&TEMP, &F->R, &F->K);
+
+  mat_inv(&F->K, &F->P);
+  mat_mult(&F->Pminus, &F->HT, &TEMP);
+  mat_mult(&TEMP, &F->P, &F->K);
+
+  //4. xhat(k) = xhat'(k) + K(k) (z(k) - H xhat'(k))
+  mat_mult(&F->H, &F->xhatminus, &TEMP21);
+  mat_sub(&F->z, &TEMP21, &F->xhat);
+  mat_mult(&F->K, &F->xhat, &TEMP21);
+  mat_add(&F->xhatminus, &TEMP21, &F->xhat);
+
+  //5. P(k) = (1-K(k)H)P'(k)
+  mat_mult(&F->K, &F->H, &F->P);
+  mat_sub(&F->Q, &F->P, &TEMP);
+  mat_mult(&TEMP, &F->Pminus, &F->P);
+
+  mat_value1 = F->xhat.pData[0];
+  mat_value2 = F->xhat.pData[1];
+	mat_value3 = F->xhat.pData[2];
+
+  F->filtered_value[0] = F->xhat.pData[0];
+  F->filtered_value[1] = F->xhat.pData[1];
+	F->filtered_value[2] = F->xhat.pData[2];
+  return F->filtered_value;
+}
 
 #ifdef IIR_FILTER
 double NUM[7] = 

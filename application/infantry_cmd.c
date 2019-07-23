@@ -82,6 +82,12 @@ uint16_t shooter_heat[2] = {0}; //TODO: make it static
  */
 float auto_aiming_pitch = 0;
 float auto_aiming_yaw   = 0;
+/* Edited By Eric Chen
+ * Added time gap between two frames to calc speed.
+ * July 23, 2019.
+ */
+uint32_t time_pc = 0;
+
 void infantry_cmd_task(void const *argument)
 {
   uint8_t app;
@@ -147,12 +153,23 @@ void infantry_cmd_task(void const *argument)
           // chassis_set_acc(pchassis, pacc->ax, pacc->ay, pacc->wz / 10.0f);
           // chassis_set_speed(pchassis, pacc->vx, pacc->vy, pacc->vw / 10.0f);
         }
+				/* Edited By Eric Chen 
+				 * Send continous data from PC for Debugging Kalman filter
+				 * July 23rd, 2019
+				 */
+				// For Kalman Debugging
+				struct cmd_gimbal_angle *pangle;
+				pangle = &manifold_cmd.gimbal_angle;
+				auto_aiming_pitch = pangle->pitch;
+				auto_aiming_yaw = pangle->yaw; 
+				time_pc = pangle->time_pc;
+				
 				// PC auto aiming mode is enabled
         if ((prc_dev->rc_info.mouse.r || rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK)
           && event.value.signals & MANIFOLD2_GIMBAL_SIGNAL)
         {
-          struct cmd_gimbal_angle *pangle;
-          pangle = &manifold_cmd.gimbal_angle;
+          
+          //pangle = &manifold_cmd.gimbal_angle;
           if (pangle->ctrl.bit.pitch_mode == 0)
           {
             gimbal_set_pitch_angle(pgimbal, pangle->pitch / 100.0f);
@@ -224,7 +241,9 @@ int32_t chassis_spd_acc_ctrl(uint8_t *buff, uint16_t len)
   }
   return 0;
 }
-
+//When Gimbal received command from the tx2
+// Buff is the address of the received data, check when 
+// Buff is envalued
 int32_t gimbal_angle_ctrl(uint8_t *buff, uint16_t len)
 {
   if (len == sizeof(struct cmd_gimbal_angle))

@@ -34,8 +34,10 @@
 /* gimbal back center time (ms) */
 #define BACK_CENTER_TIME 3000
 #define MAX_TRACK_ANGLE 35
-
+#define LOST_THRESHOLD 200 // 400ms
 //Kalman filter related define
+//#define ACC_KALMAN
+#ifndef ACC_KALMAN
 kalman_filter_init_t yaw_kalman_filter_para = {
   .P_data = {2, 0, 0, 2},					// Co-variance Matrix
   .A_data = {1, 0.002, 0, 1},			// Predict function Transfer parameter 1000Hz?
@@ -53,11 +55,49 @@ kalman_filter_init_t pit_kalman_filter_para =
   .R_data = {2000, 0, 0, 5000}		// Basic Idea is kalman filter uses co-variance data.
 };	// Only consider the variance instead of co-variance.
 // Kalman Filter
+#else
+kalman_filter_3d_init_t yaw_kalman_filter_para = {
+	.P_data = {2, 0, 0, 0, 2, 0, 0, 0, 2},
+  .A_data = {1, 0.002, 0, 0, 1, 0.002, 0, 0, 1},
+  .H_data = {1, 0, 0, 0, 1, 0, 0, 0, 1},
+  .Q_data = {1, 0, 0, 0, 1, 0, 0, 0, 1},
+  .R_data = {1000, 0, 0, 0, 2000, 0, 0, 0, 4500}		// Basic Idea is kalman filter uses co-variance data.
+};
+
+kalman_filter_3d_init_t pit_kalman_filter_para = 
+{
+  .P_data = {2, 0, 0, 0, 2, 0, 0, 0, 2},
+  .A_data = {1, 0.002, 0, 0, 1, 0.002, 0, 0, 1},
+  .H_data = {1, 0, 0, 0, 1, 0, 0, 0, 1},
+  .Q_data = {1, 0, 0, 0, 1, 0, 0, 0, 1},
+  .R_data = {2000, 0, 0, 0, 5000, 0, 0, 0, 11000}		// Basic Idea is kalman filter uses co-variance data.
+};
+
+kalman_filter_3d_t yaw_kalman_filter;
+kalman_filter_3d_t pit_kalman_filter;
+
+
+#endif
+
 kalman_filter_t yaw_kalman_filter;
 kalman_filter_t pit_kalman_filter;
 uint32_t   gim_tim_ms = 0; 
 uint32_t   gim_last_tim = 0;
 
+#ifndef ACC_KALMAN
+int kalman_yaw_js[2];
+int kalman_pit_js[2];
+#endif
+
+#ifdef ACC_KALMAN 
+int kalman_yaw_js[3];
+int kalman_pit_js[3];
+#endif
+
+
+int pc_js1;
+int pc_js2;
+int lost_target_counter = 0;
 float yaw_angle_raw = 0;
 float pit_angle_raw = 0;
 
@@ -87,17 +127,30 @@ typedef struct
 speed_calc_data_t yaw_speed_struct;
 speed_calc_data_t pit_speed_struct;
 
+acc_calc_data_t yaw_acc_struct;
+acc_calc_data_t pit_acc_struct;
+
+
+
 static float yaw_speed_raw;
 static float pit_speed_raw;
+
+static float yaw_acc_raw;
+static float pit_acc_raw;
+
 float *yaw_kf_data;
 float *pit_kf_data;
 
+
+int pc_counter = 0;
+
 float target_speed_calc(speed_calc_data_t *S,uint32_t time,float position);
-float target_accele_calc(acc_calc_data_t *A,uint32_t time, float speed);
+float target_acc_calc(acc_calc_data_t *A,uint32_t time, float speed);
 #define KALMAN
 // Aimming related
 extern float auto_aiming_pitch;
 extern float auto_aiming_yaw;
+
 // Function declaration
 static void imu_temp_ctrl_init(void);
 static int32_t gimbal_imu_update(void *argc);
@@ -151,6 +204,10 @@ void gimbal_task(void const *argument)
   float pit_delta, yaw_delta;
   // Added By Eric Chen : Init Kalman filter params
 	//#ifdef KALMAN
+	yaw_kalman_filter_para.xhat_data[0] = 0;
+	yaw_kalman_filter_para.xhat_data[1] = 0;
+	pit_kalman_filter_para.xhat_data[0] = 0;
+	pit_kalman_filter_para.xhat_data[1] = 0;
   kalman_filter_init(&yaw_kalman_filter,&yaw_kalman_filter_para);
   kalman_filter_init(&pit_kalman_filter,&pit_kalman_filter_para);
 	//#else
@@ -190,9 +247,14 @@ void gimbal_task(void const *argument)
     gim_last_tim = HAL_GetTick();
     // Eric Chen Edition End.
 		
-
+		#ifdef ACC_KALMAN
+		mat_init(*yaw_kalman_filter.Q,3,3,yaw_kalman_filter_para.Q_data);
+		mat_init(*pit_kalman_filter.Q,3,3,pit_kalman_filter_para.Q_data);
+		
+		#else
     mat_init(&yaw_kalman_filter.Q,2,2,yaw_kalman_filter_para.Q_data);
     mat_init(&pit_kalman_filter.Q,2,2,pit_kalman_filter_para.Q_data);
+		#endif
 		//Each time update
     #endif
 		// The reason using a queue is : Make a 10 ms delay when receive the data;
@@ -248,27 +310,72 @@ void gimbal_task(void const *argument)
 				#ifdef KALMAN
 				int speed_calc_time=0;
 				int speed_calc_last_time=0;
+				pc_js1 = (int)(auto_aiming_yaw*1000);
+				pc_js2 = (int)(auto_aiming_pitch*1000);
+				// Normally kalman filter
 				if(auto_aiming_yaw != 0 && auto_aiming_pitch != 0)
 				{
 					speed_calc_time = HAL_GetTick() - speed_calc_last_time;
 					speed_calc_last_time = HAL_GetTick();
-					yaw_angle_raw = auto_aiming_yaw + yaw_autoaim_offset;
-					pit_angle_raw = auto_aiming_pitch;
+					// Why use offset : To calculate relative angular speed and angle.
+					yaw_angle_raw = auto_aiming_yaw;
+					pit_angle_raw = auto_aiming_pitch ;
 					auto_aiming_pitch = 0;
 					auto_aiming_yaw = 0;
 				}
-				yaw_speed_raw = target_speed_calc(&yaw_speed_struct,speed_calc_time/1000,yaw_angle_raw);
-				pit_speed_raw = target_speed_calc(&pit_speed_struct,speed_calc_time/1000,pit_angle_raw);
+				else
+				{
+					lost_target_counter++;
+					if(lost_target_counter<LOST_THRESHOLD)
+					{
+						goto kalman_over;
+					}
+				}
+				yaw_speed_raw = target_speed_calc(&yaw_speed_struct,speed_calc_time/1000,pgimbal->ecd_angle.yaw+yaw_angle_raw);
+				pit_speed_raw = target_speed_calc(&pit_speed_struct,speed_calc_time/1000,pit_angle_raw+pgimbal->ecd_angle.pitch); 
+				#ifdef ACC_KALMAN
+				yaw_acc_raw = target_acc_calc(&yaw_acc_struct,speed_calc_time/1000,yaw_speed_raw);
+				pit_acc_raw = target_acc_calc(&pit_acc_struct,speed_calc_time/1000,pit_speed_raw);
+				yaw_kf_data = kalman_filter_3d_calc(&yaw_kalman_filter,yaw_angle_raw,yaw_speed_raw,yaw_acc_raw);
+				pit_kf_data = kalman_filter_3d_calc(&pit_kalman_filter,pit_angle_raw,pit_speed_raw,pit_acc_raw);
+				kalman_pit_js[0] = pit_kf_data[0];
+				kalman_pit_js[1] = pit_kf_data[1];
+				kalman_pit_js[2] = pit_kf_data[2];
+				
+				kalman_yaw_js[0] = yaw_kf_data[0];
+				kalman_yaw_js[1] = yaw_kf_data[1];
+				kalman_yaw_js[2] = yaw_kf_data[2];
+				#else
+				
+				yaw_kf_data = kalman_filter_calc(&yaw_kalman_filter,yaw_angle_raw,yaw_speed_raw);
+				pit_kf_data = kalman_filter_calc(&pit_kalman_filter,pit_angle_raw,pit_speed_raw);
+				kalman_yaw_js[0] = (int)(yaw_kf_data[0]*1000);
+				kalman_yaw_js[1] = (int)(yaw_kf_data[1]*1000);
+					
+					kalman_pit_js[0] = (int)(pit_kf_data[0]*1000);
+					kalman_pit_js[1] = (int)(pit_kf_data[1]*1000);
+				#endif
 				// Pure auto aiming.........
 				if(prc_info->mouse.r || rc_device_get_state(prc_dev,RC_S2_UP)==RM_OK)
 				{
-					yaw_kf_data = kalman_filter_calc(&yaw_kalman_filter,yaw_angle_raw,yaw_speed_raw);
-					pit_kf_data = kalman_filter_calc(&pit_kalman_filter,pit_angle_raw,pit_speed_raw);
-					gimbal_set_yaw_delta(pgimbal,yaw_kf_data[0]);	
-					gimbal_set_pitch_delta(pgimbal,pit_kf_data[0]);
+					
+					// The reason to implement PC counter is that kalman filter need time to converge
+					// The PC_counter make it possible to converge.
+					if(pc_counter==200)
+					{
+					gimbal_set_yaw_angle(pgimbal,pgimbal->cascade[0].outer.get+yaw_kf_data[0],ENCODER_MODE);	
+					gimbal_set_pitch_angle(pgimbal,pgimbal->cascade[1].outer.get+pit_kf_data[0]);
+					}
+					else
+						pc_counter++;
+				}
+				else
+				{
+					pc_counter = 0;
 				}
 				#endif
-        float square_ch1 = (float)prc_info->ch1 * abs(prc_info->ch1) / RC_CH_SCALE;
+				kalman_over:lost_target_counter = 0;
+				float square_ch1 = (float)prc_info->ch1 * abs(prc_info->ch1) / RC_CH_SCALE;
         /*-------- Map mouse coordinates into polar coordiantes --------*/
         int16_t yaw_mouse,pit_mouse;
         int16_t radius = (int16_t)sqrt(prc_info->mouse.y * prc_info->mouse.y + prc_info->mouse.x * prc_info->mouse.x);
@@ -549,7 +656,7 @@ float target_speed_calc(speed_calc_data_t *S, uint32_t time, float position)
 
 float acc_threshold = 10.0f;
 
-float acc_speed_calc(acc_calc_data_t *A, uint32_t time, float speed)
+float target_acc_calc(acc_calc_data_t *A,uint32_t time, float speed)
 {
   A->delay_cnt++;
 

@@ -110,6 +110,7 @@ struct cmd_gimbal_angle
   } ctrl;
   float pitch;
   float yaw;
+	uint32_t time_pc; // PC will send time gap between two frames.
 };
 
 struct cmd_chassis_speed
