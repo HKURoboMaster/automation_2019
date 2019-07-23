@@ -40,10 +40,10 @@
 #ifndef ACC_KALMAN
 kalman_filter_init_t yaw_kalman_filter_para = {
   .P_data = {2, 0, 0, 2},					// Co-variance Matrix
-  .A_data = {1, 0.002, 0, 1},			// Predict function Transfer parameter 1000Hz?
+  .A_data = {1, 0.003, 0, 1},			// Predict function Transfer parameter 1000Hz?
   .H_data = {1, 0, 0, 1},					// Measurement transfer parameter
   .Q_data = {1, 0, 0, 1},					// Co-variance of progress matrix
-  .R_data = {1000, 0, 0, 2000}		// Co-Variance of Measurement Observe matrix.
+  .R_data = {600, 0, 0, 600}		// Co-Variance of Measurement Observe matrix.
 };
 
 kalman_filter_init_t pit_kalman_filter_para = 
@@ -100,7 +100,8 @@ int pc_js2;
 int lost_target_counter = 0;
 float yaw_angle_raw = 0;
 float pit_angle_raw = 0;
-
+int speed_calc_time=0;
+int speed_calc_last_time=0;
 typedef struct  // speed_calc_data_t
 {
   int delay_cnt;
@@ -150,7 +151,8 @@ float target_acc_calc(acc_calc_data_t *A,uint32_t time, float speed);
 // Aimming related
 extern float auto_aiming_pitch;
 extern float auto_aiming_yaw;
-
+extern uint32_t time_pc;
+uint32_t time_last = 0;
 // Function declaration
 static void imu_temp_ctrl_init(void);
 static int32_t gimbal_imu_update(void *argc);
@@ -308,11 +310,11 @@ void gimbal_task(void const *argument)
 				// Auto aiming kalman testing
 				// PC data toggle
 				#ifdef KALMAN
-				int speed_calc_time=0;
-				int speed_calc_last_time=0;
+				
 				pc_js1 = (int)(auto_aiming_yaw*1000);
 				pc_js2 = (int)(auto_aiming_pitch*1000);
 				// Normally kalman filter
+				/*
 				if(auto_aiming_yaw != 0 && auto_aiming_pitch != 0)
 				{
 					speed_calc_time = HAL_GetTick() - speed_calc_last_time;
@@ -331,8 +333,30 @@ void gimbal_task(void const *argument)
 						goto kalman_over;
 					}
 				}
-				yaw_speed_raw = target_speed_calc(&yaw_speed_struct,speed_calc_time/1000,pgimbal->ecd_angle.yaw+yaw_angle_raw);
-				pit_speed_raw = target_speed_calc(&pit_speed_struct,speed_calc_time/1000,pit_angle_raw+pgimbal->ecd_angle.pitch); 
+				*/
+				// PC send Zero if track is lost
+				// If track is lost then it should listen to operator
+				if(time_pc != time_last)
+				{
+					speed_calc_time = HAL_GetTick() - time_last;
+					time_last = HAL_GetTick();
+					yaw_angle_raw = auto_aiming_yaw;
+					pit_angle_raw = auto_aiming_pitch ;
+					//auto_aiming_pitch = 0;
+					//auto_aiming_yaw = 0;
+				}
+				// The "else" happens when PC is disconnected to the board
+				// It will disable the control from pc
+				else
+				{
+					lost_target_counter++;
+					if(lost_target_counter<LOST_THRESHOLD)
+					{
+						goto kalman_over;
+					}
+				}
+				yaw_speed_raw = target_speed_calc(&yaw_speed_struct,speed_calc_time/1000,-pgimbal->ecd_angle.yaw+yaw_angle_raw);
+				pit_speed_raw = target_speed_calc(&pit_speed_struct,speed_calc_time/1000,pit_angle_raw-pgimbal->ecd_angle.pitch); 
 				#ifdef ACC_KALMAN
 				yaw_acc_raw = target_acc_calc(&yaw_acc_struct,speed_calc_time/1000,yaw_speed_raw);
 				pit_acc_raw = target_acc_calc(&pit_acc_struct,speed_calc_time/1000,pit_speed_raw);
