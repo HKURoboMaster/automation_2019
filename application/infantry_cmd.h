@@ -98,7 +98,10 @@ struct cmd_gimbal_info
   int16_t yaw_rate;
   int16_t pitch_rate;
 };
-
+/* Modified By Eric Chen;
+ * Added pc Time to calculate the speed of the tracking object.
+ * July 23rd. 2019
+ */
 struct cmd_gimbal_angle
 {
   union{
@@ -112,6 +115,8 @@ struct cmd_gimbal_angle
   float yaw;
 	uint32_t time_pc; // PC will send time gap between two frames.
 };
+
+// Edition end.
 
 struct cmd_chassis_speed
 {
