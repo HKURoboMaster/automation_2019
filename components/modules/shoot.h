@@ -32,7 +32,7 @@
 #define SHOOT_CONTINUOUS_CMD (2u)
 
 #define FIRC_STOP_SPEED 100u
-#define FIRC_MAX_SPEED 160u //MAX=200u, for safety set it to be 160
+#define FIRC_MAX_SPEED 145u //MAX=200u, for safety set it to be 160 //160 results in overheater
 #define FRIC_MIN_SPEED 99u
 
 #define BLOCK_CURRENT_DEFAULT 15000.0F

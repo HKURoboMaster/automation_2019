@@ -28,6 +28,7 @@
 
 #include "protocol.h"
 #include "referee_system.h"
+#include "exp_predict.h"
 
 #define MANIFOLD2_CHASSIS_SIGNAL (1 << 0)
 #define MANIFOLD2_GIMBAL_SIGNAL (1 << 1)
@@ -162,6 +163,7 @@ void infantry_cmd_task(void const *argument)
           {
             // gimbal_set_pitch_speed(pgimbal, pangle->pitch / 10.0f);
             auto_aiming_pitch = pangle->pitch;
+            refresh(auto_aiming_pitch, PITCH_AUTO_AIMING);
           }
           if (pangle->ctrl.bit.yaw_mode == 0)
           {
@@ -171,6 +173,7 @@ void infantry_cmd_task(void const *argument)
           {
             // gimbal_set_yaw_speed(pgimbal, pangle->yaw / 10.0f);
             auto_aiming_yaw = pangle->yaw;
+            refresh(auto_aiming_yaw, YAW_AUTO_AIMING);
           }
         }
         //
