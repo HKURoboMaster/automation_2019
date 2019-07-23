@@ -29,13 +29,12 @@ enum shoot_state shoot_state_watch;
 uint8_t shoot_cmd_watch;
 uint8_t trigger_state_watch;
 int32_t trigger_wheel_watch;
-int delta;
+
 /**Edited by Y.H. Liu
  * @Jun 13, 2019: change the FSM for shooting
  * @Jun 20, 2019: adaption for hero
  * @Jul 3, 2019: retrieve the heat data from refree system
  * @Jul 7, 2019: modify the adaption for hero
- * @Jun 19, 2019: receive the shooter heat data from the referee system
  * 
  * Implement the control logic described in Control.md
  */
@@ -64,7 +63,6 @@ void shoot_task(void const *argument)
   static uint8_t fric_on = 0; //0x00 for off, 0xFF for on
   // static uint8_t lid_open = 0; //0x00 for closed, 0xFF for opened
   shoot_firction_toggle(pshoot, 1);
-	shoot_firction_toggle(pshoot2, 1);
   shoot_lid_toggle(pshoot,1);
   while (1)
   {
@@ -77,7 +75,11 @@ void shoot_task(void const *argument)
       continue;
     }
     shoot_enable(pshoot);
+    #ifdef HERO_ROBOT
     shoot_enable(pshoot2);
+    #else
+    shoot_disable(pshoot2);
+    #endif
     if (rc_device_get_state(prc_dev, RC_S1_MID2UP) == RM_OK)
     {
       shoot_firction_toggle(pshoot, fric_on);
@@ -121,11 +123,11 @@ void shoot_task(void const *argument)
     }
     
     /*------ implement the function of a trigger ------*/
-    uint16_t * shooter_heat_current = shooter_heat_get();
+    uint16_t * shooter_heat_ptr = shooter_heat_get_via_can();
     uint16_t heatLimit = get_heat_limit();
 
     #ifndef HERO_ROBOT
-    if (shooter_heat_current[0] < heatLimit && rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK && fric_on) //not in disabled mode
+    if (shooter_heat_ptr[0]< heatLimit && rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK && fric_on) //not in disabled mode
     {
       if (rc_device_get_state(prc_dev, RC_WHEEL_UP) == RM_OK
         || mouse_shoot_control(prc_dev)==press)
@@ -147,25 +149,29 @@ void shoot_task(void const *argument)
       }
     }
     #else
-    if (shooter_heat_current[1] < heatLimit && rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK && fric_on) //not in disabled mode
+    if (shooter_heat_ptr[1] < heatLimit && rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK && fric_on) //not in disabled mode
     {
       if (rc_device_get_state(prc_dev, RC_WHEEL_UP) == RM_OK && prc_dev->last_rc_info.wheel < 300)
       {
         shoot_set_cmd(pshoot, SHOOT_ONCE_CMD, 1);
+				shoot_set_cmd(pshoot2, SHOOT_ONCE_CMD, 1);//Leo
       }
       else if ((rc_device_get_state(prc_dev, RC_WHEEL_DOWN) == RM_OK && prc_dev->last_rc_info.wheel > -300)
             || mouse_shoot_control(prc_dev)==click )
       {
         shoot_set_cmd(pshoot, SHOOT_ONCE_CMD, 1);
+				shoot_set_cmd(pshoot2, SHOOT_ONCE_CMD, 1);//Leo
+
       }
       else
       {
         shoot_set_cmd(pshoot, SHOOT_STOP_CMD, 0);
+				shoot_set_cmd(pshoot2, SHOOT_STOP_CMD, 0);//Leo
       }
     }
-		shoot_execute(pshoot2);//Leo
     #endif
     shoot_execute(pshoot);
+		shoot_execute(pshoot2);//Leo
     osDelayUntil(&period, 5);
 
     /*-------- For shoot_task debug --------*/
@@ -185,17 +191,16 @@ void shoot_task(void const *argument)
  */
 int32_t shoot_firction_toggle(shoot_t pshoot, uint8_t toggled)
 {
-	delta = strncmp(pshoot->parent.name, "shoot2",OBJECT_NAME_MAX_LEN);
   if (toggled)
   {
-    shoot_set_fric_speed(pshoot, 100, 100);
+    shoot_set_fric_speed(pshoot, FIRC_STOP_SPEED, FIRC_STOP_SPEED);
     turn_off_laser();
 		if(strlen(pshoot->parent.name)==6)//Leo
 			shoot_set_cmd(pshoot, SHOOT_STOP_CMD, 0);			//Leo	
   }
   else
   {
-    shoot_set_fric_speed(pshoot, 160, 160);
+    shoot_set_fric_speed(pshoot, FIRC_MAX_SPEED, FIRC_MAX_SPEED);
     turn_on_laser();
 		if(strlen(pshoot->parent.name)==6)//Leo
 			shoot_set_cmd(pshoot, SHOOT_CONTINUOUS_CMD, CONTIN_BULLET_NUM);	//Leo			
@@ -264,14 +269,14 @@ mouse_cmd_e mouse_shoot_control(rc_device_t rc_dev)
  */
 static uint16_t get_heat_limit(void)
 {
-  extGameRobotState_t * robotState = get_robot_state();
+  uint8_t robot_level = get_robot_level(); 
   uint16_t limit = 4096;
-  if(robotState->robotLevel != 0)
+  if(robot_level<=4)
   {
     #ifndef HERO_ROBOT
-    limit = robotState->robotLevel * 120 + 120;
+    limit = robot_level * 120 + 120;
     #else
-    limit = robotState->robotLevel * 100 + 100;
+    limit = robotLevel * 100 + 100;
     #endif
   }
   return limit; 

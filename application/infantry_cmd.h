@@ -63,6 +63,7 @@
 #define CMD_GIMBAL_ADJUST                   (0x0403u)
 #define CMD_CHASSIS_POWER                   (0x0404u)
 #define CMD_SHOOTER_HEAT                    (0x0405u)
+#define CMD_ROBOT_STATE                     (0x0406u)
 
 #pragma pack(push,1)
 
@@ -180,8 +181,12 @@ struct chassis_power_data_t
 /*-------- For chassis power receiver --------*/
 int32_t chassis_power_callback(uint8_t * buff, uint16_t len);
 /*-------- For shooter heat communication --------*/
-int32_t shooter_data_sent_by_can(extPowerHeatData_t * heat_power_d);
+int32_t shooter_data_sent_by_can(ext_power_heat_data_t * heat_power_d);
 int32_t shooter_data_callback(uint8_t *buff, uint16_t len);
-uint16_t * shooter_heat_get(void);
+uint16_t * shooter_heat_get_via_can(void);
+/*-------- For robot level communication --------*/
+int32_t robot_state_sent_by_can(ext_game_robot_state_t * robot_state_d);
+int32_t robot_state_data_callback(uint8_t *buff, uint16_t len);
+uint8_t get_robot_level(void);
 
 #endif // __INFANTRY_H__
