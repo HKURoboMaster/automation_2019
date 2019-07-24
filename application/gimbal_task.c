@@ -35,6 +35,11 @@
 #define BACK_CENTER_TIME 3000
 #define MAX_TRACK_ANGLE 35
 #define LOST_THRESHOLD 200 // 400ms
+#define SPEED_RATIO 0.5f
+
+
+#define INTEGRAL_LIM 20
+
 //Kalman filter related define
 //#define ACC_KALMAN
 #ifndef ACC_KALMAN
@@ -100,6 +105,25 @@ int pc_js2;
 int lost_target_counter = 0;
 float yaw_angle_raw = 0;
 float pit_angle_raw = 0;
+
+// Edited By Eric Chen 
+// Complement the motion of gimbal itself when using kalman filtered motion prediction of object.
+
+float ref_yaw_speed = 0;
+float ref_pit_speed = 0;
+
+float delta_pit_speed = 0;
+float delta_yaw_speed = 0;
+
+float integral_error_yaw = 0;
+float integral_error_pit = 0;
+
+float yaw_i = 0.001;
+float pit_i = 0.001;
+
+
+// Eric Chen's Edition End.
+
 int speed_calc_time=0;
 int speed_calc_last_time=0;
 typedef struct  // speed_calc_data_t
@@ -338,10 +362,17 @@ void gimbal_task(void const *argument)
 				// If track is lost then it should listen to operator
 				if(time_pc != time_last)
 				{
+					// Update the Time sent From PC.
+					// For checking wheather PC sent data to me.
+					time_last = time_pc;
+					// Using STM32 Clock to calculate the time interval between 2 measurement.
 					speed_calc_time = HAL_GetTick() - time_last;
-					time_last = HAL_GetTick();
+					speed_calc_last_time = HAL_GetTick();
+					
 					yaw_angle_raw = auto_aiming_yaw;
 					pit_angle_raw = auto_aiming_pitch ;
+					ref_yaw_speed = pgimbal->sensor.rate.yaw_rate;
+					ref_pit_speed = pgimbal->sensor.rate.pitch_rate;
 					//auto_aiming_pitch = 0;
 					//auto_aiming_yaw = 0;
 				}
@@ -355,8 +386,20 @@ void gimbal_task(void const *argument)
 						goto kalman_over;
 					}
 				}
-				yaw_speed_raw = target_speed_calc(&yaw_speed_struct,speed_calc_time/1000,-pgimbal->ecd_angle.yaw+yaw_angle_raw);
-				pit_speed_raw = target_speed_calc(&pit_speed_struct,speed_calc_time/1000,pit_angle_raw-pgimbal->ecd_angle.pitch); 
+				// Edited By Eric Chen;
+				// PITCH and YAW speed calc using the relative speed between gimbal and the object.
+				yaw_speed_raw = target_speed_calc(&yaw_speed_struct,speed_calc_time/1000,yaw_angle_raw);
+				pit_speed_raw = target_speed_calc(&pit_speed_struct,speed_calc_time/1000,pit_angle_raw); 
+				
+				delta_pit_speed = pgimbal->sensor.rate.pitch_rate - ref_pit_speed;
+				delta_yaw_speed = pgimbal->sensor.rate.yaw_rate - ref_yaw_speed;
+				// If they share same ratio
+				// For CV the angular ratio is uncertain.
+				pit_speed_raw -= SPEED_RATIO*delta_pit_speed;
+				yaw_speed_raw -= SPEED_RATIO*delta_yaw_speed;
+				// Since speed data is irrelavant from historical data.
+				// Each time speed need to complement delta the speed of gimbal compared with
+				// The time when reference was settled
 				#ifdef ACC_KALMAN
 				yaw_acc_raw = target_acc_calc(&yaw_acc_struct,speed_calc_time/1000,yaw_speed_raw);
 				pit_acc_raw = target_acc_calc(&pit_acc_struct,speed_calc_time/1000,pit_speed_raw);
@@ -371,13 +414,26 @@ void gimbal_task(void const *argument)
 				kalman_yaw_js[2] = yaw_kf_data[2];
 				#else
 				
+				// Implement a accumulated error term to cancel out constant error lead by reaction
+				
+				
 				yaw_kf_data = kalman_filter_calc(&yaw_kalman_filter,yaw_angle_raw,yaw_speed_raw);
 				pit_kf_data = kalman_filter_calc(&pit_kalman_filter,pit_angle_raw,pit_speed_raw);
 				kalman_yaw_js[0] = (int)(yaw_kf_data[0]*1000);
 				kalman_yaw_js[1] = (int)(yaw_kf_data[1]*1000);
 					
-					kalman_pit_js[0] = (int)(pit_kf_data[0]*1000);
-					kalman_pit_js[1] = (int)(pit_kf_data[1]*1000);
+				kalman_pit_js[0] = (int)(pit_kf_data[0]*1000);
+				kalman_pit_js[1] = (int)(pit_kf_data[1]*1000);
+				
+				if(integral_error_yaw<INTEGRAL_LIM)
+				{
+					integral_error_yaw += yaw_i*yaw_kf_data[0];
+				}
+				if(integral_error_pit<INTEGRAL_LIM)
+				{
+					integral_error_pit += pit_i*pit_kf_data[0];
+				}
+				
 				#endif
 				// Pure auto aiming.........
 				if(prc_info->mouse.r || rc_device_get_state(prc_dev,RC_S2_UP)==RM_OK)
@@ -387,8 +443,12 @@ void gimbal_task(void const *argument)
 					// The PC_counter make it possible to converge.
 					if(pc_counter==200)
 					{
-					gimbal_set_yaw_angle(pgimbal,pgimbal->cascade[0].outer.get+yaw_kf_data[0],ENCODER_MODE);	
-					gimbal_set_pitch_angle(pgimbal,pgimbal->cascade[1].outer.get+pit_kf_data[0]);
+					//gimbal_set_yaw_angle(pgimbal,pgimbal->cascade[0].outer.get+yaw_kf_data[0],ENCODER_MODE);	
+					//gimbal_set_pitch_angle(pgimbal,pgimbal->cascade[1].outer.get+pit_kf_data[0]);
+					// Equavalent to P only control. Need a I term.
+						
+						gimbal_set_yaw_speed(pgimbal,yaw_kf_data[0]+integral_error_yaw);
+						gimbal_set_pitch_speed(pgimbal,pit_kf_data[0]+integral_error_pit);
 					}
 					else
 						pc_counter++;
