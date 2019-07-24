@@ -185,7 +185,7 @@ void gimbal_task(void const *argument)
         
         
 				gimbal_set_pitch_mode(pgimbal, GYRO_MODE);
-        gimbal_set_yaw_mode(pgimbal, GYRO_MODE);
+        gimbal_set_yaw_mode(pgimbal, ENCODER_MODE);
         pit_delta =  (float)prc_info->ch2 * GIMBAL_RC_PITCH + (float)pit_mouse * GIMBAL_MOUSE_PITCH;
         yaw_delta =      square_ch1       * GIMBAL_RC_YAW   + (float)yaw_mouse * GIMBAL_MOUSE_YAW;
         yaw_delta += prc_info->kb.bit.E ? YAW_KB_SPEED : 0;
@@ -260,7 +260,7 @@ static int32_t gimbal_imu_update(void *argc)
   mahony_ahrs_updateIMU(&mpu_sensor, &mahony_atti);
 
   gimbal_pitch_gyro_update(pgimbal, -mahony_atti.pitch);
-  gimbal_yaw_gyro_update(pgimbal, -mahony_atti.yaw);
+  gimbal_yaw_gyro_update(pgimbal, mahony_atti.yaw);
   gimbal_rate_update(pgimbal, mpu_sensor.wz * RAD_TO_DEG, -mpu_sensor.wy * RAD_TO_DEG);
   
   mpu_pit = mahony_atti.pitch * 1000;
@@ -350,8 +350,10 @@ static void auto_gimbal_adjust(gimbal_t pgimbal)
       {
 				// Edited By Eric Chen 
 				// Convert angular data based on gear ratio.
+				// Using angle raw_ecd instead of angle can make 
+				// Data more accurate.
 				float ecd_total_angle = pgimbal->motor[PITCH_MOTOR_INDEX].data.total_ecd;
-				float converted_angle = ecd_total_angle/36.0f; // Devided By Gear ratio.
+				float converted_angle = fmod(ecd_total_angle/36.0f,ENCODER_ANGLE_RATIO); // Devided By Gear ratio.
         pit_ecd_c = converted_angle;
 				// Eric Chen's edition ended.
         break;

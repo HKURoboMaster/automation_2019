@@ -71,17 +71,17 @@ int32_t gimbal_cascade_register(struct gimbal *gimbal, const char *name, enum de
 
   gimbal->mode.bit.yaw_mode = ENCODER_MODE;
   gimbal->ctrl[YAW_MOTOR_INDEX].convert_feedback = yaw_ecd_input_convert;
-  pid_struct_init(&(gimbal->cascade[YAW_MOTOR_INDEX].outer), 500, 600, 15, 0.04, 1);
-	//pid_struct_init(&(gimbal->cascade[YAW_MOTOR_INDEX].outer), 500, 600, 0, 0, 0);
-  pid_struct_init(&(gimbal->cascade[YAW_MOTOR_INDEX].inter), 30000, 3000, 96, 0, 0);
+  pid_struct_init(&(gimbal->cascade[YAW_MOTOR_INDEX].outer), 500, 600, 15, 0, 0);
+	//pid_struct_init(&(gimbal->cascade[YAW_MOTOR_INDEX].outer), 500, 600, 80, 0, 0);
+  pid_struct_init(&(gimbal->cascade[YAW_MOTOR_INDEX].inter), 20000, 3000, 80, 0, 0);
 	//pid_struct_init(&(gimbal->cascade[YAW_MOTOR_INDEX].inter), 30000, 3000, 0, 0, 0);
   // pid_struct_init(&(gimbal->cascade[YAW_MOTOR_INDEX].outer), 100, 0, 0.5f, 0, 0);
   //pid_struct_init(&(gimbal->cascade[YAW_MOTOR_INDEX].inter), 1500, 3000, 3.5f, 0.125f, 0);
 
   gimbal->mode.bit.pitch_mode = ENCODER_MODE;
   gimbal->ctrl[PITCH_MOTOR_INDEX].convert_feedback = pitch_ecd_input_convert;
-  pid_struct_init(&(gimbal->cascade[PITCH_MOTOR_INDEX].outer), 2000, 0, 30, 0, 0);
-  pid_struct_init(&(gimbal->cascade[PITCH_MOTOR_INDEX].inter), 30000, 8000, 200, 0, 0);
+  pid_struct_init(&(gimbal->cascade[PITCH_MOTOR_INDEX].outer), 500, 0, 25, 0, 0);
+  pid_struct_init(&(gimbal->cascade[PITCH_MOTOR_INDEX].inter), 6000, 8000, 20, 0, 0);
   //pid_struct_init(&(gimbal->cascade[PITCH_MOTOR_INDEX].outer), 2000, 600, 0, 0, 0);
   //pid_struct_init(&(gimbal->cascade[PITCH_MOTOR_INDEX].inter), 1500, 3000, 0, 0, 0);//15
 
@@ -370,7 +370,8 @@ int32_t gimbal_execute(struct gimbal *gimbal)
 	// Edited By Eric chen 
 	// Based on gear ratio convert the angular data.
 	ecd_total_angle = pdata->total_ecd;
-	converted_angle = ecd_total_angle / 36.0f;
+	converted_angle =fmod(ecd_total_angle / 36.0f,ENCODER_ANGLE_RATIO);
+	
   gimbal->ecd_angle.pitch = PITCH_MOTOR_POSITIVE_DIR * gimbal_get_ecd_angle(converted_angle, gimbal->param.pitch_ecd_center) / ENCODER_ANGLE_RATIO;
 	// Eric Chen's Edition ended.
   controller_execute(&(gimbal->ctrl[PITCH_MOTOR_INDEX]), (void *)gimbal);
