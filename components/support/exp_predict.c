@@ -23,6 +23,11 @@ static float t[3][2];
 static float predict[2];
 static float time[2];
 
+//TODO: This exp prediction cannot deal with the fluctuations
+//TODO: Consider other regression methods
+//TODO: The regression should handle a non-linear relationship with high variance
+//TODO: And should be computational efficient
+
 /**Added by Y.H. Liu
  * @Jul 22, 2019: Define the function
  * 
