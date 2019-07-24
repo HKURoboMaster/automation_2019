@@ -27,7 +27,6 @@
 #define RAD_TO_DEG 57.296f // 180/PI
 #define MAPPING_INDEX_CRT 1.0f
 #define MAPPING_INDEX_VTG 0.005f
-static float vx, vy, wz;
 
 float follow_relative_angle;
 struct pid pid_follow = {0}; //angle control
@@ -56,7 +55,6 @@ uint8_t current_excess_flag_js;
 #ifdef CHASSIS_POWER_CTRL
   #include "referee_system.h"
   static uint8_t superCapacitor_Ctrl(chassis_t pchassis, uint8_t low_cap_flag);
-//TODO
 #endif
 
 #define km_dodge          prc_info->kb.bit.V == 1
@@ -81,7 +79,7 @@ void chassis_task(void const *argument)
 
   soft_timer_register(chassis_push_info, (void *)pchassis, 10);
 
-  pid_struct_init(&pid_follow, MAX_CHASSIS_VW_SPEED*0.9f, 50, 8.764f, 0.0f, 2.0f);
+  pid_struct_init(&pid_follow, MAX_CHASSIS_VW_SPEED*0.85f, 50, 7.673848152f, 0.0f, 2.0f);
 
   chassis_disable(pchassis);
 
@@ -90,6 +88,7 @@ void chassis_task(void const *argument)
   #endif
   while (1)
   {
+    float vx, vy, wz;
     if (rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK || rc_device_get_state(prc_dev, RC_S2_MID) == RM_OK)
     { //not disabled
       chassis_enable(pchassis);
@@ -118,7 +117,7 @@ void chassis_task(void const *argument)
       if(km_dodge)
       {
         #ifndef HERO_ROBOT
-        wz = 1.1f * MAX_CHASSIS_VW_SPEED;
+        wz = MAX_CHASSIS_VW_SPEED;
         #else
           if(fabsf(follow_relative_angle) >= DODGING_TH)
             twist_sign *= -1;
@@ -161,18 +160,19 @@ void chassis_task(void const *argument)
       {
         chassis_imu_update(pchassis);
         chassis_execute(pchassis);
-        current_js = get_chassis_power(&chassis_power); // Power Value Getter
+        get_chassis_power(&chassis_power); // Power Value Getter
         osDelayUntil(&period, 2);
         /*-------- Then, adjust the power --------*/
       //get the buffer
-        extPowerHeatData_t * referee_power = get_heat_power();
+        ext_power_heat_data_t * referee_power = get_heat_power();
+        shooter_data_sent_by_can(referee_power);
       //set the current & voltage flags
-        if(referee_power->chassisPowerBuffer > LOW_BUFFER && chassis_power.voltage>LOW_VOLTAGE && 
-           chassis_power.power > (CHASSIS_POWER_TH+LOW_BUFFER)/WORKING_VOLTAGE)
+        if(referee_power->chassis_power_buffer > LOW_BUFFER && chassis_power.voltage>LOW_VOLTAGE && 
+           chassis_power.current > (CHASSIS_POWER_TH+LOW_BUFFER)/WORKING_VOLTAGE)
         {
           current_excess_flag = 2;
         }
-        else if(chassis_power.power > CHASSIS_POWER_TH/WORKING_VOLTAGE)
+        else if(chassis_power.current > CHASSIS_POWER_TH/WORKING_VOLTAGE)
         {
           current_excess_flag = 1;
         }
@@ -180,18 +180,24 @@ void chassis_task(void const *argument)
         {
           current_excess_flag = 0;
         }
-        if(chassis_power.voltage<LOW_VOLTAGE)
+        if(chassis_power.voltage<LOW_VOLTAGE || chassis_power.voltage>27)
           low_volatge_flag = 1;
+          
         else
           low_volatge_flag = 0;
       //control the supercap
         uint8_t sw = superCapacitor_Ctrl(pchassis,low_volatge_flag);
+        if(sw)
+          WRITE_HIGH_CAPACITOR();
+        else
+          WRITE_LOW_CAPACITOR();
       //control the speed ref if necessary
         if(current_excess_flag)
         {
-          float prop = chassis_power.power / ((CHASSIS_POWER_TH+(current_excess_flag-1)*LOW_BUFFER)/WORKING_VOLTAGE);
+          float prop = chassis_power.current / ((CHASSIS_POWER_TH+(current_excess_flag-1)*LOW_BUFFER)/WORKING_VOLTAGE);
           prop = sqrtf(prop);
           chassis_set_vx_vy(pchassis, pchassis->mecanum.speed.vx/prop, pchassis->mecanum.speed.vy/prop);
+          chassis_set_vw(pchassis, pchassis->mecanum.speed.vw/prop);
           LED_R_ON();
         }
         else if(chassis_check_enable(pchassis))
@@ -200,7 +206,7 @@ void chassis_task(void const *argument)
         }
         //Share the flags and data with the gimbal
         current_excess_flag_js = current_excess_flag;
-        power_data_sent_by_can(current_excess_flag, low_volatge_flag, chassis_power.power, chassis_power.voltage, referee_power->chassisPowerBuffer);
+        power_data_sent_by_can(current_excess_flag, low_volatge_flag, chassis_power.current, chassis_power.voltage, referee_power->chassis_power_buffer);
       }while(current_excess_flag);
     #else
       chassis_imu_update(pchassis);
@@ -233,7 +239,7 @@ static uint8_t superCapacitor_Ctrl(chassis_t pchassis, uint8_t low_cap_flag)
   {
     for(int i=0; i<4; i++)
     {
-      if(pchassis->motor[i].data.speed_rpm < pchassis->mecanum.wheel_rpm[i]/20)
+      if(pchassis->motor[i].data.speed_rpm < pchassis->mecanum.wheel_rpm[i]/5)
         return 1;
     }
   }
@@ -247,8 +253,26 @@ int32_t chassis_set_relative_angle(float angle)
   return 0;
 }
 
+/**Added by Eric Chen
+ * @Jun 2019: Define the function & current
+ * @Jul 23, 2019: Change the current to be *current* by Y.H. Liu
+ * 
+ * BRIEF: refresh the power of the chassis
+ * PARAM: chassis_power ---- struct storing the power data
+ *        -  current_debug ---- raw data from current sensor
+ *        -  voltage_debug ---- raw data from voltage sensor
+ *        -  current ---- real current data after scaling
+ *        -  voltage ---- real voltage data after scaling
+ *        -  power ---- current * voltage
+ *        current_smoothed ---- smoothed current data
+ *        voltage_smoothed ---- smoothed voltage data
+ *        current_js ---- global variable exposing the current
+ *        voltage_js ---- global variable exposing the voltage
+ *        power_js ---- global variable exposing the power
+ * REVAL: the value of power
+ */
 int get_chassis_power(struct chassis_power *chassis_power)
-{
+{ //Getting raw data
 	if (HAL_ADC_PollForConversion(&hadc1,10000)== HAL_OK)
 	{
 		chassis_power->current_debug = HAL_ADC_GetValue(&hadc1);
@@ -257,12 +281,15 @@ int get_chassis_power(struct chassis_power *chassis_power)
 	{
 		chassis_power->voltage_debug = HAL_ADC_GetValue(&hadc2);
 	}
-
-	chassis_power->current = smooth_filter(10,((float)chassis_power->current_debug) * MAPPING_INDEX_CRT,weight)/2;
-	//chassis_power->voltage = smooth_filter(10,((float)chassis_power->voltage_debug) * MAPPING_INDEX_VTG,weight);
-	// chassis_power->power = chassis_power->current * chassis_power->voltage;
-  chassis_power->power = (((chassis_power->current-2048.0f)*25.0f/1024.0f)/10.0f-2.45f)*3; // Assume the sensor is 20 A
-	current_js = (int) (chassis_power->current_debug*1000);
+  // Smoothed raw data
+	float current_smoothed = smooth_filter(10,((float)chassis_power->current_debug) * MAPPING_INDEX_CRT,weight)/2;
+	float voltage_smoothed = smooth_filter(10,((float)chassis_power->voltage_debug) * MAPPING_INDEX_VTG,weight); //TODO: change the coefficient
+  // Store the real data
+  chassis_power->current = (((current_smoothed-2048.0f)*25.0f/1024.0f)/10.0f-2.45f)*3; // Assume the sensor is 20 A
+  chassis_power->voltage = (((voltage_smoothed-2048.0f)*25.0f/1024.0f)/10.0f-2.45f)*3; // TODO: change the scaling
+	chassis_power->power = chassis_power->current * chassis_power->voltage;
+	// Refresh the js variables
+  current_js = (int) (chassis_power->current_debug*1000);
 	current_js_smooth = (int) (chassis_power->current*1000);
 	power_js = (int)(chassis_power->power*1000);
 	return chassis_power->power;

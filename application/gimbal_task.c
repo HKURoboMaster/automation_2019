@@ -26,6 +26,7 @@
 #include "param.h"
 #include "ramp.h"
 #include "angle_queue.h"
+#include "exp_predict.h"
 
 #define DEFAULT_IMU_TEMP 50
 
@@ -34,10 +35,7 @@
 /* gimbal back center time (ms) */
 #define BACK_CENTER_TIME 3000
 
-// Aimming related
-float pit_delta, yaw_delta;
-static float yaw_autoaim_offset = 0.0f;
-static float pitch_autoaim_offset = 0.0f;
+// Aiming related
 extern float auto_aiming_pitch;
 extern float auto_aiming_yaw;
 // Function declaration
@@ -49,13 +47,12 @@ static void gimbal_state_init(gimbal_t pgimbal);
 // Flags
 uint8_t auto_adjust_f;
 uint8_t auto_init_f;
-// Orientation debugging
-int32_t mpu_pit, mpu_yaw, mpu_rol;
-int32_t mpu_wx, mpu_wy, mpu_wz;
-
 /* control ramp parameter */
 static ramp_t yaw_ramp = RAMP_GEN_DAFAULT;
 static ramp_t pitch_ramp = RAMP_GEN_DAFAULT;
+// Orientation debugging
+int32_t mpu_pit, mpu_yaw, mpu_rol;
+int32_t mpu_wx, mpu_wy, mpu_wz;
 // PID debugging
 int32_t yaw_angle_fdb_js, yaw_angle_ref_js;
 int32_t pit_angle_fdb_js, pit_angle_ref_js;
@@ -77,14 +74,19 @@ void gimbal_task(void const *argument)
   cali_sys_t *pparam = NULL;
 
   pgimbal = gimbal_find("gimbal");
-  prc_dev = rc_device_find("can_rc");
+  prc_dev = rc_device_find("uart_rc");
   pparam = get_cali_param();
   
   /**Added by Y.H. Liu
-   * @Jul 17, 2019: Define a queue for auto aimming
+   * @Jul 17, 2019: Define a queue for auto aiming
+   * @Jul 19, 2019: Change the global variable to be the local ones
    * 
-   * Use a queue to implement the speed mode of auto aimming
+   * Use a queue to implement the speed mode of auto aiming
    */
+  float yaw_autoaim_offset = 0.0f;
+  float pitch_autoaim_offset = 0.0f;
+  float pit_delta, yaw_delta;
+
   struct angle_queue yawQ;
   struct angle_queue pitQ; 
   queue_init(&yawQ);
@@ -115,6 +117,7 @@ void gimbal_task(void const *argument)
   imu_temp_ctrl_init();
   while (1)
   {
+    //Queue for auto-aiming
     if(yawQ.len>=DELAY)
     {
       do
@@ -129,16 +132,12 @@ void gimbal_task(void const *argument)
         pitch_autoaim_offset = pgimbal->ecd_angle.pitch - deQueue(&pitQ);
       }while(pitQ.len>=DELAY);
     }
+
     if(rc_device_get_state(prc_dev, RC_S2_DOWN2MID) == RM_OK)
     {
       //switched out disabled mode
       gimbal_pitch_enable(pgimbal);
       gimbal_yaw_enable(pgimbal);
-    }
-    if(rc_device_get_state(prc_dev, RC_S2_MID2DOWN) == RM_OK)
-    {
-      //switch to the disabled mode
-      gimbal_set_yaw_angle(pgimbal, 0, 0);
     }
     if (rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK || rc_device_get_state(prc_dev, RC_S2_MID) == RM_OK
     ||  rc_device_get_state(prc_dev, RC_S2_MID2UP) == RM_OK || rc_device_get_state(prc_dev,RC_S2_UP2MID == RM_OK))
@@ -146,13 +145,19 @@ void gimbal_task(void const *argument)
       //manual control mode i.e. chassis follow gimbal
       if(prc_info->kb.bit.X != 1)
       {
-        //auto_aimming
+        //auto_aiming
         if(prc_info->mouse.r || rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK)
         {
-          if(auto_aiming_yaw!=0)
-            gimbal_set_pitch_delta(pgimbal, auto_aiming_pitch-pitch_autoaim_offset);
           if(auto_aiming_pitch!=0)
+            gimbal_set_pitch_delta(pgimbal, auto_aiming_pitch-pitch_autoaim_offset);
+          else
+            // gimbal_set_pitch_delta(pgimbal, get_predict(PITCH_AUTO_AIMING)-pitch_autoaim_offset);
+          //TODO: check whether this work or not
+          if(auto_aiming_yaw!=0)
             gimbal_set_yaw_delta(pgimbal, auto_aiming_yaw-yaw_autoaim_offset);
+          else
+            // gimbal_set_yaw_delta(pgimbal, get_predict(YAW_AUTO_AIMING)-yaw_autoaim_offset);
+          //TODO: check whether this work or not
           auto_aiming_pitch = 0;
           auto_aiming_yaw = 0;
         }
@@ -179,7 +184,7 @@ void gimbal_task(void const *argument)
         }
         
         
-
+				gimbal_set_pitch_mode(pgimbal, GYRO_MODE);
         gimbal_set_yaw_mode(pgimbal, GYRO_MODE);
         pit_delta =  (float)prc_info->ch2 * GIMBAL_RC_PITCH + (float)pit_mouse * GIMBAL_MOUSE_PITCH;
         yaw_delta =      square_ch1       * GIMBAL_RC_YAW   + (float)yaw_mouse * GIMBAL_MOUSE_YAW;
@@ -254,9 +259,9 @@ static int32_t gimbal_imu_update(void *argc)
   mpu_get_data(&mpu_sensor);
   mahony_ahrs_updateIMU(&mpu_sensor, &mahony_atti);
 
-  gimbal_pitch_gyro_update(pgimbal, -mahony_atti.roll);
+  gimbal_pitch_gyro_update(pgimbal, -mahony_atti.pitch);
   gimbal_yaw_gyro_update(pgimbal, -mahony_atti.yaw);
-  gimbal_rate_update(pgimbal, mpu_sensor.wy * RAD_TO_DEG, -mpu_sensor.wx * RAD_TO_DEG);
+  gimbal_rate_update(pgimbal, mpu_sensor.wz * RAD_TO_DEG, -mpu_sensor.wy * RAD_TO_DEG);
   
   mpu_pit = mahony_atti.pitch * 1000;
   mpu_yaw = mahony_atti.yaw   * 1000;
@@ -311,9 +316,9 @@ struct pid pid_pit_spd = {0};
 /**Modified by Y.H. Liu
  * @Jun 20, 2019: adaption for hero
  * @Jul 8, 2019: use the original methods to calculate the pitch centre
- * @Jul 17, 2019: use a queue for auto-aimming adaption
+ * @Jul 17, 2019: use a queue for auto-aiming adaption
  * 
- * Automatically adjust the netural position for gimbal
+ * Automatically adjust the neutral position for gimbal
  */
 static void auto_gimbal_adjust(gimbal_t pgimbal)
 {

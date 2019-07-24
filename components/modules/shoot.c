@@ -48,12 +48,12 @@ int32_t shoot_pid_register2(struct shoot *shoot, const char *name, enum device_c
 
   memcpy(&motor_name, name, name_len);
   shoot->motor.can_periph = can;
-  shoot->motor.can_id = 0x208;//?
-  shoot->motor.init_offset_f = 1;//?
+  shoot->motor.can_id = 0x208; 
+  shoot->motor.init_offset_f = 1; 
 
   shoot->ctrl.convert_feedback = shoot_pid_input_convert;
 
-  pid_struct_init(&(shoot->motor_pid), 30000, 10000, 10, 0.3, 0);//?
+  pid_struct_init(&(shoot->motor_pid), 20000, 10000, 10, 0.3, 0); 
 
   shoot->param.block_current = BLOCK_CURRENT_DEFAULT;
   shoot->param.block_speed = BLOCK_SPEED_DEFAULT;
@@ -112,7 +112,7 @@ int32_t shoot_pid_register(struct shoot *shoot, const char *name, enum device_ca
 
   shoot->ctrl.convert_feedback = shoot_pid_input_convert;
 
-  pid_struct_init(&(shoot->motor_pid), 30000, 10000, 10, 0.3, 0);
+  pid_struct_init(&(shoot->motor_pid), 20000, 10000, 10, 0.3, 0);
 
   shoot->param.block_current = BLOCK_CURRENT_DEFAULT;
   shoot->param.block_speed = BLOCK_SPEED_DEFAULT;
@@ -367,11 +367,7 @@ static int32_t shoot_cmd_ctrl(struct shoot *shoot)
   }
   
  
-	if ((shoot->fric_spd[0] >= FRIC_MIN_SPEED) && (shoot->fric_spd[1] >= FRIC_MIN_SPEED))
-	{
-		controller_enable(&(shoot->ctrl));
-	}
-	else
+	if(shoot->fric_spd[0] < (FIRC_MAX_SPEED+FRIC_MIN_SPEED)/2 || shoot->fric_spd[1] < (FIRC_MAX_SPEED+FRIC_MIN_SPEED)/2)
 	{
 		controller_disable(&(shoot->ctrl));
 	}
@@ -395,7 +391,10 @@ static int32_t shoot_fric_ctrl(struct shoot *shoot)
   {
     if (shoot->target.fric_spd[0] < shoot->fric_spd[0])
     {
-      shoot->fric_spd[0] -= 1;
+      if(shoot->fric_spd[0]>FIRC_MAX_SPEED-10)
+        shoot->fric_spd[0] -= 0.0625f;
+      else
+        shoot->fric_spd[0] -= 1;
     }
     else
     {
@@ -406,7 +405,10 @@ static int32_t shoot_fric_ctrl(struct shoot *shoot)
   {
     if (shoot->target.fric_spd[1] < shoot->fric_spd[1])
     {
-      shoot->fric_spd[1] -= 1;
+      if(shoot->fric_spd[1]>FIRC_MAX_SPEED-10)
+        shoot->fric_spd[1] -= 0.0625f;
+      else
+        shoot->fric_spd[1] -= 1;
     }
     else
     {
@@ -417,7 +419,7 @@ static int32_t shoot_fric_ctrl(struct shoot *shoot)
   VAL_LIMIT(shoot->fric_spd[0], FIRC_STOP_SPEED, FIRC_MAX_SPEED);
   VAL_LIMIT(shoot->fric_spd[1], FIRC_STOP_SPEED, FIRC_MAX_SPEED);
 
-  if(strncmp(shoot->parent.name, "shoot2",OBJECT_NAME_MAX_LEN))
+  if(strlen(shoot->parent.name)==5)
 	  fric_set_output((uint16_t)shoot->fric_spd[0], (uint16_t)shoot->fric_spd[1]);
 	return RM_OK;
 }
