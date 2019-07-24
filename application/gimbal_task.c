@@ -33,6 +33,14 @@
 /* gimbal back center time (ms) */
 #define BACK_CENTER_TIME 3000
 
+/* gimbal auto patrol */
+#define PATROL_PITCH_MIN -20.5f
+#define PATROL_PITCH_MAX 5.5f
+#define PATROL_PITCH_SPEED 2
+#define PATROL_YAW_SPEED 20
+float auto_patrol_pitch = 0, auto_patrol_yaw = 0;
+int pitch_increaser = 1;
+
 float pit_delta, yaw_delta;
 
 static void imu_temp_ctrl_init(void);
@@ -145,14 +153,13 @@ void gimbal_task(void const *argument)
       //switch to the disabled mode
       gimbal_set_yaw_angle(pgimbal, 0, 0);
     }
-    if (rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK || rc_device_get_state(prc_dev, RC_S2_MID) == RM_OK
-    ||  rc_device_get_state(prc_dev, RC_S2_MID2UP) == RM_OK || rc_device_get_state(prc_dev,RC_S2_UP2MID == RM_OK))
+    if (rrc_device_get_state(prc_dev, RC_S2_MID) == RM_OK)
     {
       //manual control mode i.e. chassis follow gimbal
       if(prc_info->kb.bit.X != 1)
       {
         //auto_aimming
-        if(prc_info->mouse.r || rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK)
+        if(prc_info->mouse.r || rc_device_get_state(prc_dev, RC_S2_MID) == RM_OK)
         {
           gimbal_set_pitch_delta(pgimbal, auto_aiming_pitch);
           gimbal_set_yaw_delta(pgimbal, auto_aiming_yaw);
@@ -209,6 +216,12 @@ void gimbal_task(void const *argument)
         }
       }
     }
+
+    if(rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK)
+    {
+      gimbal_patrol(pgimbal);
+    }
+
     if(rc_device_get_state(prc_dev, RC_S2_DOWN) == RM_OK)
     {
       //disbaled
@@ -397,4 +410,19 @@ static void gimbal_state_init(gimbal_t pgimbal)
       }
     }
   }
+}
+
+/**
+ * Jerry @ 24 Jul
+ * @brief let gimbal patrol automatically.
+ */
+void gimbal_patrol(gimbal_t pgimbal) {
+  if (auto_patrol_pitch < PATROL_PITCH_MIN || auto_patrol_pitch > PATROL_PITCH_MAX) {
+    pitch_increaser = -pitch_increaser;
+  }
+  auto_patrol_pitch += pitch_increaser * PATROL_PITCH_SPEED;
+  auto_patrol_yaw += PATROL_YAW_SPEED;
+  if (auto_patrol_yaw > 180f) auto_patrol_yaw -= 180f;
+  gimbal_set_pitch_angle(pgimbal, auto_patrol_pitch);
+  gimbal_set_yaw_angle(pgimbal, auto_patrol_yaw, 0);
 }

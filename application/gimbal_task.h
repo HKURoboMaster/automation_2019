@@ -30,6 +30,7 @@ void gimbal_task(void const * argument);
 void gimbal_auto_adjust_start(void);
 uint8_t get_gimbal_init_state(void);
 void gimbal_init_state_reset(void);
+void gimbal_patrol(gimbal_t pgimbal);
 
 #define RC_CH_SCALE        660
 #define GIMBAL_RC_PITCH    0.0008f

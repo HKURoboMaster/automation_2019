@@ -46,8 +46,9 @@ chassis_state_t state = {IDLE_STATE, IDLE_CONSTANT_SPEED}; //The state of chassi
 cv_dynamic_event_t dynamic_eve = ENEMY_STAY_STILL;
 cv_static_event_t static_eve = ENEMY_NOT_DETECTED;
 power_event_t power_eve = POWER_NORMAL;
-armor_event_t armor_eve = NO_HIT_FOR_THREE_SEC;
+armor_event_t armor_eve = NO_HIT_FOR_X_SEC;
 int vy_js = 0; // for debugging vy
+int chassis_yaw_js = 0;
 
 /**Eric Edited get data from ADC
   * @Jul 3, 2019: Add power gettter function: get_chassis_power
@@ -104,6 +105,8 @@ void chassis_task(void const *argument)
 
   set_state(&state, IDLE_STATE); // default state: idle
 
+  activate_bounded_movement(50000);
+
   while (1)
   {
     check_ir_signal(); // check ir signals
@@ -115,43 +118,49 @@ void chassis_task(void const *argument)
 
 			chassis_enable(pchassis);
 
-			#ifdef USING_RC_CTRL_VY
-      int32_t key_x_speed = MAX_CHASSIS_VX_SPEED/2;
-      int32_t key_y_speed = MAX_CHASSIS_VY_SPEED/2;
-      if(prc_info->kb.bit.SHIFT)
-      {
-        key_x_speed = MAX_CHASSIS_VX_SPEED;
-        key_y_speed = MAX_CHASSIS_VY_SPEED;
-      }
-      else if (prc_info->kb.bit.CTRL)
-      {
-        key_x_speed /= 2;
-        key_y_speed /= 2;
-      }
-      float square_ch4 = ((float)prc_info->ch4 * fabsf(prc_info->ch4) / RC_CH_SCALE) / RC_CH_SCALE;
-      float square_ch3 = ((float)prc_info->ch3 * fabsf(prc_info->ch3) / RC_CH_SCALE) / RC_CH_SCALE;
+      if (rc_device_get_state(prc_dev, RC_S2_MID) == RM_OK) {
 
-      float temp_vx = square_ch4 * MAX_CHASSIS_VX_SPEED;
-      temp_vx += (prc_info->kb.bit.W - prc_info->kb.bit.S)* key_x_speed;
-      float temp_vy = -square_ch3 * MAX_CHASSIS_VY_SPEED;
-      temp_vy += (prc_info->kb.bit.A - prc_info->kb.bit.D)* key_y_speed;
-      vx = temp_vx * cos(-follow_relative_angle / RAD_TO_DEG) - temp_vy * sin(-follow_relative_angle / RAD_TO_DEG);
-      vy = temp_vx * sin(-follow_relative_angle / RAD_TO_DEG) + temp_vy * cos(-follow_relative_angle / RAD_TO_DEG);
-			#else
-      vy = chassis_random_movement(get_spd(&state));
-      vy_js = vy * 1000;
-			#endif
+        int32_t key_x_speed = MAX_CHASSIS_VX_SPEED/2;
+        int32_t key_y_speed = MAX_CHASSIS_VY_SPEED/2;
+        if(prc_info->kb.bit.SHIFT)
+        {
+          key_x_speed = MAX_CHASSIS_VX_SPEED;
+          key_y_speed = MAX_CHASSIS_VY_SPEED;
+        }
+        else if (prc_info->kb.bit.CTRL)
+        {
+          key_x_speed /= 2;
+          key_y_speed /= 2;
+        }
+        float square_ch4 = ((float)prc_info->ch4 * fabsf(prc_info->ch4) / RC_CH_SCALE) / RC_CH_SCALE;
+        float square_ch3 = ((float)prc_info->ch3 * fabsf(prc_info->ch3) / RC_CH_SCALE) / RC_CH_SCALE;
+
+        float temp_vx = square_ch4 * MAX_CHASSIS_VX_SPEED;
+        temp_vx += (prc_info->kb.bit.W - prc_info->kb.bit.S)* key_x_speed;
+        float temp_vy = -square_ch3 * MAX_CHASSIS_VY_SPEED;
+        temp_vy += (prc_info->kb.bit.A - prc_info->kb.bit.D)* key_y_speed;
+        vx = temp_vx * cos(-follow_relative_angle / RAD_TO_DEG) - temp_vy * sin(-follow_relative_angle / RAD_TO_DEG);
+        vy = temp_vx * sin(-follow_relative_angle / RAD_TO_DEG) + temp_vy * cos(-follow_relative_angle / RAD_TO_DEG);
+
+      } else {
+
+        vy = chassis_random_movement(get_spd(&state));
+        vy_js = vy * 1000;
+
+      }
 
       chassis_set_offset(pchassis, ROTATE_X_OFFSET, ROTATE_Y_OFFSET);
 
+      float raw_vy = vy;
       vy = direction_control(vy); // direction control
 
-      #ifndef USING_RC_CTRL_VY
-      // if blocked by wall
-      if (vy == 0) {
-        generate_movement();
+      if (rc_device_get_state(prc_dev, RC_S2_MID) == RM_OK) {
+        // if blocked by wall
+        if (vy == 0) {
+          generate_movement(); // bounce off by another movement
+          adjust_accumulated_distance(raw_vy);
+        }
       }
-      #endif
 
       chassis_set_speed(pchassis, 0, vy, 0);
 
@@ -224,6 +233,7 @@ static void chassis_imu_update(void *argc)
   chassis_t pchassis = (chassis_t)argc;
   mpu_get_data(&mpu_sensor);
   mahony_ahrs_updateIMU(&mpu_sensor, &mahony_atti);
+  chassis_yaw_js = mahony_atti.yaw;
   chassis_gyro_update(pchassis, -mahony_atti.yaw, -mpu_sensor.wz * RAD_TO_DEG);
 }
 
@@ -279,39 +289,4 @@ void check_ir_signal(void) {
   right_blocked = (HAL_GPIO_ReadPin(IR_RIGHT_Port, IR_RIGHT_Pin) == GPIO_PIN_RESET);
   left_ir_js = left_blocked ? 5000 : 0;
   right_ir_js = right_blocked ? -5000 : 0;
-}
-
-/**
- * Jerry 10 Jul
- * @brief Set the chassis state to be one of the three states.
- * Example: set_state(&state, IDLE_STATE);
- */
-void set_state(chassis_state_t * state, chassis_state_name_t dest_state) {
-  state->state_name = dest_state;
-  switch (dest_state) {
-    case IDLE_STATE:
-      state->constant_spd = IDLE_CONSTANT_SPEED;
-      break;
-    case NORMAL_STATE:
-      state->constant_spd = NORMAL_CONSTANT_SPEED;
-      break;
-    case BOOST_STATE:
-      state->constant_spd = BOOST_CONSTANT_SPEED;
-  }
-}
-
-/**
- * Jerry 10 Jul
- * @brief Get the chassis state name.
- */
-chassis_state_name_t get_state(const chassis_state_t * state) {
-  return state->state_name;
-}
-
-/**
- * Jerry 10 Jul
- * @brief Get the constant speed under current state.
- */
-float get_spd(const chassis_state_t * state) {
-  return state->constant_spd;
 }
