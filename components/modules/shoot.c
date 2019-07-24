@@ -441,11 +441,12 @@ static uint8_t trigger_motor_status(struct shoot * shoot)
   static float trigger_motor_rotation = 0.0f;
   static float trigger_motor_rot_last = 0.0f;
   static int32_t total_angle_last = 0;
-
+	// convert angle using gear ratio
   trigger_motor_rot_last = trigger_motor_rotation;
   trigger_motor_rotation += abs(shoot->motor.data.total_angle - total_angle_last)/36.0f;
   total_angle_last = shoot->motor.data.total_angle;
   trigger_motor_rotation = fmodf(trigger_motor_rotation, 360.0f);
+	// convert data using gear ratio end.
   #ifndef HERO_ROBOT
   float bullet_passing_offset = fmodf(trigger_motor_rotation, 45.0f);
   if(bullet_passing_offset>=5 && bullet_passing_offset<40 && trigger_motor_rot_last!=trigger_motor_rotation)

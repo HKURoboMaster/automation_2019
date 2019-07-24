@@ -343,7 +343,12 @@ static void auto_gimbal_adjust(gimbal_t pgimbal)
       }
       if (pit_cnt > 1000 || pit_timeout_cnt>2000)
       {
-        pit_ecd_c = pgimbal->motor[PITCH_MOTOR_INDEX].data.ecd;
+				// Edited By Eric Chen 
+				// Convert angular data based on gear ratio.
+				float ecd_total_angle = pgimbal->motor[PITCH_MOTOR_INDEX].data.total_ecd;
+				float converted_angle = ecd_total_angle/36.0f; // Devided By Gear ratio.
+        pit_ecd_c = converted_angle;
+				// Eric Chen's edition ended.
         break;
       }
     }

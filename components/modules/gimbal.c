@@ -24,6 +24,11 @@ static int32_t pitch_ecd_input_convert(struct controller *ctrl, void *input);
 static int32_t gimbal_set_yaw_gyro_angle(struct gimbal *gimbal, float yaw, uint8_t mode);
 static int16_t gimbal_get_ecd_angle(int16_t raw_ecd, int16_t center_offset);
 
+// Added By Eric Chen 
+// Convert M2006 angle data with gear box.
+float ecd_total_angle = 0;
+float converted_angle = 0;
+
 int32_t gimbal_cascade_register(struct gimbal *gimbal, const char *name, enum device_can can)
 {
   char motor_name[2][OBJECT_NAME_MAX_LEN] = {0};
@@ -362,7 +367,12 @@ int32_t gimbal_execute(struct gimbal *gimbal)
   motor_device_set_current(&(gimbal->motor[YAW_MOTOR_INDEX]), (int16_t)YAW_MOTOR_POSITIVE_DIR * motor_out);
 
   pdata = motor_device_get_data(&(gimbal->motor[PITCH_MOTOR_INDEX]));
-  gimbal->ecd_angle.pitch = PITCH_MOTOR_POSITIVE_DIR * gimbal_get_ecd_angle(pdata->ecd, gimbal->param.pitch_ecd_center) / ENCODER_ANGLE_RATIO;
+	// Edited By Eric chen 
+	// Based on gear ratio convert the angular data.
+	ecd_total_angle = pdata->total_ecd;
+	converted_angle = ecd_total_angle / 36.0f;
+  gimbal->ecd_angle.pitch = PITCH_MOTOR_POSITIVE_DIR * gimbal_get_ecd_angle(converted_angle, gimbal->param.pitch_ecd_center) / ENCODER_ANGLE_RATIO;
+	// Eric Chen's Edition ended.
   controller_execute(&(gimbal->ctrl[PITCH_MOTOR_INDEX]), (void *)gimbal);
   controller_get_output(&(gimbal->ctrl[PITCH_MOTOR_INDEX]), &motor_out);
   motor_device_set_current(&(gimbal->motor[PITCH_MOTOR_INDEX]), (int16_t)PITCH_MOTOR_POSITIVE_DIR * motor_out);
