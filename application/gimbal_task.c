@@ -38,6 +38,7 @@
 // Aiming related
 extern float auto_aiming_pitch;
 extern float auto_aiming_yaw;
+extern float pitch_ecd_rate;
 // Function declaration
 static void imu_temp_ctrl_init(void);
 static int32_t gimbal_imu_update(void *argc);
@@ -261,8 +262,12 @@ static int32_t gimbal_imu_update(void *argc)
 
   gimbal_pitch_gyro_update(pgimbal, -mahony_atti.pitch);
   gimbal_yaw_gyro_update(pgimbal, mahony_atti.yaw);
-  gimbal_rate_update(pgimbal, mpu_sensor.wz * RAD_TO_DEG, -mpu_sensor.wy * RAD_TO_DEG);
-  
+	// Edited By Eric Chen: 
+	// Using ecd rate as rate, avoid mechanical inconsistance between board and motor
+	// Orientation changed.
+	
+  gimbal_rate_update(pgimbal, mpu_sensor.wz * RAD_TO_DEG, pitch_ecd_rate * RAD_TO_DEG);
+  // Eric Chen'e Edition end.
   mpu_pit = mahony_atti.pitch * 1000;
   mpu_yaw = mahony_atti.yaw   * 1000;
   mpu_rol = mahony_atti.roll  * 1000;
@@ -353,7 +358,7 @@ static void auto_gimbal_adjust(gimbal_t pgimbal)
 				// Using angle raw_ecd instead of angle can make 
 				// Data more accurate.
 				float ecd_total_angle = pgimbal->motor[PITCH_MOTOR_INDEX].data.total_ecd;
-				float converted_angle = fmod(ecd_total_angle/36.0f,ENCODER_ANGLE_RATIO); // Devided By Gear ratio.
+				float converted_angle = fmod(ecd_total_angle/36.0f,8192); // Devided By Gear ratio.
         pit_ecd_c = converted_angle;
 				// Eric Chen's edition ended.
         break;

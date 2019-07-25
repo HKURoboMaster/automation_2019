@@ -28,6 +28,7 @@ static int16_t gimbal_get_ecd_angle(int16_t raw_ecd, int16_t center_offset);
 // Convert M2006 angle data with gear box.
 float ecd_total_angle = 0;
 float converted_angle = 0;
+float pitch_ecd_rate = 0;
 
 int32_t gimbal_cascade_register(struct gimbal *gimbal, const char *name, enum device_can can)
 {
@@ -370,7 +371,8 @@ int32_t gimbal_execute(struct gimbal *gimbal)
 	// Edited By Eric chen 
 	// Based on gear ratio convert the angular data.
 	ecd_total_angle = pdata->total_ecd;
-	converted_angle =fmod(ecd_total_angle / 36.0f,ENCODER_ANGLE_RATIO);
+	converted_angle =fmod(ecd_total_angle / 36.0f,8192);
+	pitch_ecd_rate = pdata->ecd_raw_rate/36.0f; // Mapped to real data
 	
   gimbal->ecd_angle.pitch = PITCH_MOTOR_POSITIVE_DIR * gimbal_get_ecd_angle(converted_angle, gimbal->param.pitch_ecd_center) / ENCODER_ANGLE_RATIO;
 	// Eric Chen's Edition ended.
