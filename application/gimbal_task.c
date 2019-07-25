@@ -185,7 +185,7 @@ void gimbal_task(void const *argument)
         }
         
         
-				gimbal_set_pitch_mode(pgimbal, GYRO_MODE);
+				gimbal_set_pitch_mode(pgimbal, ENCODER_MODE);
         gimbal_set_yaw_mode(pgimbal, ENCODER_MODE);
         pit_delta =  (float)prc_info->ch2 * GIMBAL_RC_PITCH + (float)pit_mouse * GIMBAL_MOUSE_PITCH;
         yaw_delta =      square_ch1       * GIMBAL_RC_YAW   + (float)yaw_mouse * GIMBAL_MOUSE_YAW;
