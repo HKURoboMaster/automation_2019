@@ -186,7 +186,19 @@ void gimbal_task(void const *argument)
         
         
 				gimbal_set_pitch_mode(pgimbal, ENCODER_MODE);
-        gimbal_set_yaw_mode(pgimbal, ENCODER_MODE);
+				// Edited By Eric Chen 
+				// Added 'Breath holding' feature.
+				// When SHIFT key is pressed. Shift to GYRO_MODE. using current angle as 
+				// target for both mode to set delta.
+				if(prc_info->kb.bit.SHIFT != 1)
+				{
+					gimbal_set_yaw_mode(pgimbal, ENCODER_MODE);
+				}
+				else
+				{
+					gimbal_set_yaw_mode(pgimbal,GYRO_MODE);
+					//pgimbal->gyro_target_angle = pgimbal->sensor.gyro_angle;
+				}
         pit_delta =  (float)prc_info->ch2 * GIMBAL_RC_PITCH + (float)pit_mouse * GIMBAL_MOUSE_PITCH;
         yaw_delta =      square_ch1       * GIMBAL_RC_YAW   + (float)yaw_mouse * GIMBAL_MOUSE_YAW;
         yaw_delta += prc_info->kb.bit.E ? YAW_KB_SPEED : 0;
