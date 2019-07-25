@@ -43,6 +43,9 @@ int32_t current_js_smooth;
 int32_t power_pidout_js;
 int32_t power_js;
 uint8_t current_excess_flag_js;
+uint8_t sensor_offline = 0;
+#define CURRENT_OFFLINE 0x0Fu
+#define VOLTAGE_OFFLINE 0xF0u
 
 
 /** Edited by Y.H. Liu
@@ -159,6 +162,10 @@ void chassis_task(void const *argument)
       do
       {
         chassis_imu_update(pchassis);
+        if(sensor_offline & CURRENT_OFFLINE)
+        {
+          //TODO: what if current sensor offline
+        }
         chassis_execute(pchassis);
         get_chassis_power(&chassis_power); // Power Value Getter
         osDelayUntil(&period, 2);
@@ -180,9 +187,8 @@ void chassis_task(void const *argument)
         {
           current_excess_flag = 0;
         }
-        if(chassis_power.voltage<LOW_VOLTAGE || chassis_power.voltage>27)
-          low_volatge_flag = 1;
-          
+        if(chassis_power.voltage<LOW_VOLTAGE || sensor_offline&VOLTAGE_OFFLINE)
+          low_volatge_flag = 1;          
         else
           low_volatge_flag = 0;
       //control the supercap
@@ -281,6 +287,11 @@ int get_chassis_power(struct chassis_power *chassis_power)
 	{
 		chassis_power->voltage_debug = HAL_ADC_GetValue(&hadc2);
 	}
+  // Check the offline # TODO: determine whether this is corrent
+  if(chassis_power->current_debug > 1200)
+    sensor_offline |= CURRENT_OFFLINE;
+  if(chassis_power->voltage_debug > 1200)
+    sensor_offline |= VOLTAGE_OFFLINE;
   // Smoothed raw data
 	float current_smoothed = smooth_filter(10,((float)chassis_power->current_debug) * MAPPING_INDEX_CRT,weight)/2;
 	float voltage_smoothed = smooth_filter(10,((float)chassis_power->voltage_debug) * MAPPING_INDEX_VTG,weight); //TODO: change the coefficient

@@ -26,7 +26,6 @@
 #include "param.h"
 #include "ramp.h"
 #include "angle_queue.h"
-#include "exp_predict.h"
 
 #define DEFAULT_IMU_TEMP 50
 
@@ -151,14 +150,8 @@ void gimbal_task(void const *argument)
         {
           if(auto_aiming_pitch!=0)
             gimbal_set_pitch_delta(pgimbal, auto_aiming_pitch-pitch_autoaim_offset);
-          else
-            // gimbal_set_pitch_delta(pgimbal, get_predict(PITCH_AUTO_AIMING)-pitch_autoaim_offset);
-          //TODO: check whether this work or not
           if(auto_aiming_yaw!=0)
             gimbal_set_yaw_delta(pgimbal, auto_aiming_yaw-yaw_autoaim_offset);
-          else
-            // gimbal_set_yaw_delta(pgimbal, get_predict(YAW_AUTO_AIMING)-yaw_autoaim_offset);
-          //TODO: check whether this work or not
           auto_aiming_pitch = 0;
           auto_aiming_yaw = 0;
         }

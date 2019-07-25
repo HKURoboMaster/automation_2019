@@ -132,19 +132,18 @@ void shoot_task(void const *argument)
       if (rc_device_get_state(prc_dev, RC_WHEEL_UP) == RM_OK
         || mouse_shoot_control(prc_dev)==press)
       {
-        // if (get_time_ms() - shoot_time > 2500)
-        // {
-        //   shoot_set_cmd(pshoot, SHOOT_CONTINUOUS_CMD, 0);
-        // }
+        shoot_set_fric_speed(pshoot, FRIC_CON_SPEED, FRIC_CON_SPEED);
         shoot_set_cmd(pshoot, SHOOT_CONTINUOUS_CMD, CONTIN_BULLET_NUM);				
       }
       else if ((rc_device_get_state(prc_dev, RC_WHEEL_DOWN) == RM_OK && prc_dev->last_rc_info.wheel > -300)
             || mouse_shoot_control(prc_dev)==click)
       {
+        shoot_set_fric_speed(pshoot, FRIC_MAX_SPEED, FRIC_MAX_SPEED);
         shoot_set_cmd(pshoot, SHOOT_ONCE_CMD, 1);
       }
       else
       {
+        shoot_set_fric_speed(pshoot, FRIC_MAX_SPEED, FRIC_MAX_SPEED);
         shoot_set_cmd(pshoot, SHOOT_STOP_CMD, 0);
       }
     }
@@ -193,14 +192,14 @@ int32_t shoot_firction_toggle(shoot_t pshoot, uint8_t toggled)
 {
   if (toggled)
   {
-    shoot_set_fric_speed(pshoot, FIRC_STOP_SPEED, FIRC_STOP_SPEED);
+    shoot_set_fric_speed(pshoot, FRIC_STOP_SPEED, FRIC_STOP_SPEED);
     turn_off_laser();
 		if(strlen(pshoot->parent.name)==6)//Leo
 			shoot_set_cmd(pshoot, SHOOT_STOP_CMD, 0);			//Leo	
   }
   else
   {
-    shoot_set_fric_speed(pshoot, FIRC_MAX_SPEED, FIRC_MAX_SPEED);
+    shoot_set_fric_speed(pshoot, FRIC_MAX_SPEED, FRIC_MAX_SPEED);
     turn_on_laser();
 		if(strlen(pshoot->parent.name)==6)//Leo
 			shoot_set_cmd(pshoot, SHOOT_CONTINUOUS_CMD, CONTIN_BULLET_NUM);	//Leo			
