@@ -120,24 +120,6 @@ void chassis_task(void const *argument)
     check_ir_signal(); // check ir signals
     
     float vx, vy, wz;
-    if (rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK || rc_device_get_state(prc_dev, RC_S2_MID) == RM_OK)
-    { //not disabled
-      chassis_enable(pchassis);
-      int32_t key_x_speed = MAX_CHASSIS_VX_SPEED/2;
-      int32_t key_y_speed = MAX_CHASSIS_VY_SPEED/2;
-      if(prc_info->kb.bit.SHIFT)
-      {
-        key_x_speed = MAX_CHASSIS_VX_SPEED;
-        key_y_speed = MAX_CHASSIS_VY_SPEED;
-      }
-      else if (prc_info->kb.bit.CTRL)
-      {
-        key_x_speed /= 2;
-        key_y_speed /= 2;
-      }
-      float square_ch4 = ((float)prc_info->ch4 * fabsf(prc_info->ch4) / RC_CH_SCALE) / RC_CH_SCALE;
-      float square_ch3 = ((float)prc_info->ch3 * fabsf(prc_info->ch3) / RC_CH_SCALE) / RC_CH_SCALE;
-
     #ifdef RC_CONNECTED
 		if (rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK || rc_device_get_state(prc_dev, RC_S2_MID) == RM_OK)
 		{ //not disabled

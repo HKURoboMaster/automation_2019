@@ -43,6 +43,8 @@ float auto_patrol_pitch = 0, auto_patrol_yaw = 0;
 int pitch_increaser = 1;
 
 float pit_delta, yaw_delta;
+extern float auto_aiming_pitch;
+extern float auto_aiming_yaw;
 
 static void imu_temp_ctrl_init(void);
 static int32_t gimbal_imu_update(void *argc);
@@ -149,7 +151,7 @@ void gimbal_task(void const *argument)
       //switch to the disabled mode
       gimbal_set_yaw_angle(pgimbal, 0, 0);
     }
-    if (rrc_device_get_state(prc_dev, RC_S2_MID) == RM_OK)
+    if (rc_device_get_state(prc_dev, RC_S2_MID) == RM_OK)
     {
       //manual control mode i.e. chassis follow gimbal
       if(prc_info->kb.bit.X != 1)
@@ -425,7 +427,7 @@ void gimbal_patrol(gimbal_t pgimbal) {
   }
   auto_patrol_pitch += pitch_increaser * PATROL_PITCH_SPEED;
   auto_patrol_yaw += PATROL_YAW_SPEED;
-  if (auto_patrol_yaw > 180f) auto_patrol_yaw -= 180f;
+  if (auto_patrol_yaw > 180.0f) auto_patrol_yaw -= 180.0f;
   gimbal_set_pitch_angle(pgimbal, auto_patrol_pitch);
   gimbal_set_yaw_angle(pgimbal, auto_patrol_yaw, 0);
 }

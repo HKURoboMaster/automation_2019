@@ -129,7 +129,6 @@ void shoot_task(void const *argument)
     uint16_t * shooter_heat_ptr = shooter_heat_get_via_can();
     uint16_t heatLimit = get_heat_limit();
 
-    #ifndef HERO_ROBOT
     if (shooter_heat_ptr[0]< heatLimit && rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK && fric_on) //not in disabled mode
     {
       if (rc_device_get_state(prc_dev, RC_WHEEL_UP) == RM_OK
