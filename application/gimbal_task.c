@@ -210,7 +210,6 @@ void gimbal_task(void const *argument)
     if(rc_device_get_state(prc_dev, RC_S2_DOWN) == RM_OK)
     {
       //disbaled
-			shoot_set_fric_speed();
       gimbal_pitch_disable(pgimbal);
       gimbal_yaw_disable(pgimbal);
     }
