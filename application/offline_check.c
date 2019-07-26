@@ -40,6 +40,7 @@ struct detect_device *get_offline_dev(void)
 
 static chassis_t pchassis = NULL;
 extern Engineer engg;
+extern upper_ctrl upper_controller;
 
 void offline_init(void)
 {
@@ -63,11 +64,14 @@ void offline_init(void)
     detect_device_add_event(&offline_dev, MOTOR2_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[2]);
     detect_device_add_event(&offline_dev, MOTOR3_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[3]);
     detect_device_add_event(&offline_dev, MOTOR4_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[4]);
-		detect_device_add_event(&offline_dev, DUALMOTOR1_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[5]);
-		detect_device_add_event(&offline_dev, DUALMOTOR2_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[6]);
 		detect_device_add_event(&offline_dev, MOONROVER1_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[7]);
 		detect_device_add_event(&offline_dev, MOONROVER2_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[8]);
   }
+	else if (app == UPPER_APP)
+	{
+		detect_device_add_event(&offline_dev, DUALMOTOR1_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[5]);
+		detect_device_add_event(&offline_dev, DUALMOTOR2_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[6]);
+	}
  
   soft_timer_register(offline_check, NULL, 20);
   can_fifo0_rx_callback_register(&can1_manage, can1_detect_update);
@@ -82,7 +86,7 @@ int32_t offline_check(void *argc)
     offline_beep_set_times(&offline_beep_times[0]);
 
     chassis_enable(pchassis);
-		dualmotor_enable(&engg);
+		dualmotor_enable(&upper_controller);
 		moonrover_enable(&engg);
 		
 		LED_R_OFF();
@@ -90,7 +94,7 @@ int32_t offline_check(void *argc)
   else
   {
     chassis_disable(pchassis);
-		dualmotor_disable(&engg);
+		dualmotor_disable(&upper_controller);
 		moonrover_disable(&engg);
   }
   return 0;

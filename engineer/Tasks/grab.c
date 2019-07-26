@@ -2,33 +2,43 @@
 #include "engineer.h"
 #include "dbus.h"
 #include "engg_gpio.h"
+#include "timer_task.h"
+#include "infantry_cmd.h"
+#include "upper.h"
 
 /* VARIABLES: GRAB - related */
 extern Engineer engg;
+extern struct upper_info upper;
 /* END of VARIABLES: GRAB - related */
 
 /* FUNCTIONS: GRAB - related */
-int32_t grab_execute(Engineer* engineer, rc_device_t prc_dev, rc_info_t prc_info) {
+int32_t grab_execute(Engineer* engineer, struct upper_info* upperinf, rc_device_t prc_dev, rc_info_t prc_info) {
 	if (engineer == NULL)
 		return -RM_INVAL;
 	
 	if (engineer->ENGINEER_BIG_STATE != UPPERPART) {
 		// reset
-		if (engineer->grabber.GRABBER_STATE != IDLE)
+		if (engineer->grabber.GRABBER_STATE != IDLE) {
 			engineer->grabber.GRABBER_STATE = IDLE;
+			upperinf->mode = IDLE;
+		}
 		if (engineer->HALT_CHASSIS != 0)
 			engineer->HALT_CHASSIS = 0;
 		return RM_OK;
 	}
 	
-	if (engineer->ENGINEER_SMALL_STATE == SINGLE_LOCATE || engineer->ENGINEER_SMALL_STATE == MULTI_LOCATE) {
-		if (engineer->grabber.GRABBER_STATE == IDLE)
+	if (engineer->ENGINEER_SMALL_STATE == SINGLE_LOCATE || engineer->ENGINEER_SMALL_STATE ==TRIO_LOCATE
+			|| engineer->ENGINEER_SMALL_STATE == PENTA_LOCATE) {
+		if (engineer->grabber.GRABBER_STATE == IDLE) {
 			engineer->grabber.GRABBER_STATE = LOCATING;
+			upperinf->mode = LOCATING;
+		}
 		
 		if (engineer->grabber.GRABBER_STATE == LOCATING) {
 			if (read_sonicL() && read_sonicR()) {
 				engg.HALT_CHASSIS = 1;
 				engineer->grabber.GRABBER_STATE = LOCATED;
+				upperinf->mode = LOCATED;
 			}
 		}
 		
@@ -37,14 +47,14 @@ int32_t grab_execute(Engineer* engineer, rc_device_t prc_dev, rc_info_t prc_info
 				if (engineer->ENGINEER_SMALL_STATE == SINGLE_LOCATE) {
 					
 				}
-				else if (engineer->ENGINEER_SMALL_STATE == MULTI_LOCATE) {
+				else if (engineer->ENGINEER_SMALL_STATE == TRIO_LOCATE) {
+					
+				}
+				else if (engineer->ENGINEER_SMALL_STATE == PENTA_LOCATE) {
 					
 				}
 			}
 		}
-	}
-	else if (engineer->ENGINEER_SMALL_STATE == MANUAL_LOCATE) {
-		
 	}
 	
 	return RM_OK;
@@ -65,8 +75,10 @@ void grab_task(void const *argument)
     prc_info = rc_device_get_info(prc_dev);
   }
 	
+	soft_timer_register(upper_push_info, (void *)&upper, 10);
+	
 	for(;;) {
-		grab_execute(&engg, prc_dev, prc_info);
+		grab_execute(&engg, &upper, prc_dev, prc_info);
     osDelayUntil(&period, 2);
 	}
 }

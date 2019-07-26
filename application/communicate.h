@@ -24,7 +24,7 @@
   #define COMMUNICATE_H_EXTERN extern
 #endif
 
-#define GIMBAL_CAN_ID         0x500
+#define UPPER_CAN_ID         0x500
 #define CHASSIS_CAN_ID        0x600
 
 #define RECV_PROTOCOL_SIGNAL      ( 1 << 0 )
@@ -37,7 +37,6 @@ enum interface{
   CAN2_0x600_INTERFACE,
 };
 
-int32_t gimbal_adjust(void);
 void communicate_task(void const * argument);
 
 #endif // __COMMUNICATE_H__

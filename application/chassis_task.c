@@ -95,7 +95,6 @@ static void chassis_imu_update(void *argc)
   mpu_get_data(&mpu_sensor);
   mahony_ahrs_updateIMU(&mpu_sensor, &mahony_atti);
   chassis_gyro_update(pchassis, -mahony_atti.yaw, mpu_sensor.wz * RAD_TO_DEG);
-	update_engg_imu(mahony_atti.yaw, mahony_atti.pitch, mahony_atti.roll);
 }
 
 int32_t chassis_set_relative_angle(float angle)

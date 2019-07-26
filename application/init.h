@@ -25,7 +25,7 @@
 #endif
 
 #define CHASSIS_APP 0
-#define GIMBAL_APP  1
+#define UPPER_APP  1
 
 uint8_t get_sys_cfg(void);
 void hw_init(void);

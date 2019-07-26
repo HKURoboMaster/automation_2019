@@ -15,11 +15,11 @@ struct dualMotor {
 	float DUALMOTOR_STATE;
 };
 
-typedef struct Engineer Engineer;
+typedef struct upper_ctrl upper_ctrl;
 
-int32_t dualmotor_cascade_register(Engineer *engineer, const char *name, enum device_can can);
-int32_t dualmotor_disable(Engineer* engineer);
-int32_t dualmotor_enable(Engineer* engineer);
+int32_t dualmotor_cascade_register(upper_ctrl *upper, const char *name, enum device_can can);
+int32_t dualmotor_disable(upper_ctrl* upper);
+int32_t dualmotor_enable(upper_ctrl* upper);
 void dualmotor_task(void const *argument);
 
 #endif

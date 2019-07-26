@@ -77,20 +77,18 @@ void communicate_task(void const *argument)
   if (app == CHASSIS_APP)
   {
     protocol_local_init(CHASSIS_ADDRESS);
-    //protocol_can_interface_register("gimbal_can2", 4096, 1, PROTOCOL_CAN_PORT2, GIMBAL_CAN_ID, CHASSIS_CAN_ID, can2_send_data);
-    //protocol_set_route(GIMBAL_ADDRESS, "gimbal_can2");
-    //protocol_set_route(MANIFOLD2_ADDRESS, "gimbal_can2");
+    protocol_can_interface_register("upperp_can2", 4096, 1, PROTOCOL_CAN_PORT2, UPPER_CAN_ID, CHASSIS_CAN_ID, can2_send_data);
+    protocol_set_route(UPPER_ADDRESS, "upper_can2");
+		protocol_set_route(MANIFOLD2_ADDRESS, "upper_can2");
   }
   else
   {
-		/*
-    protocol_local_init(GIMBAL_ADDRESS);
-    protocol_can_interface_register("chassis_can2", 4096, 1, PROTOCOL_CAN_PORT2, CHASSIS_CAN_ID, GIMBAL_CAN_ID, can2_send_data);
+    protocol_local_init(UPPER_ADDRESS);
+    protocol_can_interface_register("chassis_can2", 4096, 1, PROTOCOL_CAN_PORT2, CHASSIS_CAN_ID, UPPER_CAN_ID, can2_send_data);
     protocol_uart_interface_register("manifold2", 4096, 1, PROTOCOL_USB_PORT, usb_interface_send);
     protocol_set_route(CHASSIS_ADDRESS, "chassis_can2");
     protocol_set_route(MANIFOLD2_ADDRESS, "manifold2");
     protocol_rcv_cmd_register(CMD_RC_DATA_FORWORD, dr16_rx_data_by_can);
-		*/
   }
 
   protocol_rcv_cmd_register(CMD_MANIFOLD2_HEART, manifold2_heart_package);

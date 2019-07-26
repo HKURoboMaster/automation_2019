@@ -39,6 +39,8 @@
 #include "engineer.h"
 #include "dualmotor.h"
 #include "moonrover.h"
+#include "upper.h"
+#include "sub_engineer.h"
 
 struct chassis chassis;
 static struct rc_device rc_dev;
@@ -47,6 +49,7 @@ static uint8_t glb_sys_cfg;
 
 extern int ulog_console_backend_init(void);
 extern Engineer engg;
+extern upper_ctrl upper_controller;
 
 void system_config(void)
 {
@@ -77,11 +80,14 @@ void hw_init(void)
     dr16_forword_callback_register(rc_data_forword_by_can);
     chassis_pid_register(&chassis, "chassis", DEVICE_CAN1);
     chassis_disable(&chassis);
-		dualmotor_cascade_register(&engg, "dualmotor", DEVICE_CAN1);
-		dualmotor_disable(&engg);
 		moonrover_pid_register(&engg, "moonrover", DEVICE_CAN1);
 		moonrover_disable(&engg);
   }
+	else if (glb_sys_cfg == UPPER_APP) {
+		rc_device_register(&rc_dev, "can_rc", 0);
+		dualmotor_cascade_register(&upper_controller, "dualmotor", DEVICE_CAN1);
+		dualmotor_disable(&upper_controller);
+	}
 
   offline_init();
 }
@@ -95,6 +101,8 @@ osThreadId moonrover_task_t;
 osThreadId engineer_task_t;
 osThreadId grab_task_t;
 osThreadId locomotion_task_t;
+osThreadId upper_task_t;
+osThreadId subengineer_task_t;
 
 void task_init(void)
 {
@@ -118,16 +126,24 @@ void task_init(void)
 		osThreadDef(ENGINEER_TASK, engineer_task, osPriorityNormal, 0, 512);
 		engineer_task_t = osThreadCreate(osThread(ENGINEER_TASK), NULL);
 		
-		osThreadDef(DUALMOTOR_TASK, dualmotor_task, osPriorityNormal, 0, 512);
-		dualmotor_task_t = osThreadCreate(osThread(DUALMOTOR_TASK), NULL);
-			
 		osThreadDef(MOONROVER_TASK, moonrover_task, osPriorityNormal, 0, 512);
 		moonrover_task_t = osThreadCreate(osThread(MOONROVER_TASK), NULL);
 		
-		osThreadDef(GRAB_TASK, grab_task, osPriorityNormal, 0, 512);
-		grab_task_t = osThreadCreate(osThread(GRAB_TASK), NULL);
-		
 		osThreadDef(LOCOMOTION_TASK, locomotion_task, osPriorityNormal, 0, 512);
 		locomotion_task_t = osThreadCreate(osThread(LOCOMOTION_TASK), NULL);
+		
+		osThreadDef(GRAB_TASK, grab_task, osPriorityNormal, 0, 512);
+		grab_task_t = osThreadCreate(osThread(GRAB_TASK), NULL);
   }
+	else if (app == UPPER_APP)
+	{
+		osThreadDef(DUALMOTOR_TASK, dualmotor_task, osPriorityRealtime, 0, 512);
+		dualmotor_task_t = osThreadCreate(osThread(DUALMOTOR_TASK), NULL);
+		
+		osThreadDef(UPPER_TASK, upper_task, osPriorityNormal, 0, 512);
+		upper_task_t = osThreadCreate(osThread(UPPER_TASK), NULL);
+		
+		osThreadDef(SUBENGINEER_TASK, sub_engineer_task, osPriorityNormal, 0, 512);
+		subengineer_task_t = osThreadCreate(osThread(SUBENGINEER_TASK), NULL);
+	}
 }

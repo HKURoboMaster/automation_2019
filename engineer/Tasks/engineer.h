@@ -5,8 +5,8 @@
 #include "pid_controller.h"
 #include "dualmotor.h"
 #include "mecanum.h"
-#include "grab.h"
 #include "locomotion.h"
+#include "grab.h"
 
 /* VARIABLES: DUALMOTOR - related */
 #define LEFT_DUALMOTOR_INDEX 0
@@ -35,9 +35,9 @@
 #define CHASSIS 0
 #define REVERSE_CHASSIS 1
 #define UNLOAD 2
-#define MULTI_LOCATE 3
-#define SINGLE_LOCATE 4
-#define MANUAL_LOCATE 5
+#define SINGLE_LOCATE 3
+#define TRIO_LOCATE 4
+#define PENTA_LOCATE 5
 #define RESET 6
 #define CHASSIS_ONLY 7
 #define OFF 8
@@ -67,25 +67,19 @@ typedef struct Engineer {
 	int ENGINEER_SMALL_STATE;
 	
 	int HALT_CHASSIS;
-	struct motor_device motor[4];
+	struct motor_device motor[2];
 	
 	struct pid motor_pid[2];
 	struct pid_feedback motor_feedback[2];
 	struct mecanum mecanum;
-  struct cascade cascade[2];
 	
-	struct dualMotor dualMotor;
 	struct Grabber grabber;
-	
-  struct cascade_feedback cascade_fdb[2];
-	
-  struct controller ctrl[4];
+		
+  struct controller ctrl[2];
 	
 	int reloader;
-	float PITCH_TILL_ASSIST;
 } Engineer;
 
 void engineer_task(void const *argument);
-void update_engg_imu(float yaw, float pitch, float roll);
 
 #endif

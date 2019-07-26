@@ -25,11 +25,11 @@ int32_t moonrover_pid_register(Engineer* engineer, const char *name, enum device
   {
     name_len = OBJECT_NAME_MAX_LEN / 2;
   }
-  for (int i = MOONROVER_OFFSET + 0; i < MOONROVER_OFFSET + 2; i++)
+  for (int i = 0; i < 2; i++)
   {
     memcpy(&motor_name[i], name, name_len);
     engineer->motor[i].can_periph = can;
-    engineer->motor[i].can_id = 0x205 + i;
+    engineer->motor[i].can_id = 0x205 + MOONROVER_OFFSET + i;
     engineer->motor[i].init_offset_f = 1;
 
     engineer->ctrl[i].convert_feedback = motor_pid_input_convert;
@@ -45,7 +45,7 @@ int32_t moonrover_pid_register(Engineer* engineer, const char *name, enum device
   memcpy(&motor_name[0][name_len], "_MR\0", 4);
   memcpy(&motor_name[1][name_len], "_ML\0", 4);
 
-  for (int i = MOONROVER_OFFSET + 0; i < MOONROVER_OFFSET + 2; i++)
+  for (int i = 0; i < 2; i++)
   {
     err = motor_device_register(&(engineer->motor[i]), motor_name[i], 0);
     if (err != RM_OK) {
@@ -56,11 +56,11 @@ int32_t moonrover_pid_register(Engineer* engineer, const char *name, enum device
   memcpy(&motor_name[0][name_len], "_CTLMR\0", 7);
   memcpy(&motor_name[1][name_len], "_CTLML\0", 7);
 
-  for (int i = MOONROVER_OFFSET + 0; i < MOONROVER_OFFSET + 2; i++)
+  for (int i = 0; i < 2; i++)
   {
     err = pid_controller_register(&(engineer->ctrl[i]), motor_name[i],
-																  &(engineer->motor_pid[i - MOONROVER_OFFSET]),
-																	&(engineer->motor_feedback[i - MOONROVER_OFFSET]), 1);
+																  &(engineer->motor_pid[i]),
+																	&(engineer->motor_feedback[i]), 1);
     if (err != RM_OK) {
       // error handler
 		}
@@ -84,14 +84,14 @@ int32_t moonrover_execute(Engineer* engineer, chassis_t pchassis, rc_device_t pr
 		struct mecanum_motor_fdb wheel_fdb[2];
 		mecanum_calculate(&(engineer->mecanum));
 		motor_out = ROTATION_SPEED;
-		for (int i = MOONROVER_OFFSET + 0; i < MOONROVER_OFFSET + 2; i++)
+		for (int i = 0; i < 2; i++)
 		{
 			pdata = motor_device_get_data(&(engineer->motor[i]));
 
-			wheel_fdb[i - MOONROVER_OFFSET].total_ecd = pdata->total_ecd;
-			wheel_fdb[i - MOONROVER_OFFSET].speed_rpm = pdata->speed_rpm;
+			wheel_fdb[i].total_ecd = pdata->total_ecd;
+			wheel_fdb[i].speed_rpm = pdata->speed_rpm;
 		
-			controller_set_input(&engineer->ctrl[i], engineer->mecanum.wheel_rpm[i - MOONROVER_OFFSET]);
+			controller_set_input(&engineer->ctrl[i], engineer->mecanum.wheel_rpm[i]);
 			controller_execute(&engineer->ctrl[i], (void *)pdata);
 			controller_get_output(&engineer->ctrl[i], &motor_out);
 
@@ -117,7 +117,7 @@ int32_t moonrover_enable(Engineer* engineer)
   if (engineer == NULL)
     return -RM_INVAL;
 
-  for (int i = MOONROVER_OFFSET + 0; i < MOONROVER_OFFSET + 2; i++)
+  for (int i = 0; i < 2; i++)
   {
     controller_enable(&(engineer->ctrl[i])); 
   }
@@ -130,7 +130,7 @@ int32_t moonrover_disable(Engineer* engineer)
   if (engineer == NULL)
     return -RM_INVAL;
 
-  for (int i = MOONROVER_OFFSET + 0; i < MOONROVER_OFFSET + 2; i++)
+  for (int i = 0; i < 2; i++)
   {
     controller_disable(&(engineer->ctrl[i])); 
   }

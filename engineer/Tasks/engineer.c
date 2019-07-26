@@ -21,11 +21,11 @@ static void engineer_state_handler(rc_device_t prc_dev, rc_info_t prc_info) {
 	if (rc_device_get_state(prc_dev, RC_S1_UP)) {
 		engg.ENGINEER_BIG_STATE = UPPERPART;
 		if (rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK)
-			engg.ENGINEER_SMALL_STATE = MULTI_LOCATE;
-		if (rc_device_get_state(prc_dev, RC_S2_MID) == RM_OK)
 			engg.ENGINEER_SMALL_STATE = SINGLE_LOCATE;
+		if (rc_device_get_state(prc_dev, RC_S2_MID) == RM_OK)
+			engg.ENGINEER_SMALL_STATE = TRIO_LOCATE;
 		if (rc_device_get_state(prc_dev, RC_S2_DOWN) == RM_OK)
-			engg.ENGINEER_SMALL_STATE = MANUAL_LOCATE;
+			engg.ENGINEER_SMALL_STATE = PENTA_LOCATE;
 	}
 	if (rc_device_get_state(prc_dev, RC_S1_MID) == RM_OK) {
 		engg.ENGINEER_BIG_STATE = LOWERPART;
@@ -46,21 +46,12 @@ static void engineer_state_handler(rc_device_t prc_dev, rc_info_t prc_info) {
 			engg.ENGINEER_SMALL_STATE = OFF;
 	}
 }
-void update_engg_imu(float yaw, float pitch, float roll) {
-	engg.yaw = yaw;
-	engg.pitch = pitch;
-	engg.roll = roll;
-}
 /* END of FUNCTIONS: ENGINEER - related */
 
 /* RTOS: ENGINEER - related */
 void engineer_task(void const *argument)
 {
 	uint32_t period = osKernelSysTick();	
-	
-	engg.dualMotor.rest_angle = REST_ANGLE;
-	engg.dualMotor.rise_angle = RISE_ANGLE;
-	engg.PITCH_TILL_ASSIST = PITCH_2_ASSIST;
 	
 	rc_device_t prc_dev = NULL;
 	rc_info_t prc_info = NULL;
