@@ -697,6 +697,11 @@
               <FileType>5</FileType>
               <FilePath>..\components\support\macro_mutex.h</FilePath>
             </File>
+            <File>
+              <FileName>angle_queue.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\components\support\angle_queue.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

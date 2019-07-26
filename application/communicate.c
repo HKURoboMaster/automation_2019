@@ -127,6 +127,8 @@ void communicate_task(void const *argument)
       if (event.value.signals & REFEREE_SIGNAL)
       {
         referee_unpack_fifo_data();
+        ext_game_robot_state_t * sent2gimbal = get_robot_state();
+        robot_state_sent_by_can(sent2gimbal);
       }
     }
   }

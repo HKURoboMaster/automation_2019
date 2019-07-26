@@ -193,7 +193,18 @@ void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(LASER_GPIO_PORT, LASER_PIN, GPIO_PIN_RESET);
 	
 	HAL_GPIO_WritePin(IR_OUTPUT_Port, IR_OUTPUT_Pin, GPIO_PIN_SET);
+	//Leo starts
+	//pin Z --- used for capacitor ctrl
+	GPIO_InitStruct.Pin = CAPACITOR_CTRL_Z;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(CAPACITOR_CTRL_Z_PORT, &GPIO_InitStruct);
+  HAL_GPIO_WritePin(CAPACITOR_CTRL_Z_PORT, CAPACITOR_CTRL_Z, GPIO_PIN_RESET);
+
 }
+//change GPIO_PIN_RESET in HAL_GPIO_WritePin(GPIOI, GPIO_PIN_7, GPIO_PIN_RESET) to GPIO_PIN_SET to light it up
+ //Leo ends
 
 /* USER CODE BEGIN 2 */
 

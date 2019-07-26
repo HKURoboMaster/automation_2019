@@ -109,6 +109,8 @@
 /* USER CODE BEGIN Private defines */
 #define LASER_PIN GPIO_PIN_13
 #define LASER_GPIO_PORT GPIOG
+#define CAPACITOR_CTRL_Z GPIO_PIN_2
+#define CAPACITOR_CTRL_Z_PORT GPIOI
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

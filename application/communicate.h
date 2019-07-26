@@ -23,6 +23,7 @@
 #else
   #define COMMUNICATE_H_EXTERN extern
 #endif
+// #define HERO_ROBOT
 
 #define GIMBAL_CAN_ID         0x500
 #define CHASSIS_CAN_ID        0x600

@@ -78,5 +78,6 @@ int32_t chassis_get_info(struct chassis *chassis, struct chassis_info *info);
 
 int32_t chassis_enable(struct chassis *chassis);
 int32_t chassis_disable(struct chassis *chassis);
+uint8_t chassis_check_enable(struct chassis *chassis);
 
 #endif // __CHASSIS_H__

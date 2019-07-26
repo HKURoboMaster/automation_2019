@@ -31,15 +31,16 @@
 #define SHOOT_ONCE_CMD (1u)
 #define SHOOT_CONTINUOUS_CMD (2u)
 
-#define FIRC_STOP_SPEED 100u
-#define FIRC_MAX_SPEED 180u //MAX=200u, for safety set it to be 180
+#define FRIC_STOP_SPEED 100u
+#define FRIC_MAX_SPEED 162u //MAX=200u, for safety set it to be 160 //160 results in overheater
+#define FRIC_CON_SPEED 149u
 #define FRIC_MIN_SPEED 99u
 
-#define BLOCK_CURRENT_DEFAULT 26000.0F
+#define BLOCK_CURRENT_DEFAULT 9500.0F
 #define BLOCK_SPEED_DEFAULT -1650
 #define BLOCK_TIMEOUT_DEFAULT 200
 #define BLOCK_CHECK_TIMEOUT_DEFAULT 80
-#define TURN_SPEED_DEFAULT 1200
+#define TURN_SPEED_DEFAULT 2000
 
 
 enum trigger_state
@@ -99,6 +100,7 @@ struct shoot
 
 shoot_t shoot_find(const char *name);
 int32_t shoot_pid_register(struct shoot *shoot, const char *name, enum device_can can);
+int32_t shoot_pid_register2(struct shoot *shoot, const char *name, enum device_can can);
 int32_t shoot_set_fric_speed(struct shoot *shoot, uint16_t fric_spd1, uint16_t fric_spd2);
 int32_t shoot_get_fric_speed(struct shoot *shoot, float *fric_spd1, float *fric_spd2);
 int32_t shoot_set_cmd(struct shoot *shoot, uint8_t cmd, uint32_t shoot_num);
