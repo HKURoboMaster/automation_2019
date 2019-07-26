@@ -70,6 +70,7 @@ void shoot_task(void const *argument)
     {
       shoot_disable(pshoot);
       shoot_disable(pshoot2);
+			shoot_set_fric_speed(pshoot,FRIC_MIN_SPEED,FRIC_MIN_SPEED);
       shoot_firction_toggle(pshoot,1); //assume that currently the fric is on
       shoot_firction_toggle(pshoot2,1); //Leo assume that currently the fric is on
       continue;
