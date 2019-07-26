@@ -43,6 +43,7 @@ static int32_t gimbal_imu_update(void *argc);
 static int32_t imu_temp_keep(void *argc);
 static void auto_gimbal_adjust(gimbal_t pgimbal);
 static void gimbal_state_init(gimbal_t pgimbal);
+
 // Flags
 uint8_t auto_adjust_f;
 uint8_t auto_init_f;
@@ -209,6 +210,7 @@ void gimbal_task(void const *argument)
     if(rc_device_get_state(prc_dev, RC_S2_DOWN) == RM_OK)
     {
       //disbaled
+			shoot_set_fric_speed();
       gimbal_pitch_disable(pgimbal);
       gimbal_yaw_disable(pgimbal);
     }
