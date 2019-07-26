@@ -266,12 +266,12 @@ static int32_t gimbal_imu_update(void *argc)
   mahony_ahrs_updateIMU(&mpu_sensor, &mahony_atti);
 
   gimbal_pitch_gyro_update(pgimbal, -mahony_atti.pitch);
-  gimbal_yaw_gyro_update(pgimbal, mahony_atti.yaw);
+  gimbal_yaw_gyro_update(pgimbal, -mahony_atti.yaw);
 	// Edited By Eric Chen: 
 	// Using ecd rate as rate, avoid mechanical inconsistance between board and motor
 	// Orientation changed.
 	
-  gimbal_rate_update(pgimbal, mpu_sensor.wz * RAD_TO_DEG, pitch_ecd_rate * RAD_TO_DEG);
+  gimbal_rate_update(pgimbal, mpu_sensor.wz * RAD_TO_DEG, -pitch_ecd_rate * RAD_TO_DEG);
   // Eric Chen'e Edition end.
   mpu_pit = mahony_atti.pitch * 1000;
   mpu_yaw = mahony_atti.yaw   * 1000;
