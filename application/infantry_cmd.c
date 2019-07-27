@@ -73,7 +73,6 @@ int32_t gimbal_adjust_cmd(uint8_t *buff, uint16_t len)
  */
 uint8_t current_excess, low_voltage;
 int32_t current_detecting_js, voltage_detecting_js, buffer_remained_js;
-uint16_t shooter_heat[2] = {0}; //TODO: make it static
 
 /** Edited by Y.H. Liu
  *  @Jun 12, 2019: disbable the auto mode and implement the auto_aiming
@@ -119,6 +118,8 @@ void infantry_cmd_task(void const *argument)
     protocol_rcv_cmd_register(CMD_SET_SHOOT_FREQUENTCY, shoot_ctrl);
     protocol_rcv_cmd_register(CMD_GIMBAL_ADJUST, gimbal_adjust_cmd);
     protocol_rcv_cmd_register(CMD_CHASSIS_POWER, chassis_power_callback);
+    protocol_rcv_cmd_register(CMD_SHOOTER_HEAT, shooter_data_callback);
+    protocol_rcv_cmd_register(CMD_ROBOT_STATE, robot_state_data_callback);
   }
 
   while (1)
@@ -177,7 +178,7 @@ void infantry_cmd_task(void const *argument)
           else
           {
             // gimbal_set_pitch_speed(pgimbal, pangle->pitch / 10.0f);
-            auto_aiming_pitch = pangle->pitch / 10.0f; // Use the absolute angle
+            auto_aiming_pitch = pangle->pitch;
           }
           if (pangle->ctrl.bit.yaw_mode == 0)
           {
@@ -186,7 +187,7 @@ void infantry_cmd_task(void const *argument)
           else
           {
             // gimbal_set_yaw_speed(pgimbal, pangle->yaw / 10.0f);
-            auto_aiming_yaw = pangle->yaw / 10.0f;	// Divide by 10 is a unit transfer.
+            auto_aiming_yaw = pangle->yaw;
           }
         }
         //
@@ -353,4 +354,52 @@ int32_t chassis_power_callback(uint8_t *buff, uint16_t len)
     buffer_remained_js = pchassis_power->buffer;
   }
 	return RM_OK;
+}
+/**Added by Y.H. Liu
+ * @Jul 20, 2019: Declare the function
+ * 
+ * Data transmission between chassis and gimbal regarding shooter heat
+ */
+int32_t shooter_data_sent_by_can(ext_power_heat_data_t * heat_power_d)
+{
+  protocol_send(GIMBAL_ADDRESS, CMD_SHOOTER_HEAT, &(heat_power_d->shooter_heat0), 2*sizeof(uint16_t));
+  return RM_OK;
+}
+static uint16_t shooter_heat_data[2] = {0};
+int32_t shooter_data_callback(uint8_t *buff, uint16_t len)
+{
+  if(len == 2*sizeof(uint16_t))
+  {
+    shooter_heat_data[0] = *(uint16_t *)buff;
+    shooter_heat_data[1] = *(uint16_t *)(buff+2);
+  }
+  return RM_OK;
+}
+uint16_t * shooter_heat_get_via_can(void)
+{
+  return shooter_heat_data;
+}
+/**Added by Y.H. Liu
+ * @Jul 21, 2019: Define the functions
+ * 
+ * Data transmission between chassis and gimbal regarding the robot state
+ */
+int32_t robot_state_sent_by_can(ext_game_robot_state_t * robot_state_d)
+{
+  protocol_send(GIMBAL_ADDRESS, CMD_ROBOT_STATE, robot_state_d, sizeof(ext_game_robot_state_t));
+  return RM_OK;
+}
+static uint8_t robot_level=0;
+int32_t robot_state_data_callback(uint8_t *buff, uint16_t len)
+{
+  if(len==sizeof(ext_game_robot_state_t))
+  {
+    ext_game_robot_state_t * temp = (ext_game_robot_state_t *) buff;
+    robot_level = temp->robot_level;
+  }
+  return RM_OK;
+}
+uint8_t get_robot_level(void)
+{
+  return robot_level;
 }

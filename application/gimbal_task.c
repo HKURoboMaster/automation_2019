@@ -183,6 +183,7 @@ static int32_t gimbal_imu_update(void *argc);
 static int32_t imu_temp_keep(void *argc);
 static void auto_gimbal_adjust(gimbal_t pgimbal);
 static void gimbal_state_init(gimbal_t pgimbal);
+
 // Flags
 uint8_t auto_adjust_f;
 uint8_t auto_init_f;
@@ -192,6 +193,8 @@ static ramp_t pitch_ramp = RAMP_GEN_DAFAULT;
 // Orientation debugging
 int32_t mpu_pit, mpu_yaw, mpu_rol;
 int32_t mpu_wx, mpu_wy, mpu_wz;
+int target_lost_cnt_pit = 0;
+int target_lost_cnt_yaw = 0;
 // PID debugging
 int32_t yaw_angle_fdb_js, yaw_angle_ref_js;
 int32_t pit_angle_fdb_js, pit_angle_ref_js;
@@ -220,10 +223,10 @@ void gimbal_task(void const *argument)
   pparam = get_cali_param();
   
   /**Added by Y.H. Liu
-   * @Jul 17, 2019: Define a queue for auto aimming
+   * @Jul 17, 2019: Define a queue for auto aiming
    * @Jul 19, 2019: Change the global variable to be the local ones
    * 
-   * Use a queue to implement the speed mode of auto aimming
+   * Use a queue to implement the speed mode of auto aiming
    */
   float yaw_autoaim_offset = 0.0f;
   float pitch_autoaim_offset = 0.0f;
@@ -308,11 +311,6 @@ void gimbal_task(void const *argument)
       gimbal_pitch_enable(pgimbal);
       gimbal_yaw_enable(pgimbal);
     }
-    if(rc_device_get_state(prc_dev, RC_S2_MID2DOWN) == RM_OK)
-    {
-      //switch to the disabled mode
-      gimbal_set_yaw_angle(pgimbal, 0, 0);
-    }
     if (rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK || rc_device_get_state(prc_dev, RC_S2_MID) == RM_OK
     ||  rc_device_get_state(prc_dev, RC_S2_MID2UP) == RM_OK || rc_device_get_state(prc_dev,RC_S2_UP2MID == RM_OK))
     {
@@ -323,8 +321,6 @@ void gimbal_task(void const *argument)
 				#ifndef KALMAN
         if(prc_info->mouse.r || rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK)
         {
-          if(auto_aiming_yaw!=0)
-            gimbal_set_pitch_delta(pgimbal, auto_aiming_pitch-pitch_autoaim_offset);
           if(auto_aiming_pitch!=0)
             gimbal_set_yaw_delta(pgimbal, auto_aiming_yaw-yaw_autoaim_offset);
           auto_aiming_pitch = 0;	// Make sure the only data sent by pc will be used
@@ -512,7 +508,7 @@ void gimbal_task(void const *argument)
     }
     if(rc_device_get_state(prc_dev, RC_S2_DOWN) == RM_OK)
     {
-      //disbaled
+      //disbaled shoot_set_fric_speed();
       gimbal_pitch_disable(pgimbal);
       gimbal_yaw_disable(pgimbal);
     }
@@ -613,7 +609,7 @@ struct pid pid_pit_spd = {0};
 /**Modified by Y.H. Liu
  * @Jun 20, 2019: adaption for hero
  * @Jul 8, 2019: use the original methods to calculate the pitch centre
- * @Jul 17, 2019: use a queue for auto-aimming adaption
+ * @Jul 17, 2019: use a queue for auto-aiming adaption
  * 
  * Automatically adjust the netural position for gimbal
  */
