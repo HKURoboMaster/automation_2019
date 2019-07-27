@@ -35,7 +35,7 @@
 #define BACK_CENTER_TIME 3000
 #define MAX_TRACK_ANGLE 35
 #define LOST_THRESHOLD 200 // 400ms
-#define SPEED_RATIO 0.5f
+#define SPEED_RATIO 1.0f
 
 
 #define INTEGRAL_LIM 20
@@ -369,6 +369,22 @@ void gimbal_task(void const *argument)
 					pit_angle_raw = auto_aiming_pitch ;
 					ref_yaw_speed = pgimbal->sensor.rate.yaw_rate;
 					ref_pit_speed = pgimbal->sensor.rate.pitch_rate;
+          yaw_speed_raw = target_speed_calc(&yaw_speed_struct,speed_calc_time/1000,yaw_angle_raw);
+				  pit_speed_raw = target_speed_calc(&pit_speed_struct,speed_calc_time/1000,pit_angle_raw); 
+          if(yaw_angle_raw ==0 && pit_angle_raw ==0)
+          {
+            lost_target_counter++;
+          }
+          else
+          {
+            lost_target_counter = 0;
+          }
+          // Logic: When there are too long we cannot detect target
+          // The control should be completely hand over to operator.
+          if(lost_target_counter<LOST_THRESHOLD)
+          {
+            goto kalman_over;
+          }
 					//auto_aiming_pitch = 0;
 					//auto_aiming_yaw = 0;
 				}
@@ -384,8 +400,7 @@ void gimbal_task(void const *argument)
 				}
 				// Edited By Eric Chen;
 				// PITCH and YAW speed calc using the relative speed between gimbal and the object.
-				yaw_speed_raw = target_speed_calc(&yaw_speed_struct,speed_calc_time/1000,yaw_angle_raw);
-				pit_speed_raw = target_speed_calc(&pit_speed_struct,speed_calc_time/1000,pit_angle_raw); 
+				
 				
 				delta_pit_speed = pgimbal->sensor.rate.pitch_rate - ref_pit_speed;
 				delta_yaw_speed = pgimbal->sensor.rate.yaw_rate - ref_yaw_speed;
@@ -411,8 +426,9 @@ void gimbal_task(void const *argument)
 				#else
 				
 				// Implement a accumulated error term to cancel out constant error lead by reaction
-				
-				
+				// gim_tim_ms is time gap between each calculation
+				yaw_angle_raw += yaw_speed_raw*gim_tim_ms;
+        pit_angle_raw += pit_speed_raw*gim_tim_ms;
 				yaw_kf_data = kalman_filter_calc(&yaw_kalman_filter,yaw_angle_raw,yaw_speed_raw);
 				pit_kf_data = kalman_filter_calc(&pit_kalman_filter,pit_angle_raw,pit_speed_raw);
 				kalman_yaw_js[0] = (int)(yaw_kf_data[0]*1000);
@@ -442,7 +458,7 @@ void gimbal_task(void const *argument)
 					//gimbal_set_yaw_angle(pgimbal,pgimbal->cascade[0].outer.get+yaw_kf_data[0],ENCODER_MODE);	
 					//gimbal_set_pitch_angle(pgimbal,pgimbal->cascade[1].outer.get+pit_kf_data[0]);
 					// Equavalent to P only control. Need a I term.
-						
+					// Set angle speed is no matter what set the difference of angle
 						gimbal_set_yaw_speed(pgimbal,yaw_kf_data[0]+integral_error_yaw);
 						gimbal_set_pitch_speed(pgimbal,pit_kf_data[0]+integral_error_pit);
 					}
@@ -454,7 +470,7 @@ void gimbal_task(void const *argument)
 					pc_counter = 0;
 				}
 				#endif
-				kalman_over:lost_target_counter = 0;
+				kalman_over:lost_target_counter = lost_target_counter;
 				float square_ch1 = (float)prc_info->ch1 * abs(prc_info->ch1) / RC_CH_SCALE;
         /*-------- Map mouse coordinates into polar coordiantes --------*/
         int16_t yaw_mouse,pit_mouse;
@@ -479,8 +495,10 @@ void gimbal_task(void const *argument)
         
 
         gimbal_set_yaw_mode(pgimbal, GYRO_MODE);
-        pit_delta =  (float)prc_info->ch2 * GIMBAL_RC_PITCH + (float)pit_mouse * GIMBAL_MOUSE_PITCH;
-        yaw_delta =      square_ch1       * GIMBAL_RC_YAW   + (float)yaw_mouse * GIMBAL_MOUSE_YAW;
+        //pit_delta =  (float)prc_info->ch2 * GIMBAL_RC_PITCH + (float)pit_mouse * GIMBAL_MOUSE_PITCH;
+        //yaw_delta =      square_ch1       * GIMBAL_RC_YAW   + (float)yaw_mouse * GIMBAL_MOUSE_YAW;
+        pit_delta = (float)prc_info->ch2 * GIMBAL_RC_PITCH + (float)prc_info->mouse.y * GIMBAL_MOUSE_PITCH;
+        yaw_delta = square_ch1 * GIMBAL_RC_YAW + (float)prc_info->mouse.x * GIMBAL_MOUSE_YAW;
         yaw_delta += prc_info->kb.bit.E ? YAW_KB_SPEED : 0;
         yaw_delta -= prc_info->kb.bit.Q ? YAW_KB_SPEED : 0;
         gimbal_set_pitch_delta(pgimbal, pit_delta);
@@ -540,6 +558,8 @@ void gimbal_task(void const *argument)
     enQueue(&pitQ, pgimbal->ecd_angle.pitch);
     gimbal_imu_update(pgimbal);
     gimbal_execute(pgimbal);
+    // The period is calculated from very beginning.
+    // If time excess then do this task. Fake real time.
     osDelayUntil(&period, 2);
   }
 }
