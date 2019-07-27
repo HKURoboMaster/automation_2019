@@ -52,6 +52,7 @@ uint8_t sensor_offline = 0;
   * @Jun 12, 2019: modified the mode switch
   * @Jun 18, 2019: chassis current control
   * @Jun 20, 2019: adaption for hero
+  * @Jul 27, 2019: confirm the control signals for supercapacitor
   *
   * Implement the customized control logic and FSM, details in Control.md
 */
@@ -208,7 +209,7 @@ void chassis_task(void const *argument)
         }
         else if(chassis_check_enable(pchassis))
         {
-          LED_R_OFF();
+          LED_R_OFF(); 
         }
         //Share the flags and data with the gimbal
         current_excess_flag_js = current_excess_flag;
@@ -245,7 +246,7 @@ static uint8_t superCapacitor_Ctrl(chassis_t pchassis, uint8_t low_cap_flag)
   {
     for(int i=0; i<4; i++)
     {
-      if(pchassis->motor[i].data.speed_rpm < pchassis->mecanum.wheel_rpm[i]/5)
+      if(abs(pchassis->motor[i].data.speed_rpm) < abs(pchassis->mecanum.wheel_rpm[i])/2)
         return 1;
     }
   }

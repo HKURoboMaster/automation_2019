@@ -53,8 +53,6 @@ static ramp_t pitch_ramp = RAMP_GEN_DAFAULT;
 // Orientation debugging
 int32_t mpu_pit, mpu_yaw, mpu_rol;
 int32_t mpu_wx, mpu_wy, mpu_wz;
-int target_lost_cnt_pit = 0;
-int target_lost_cnt_yaw = 0;
 // PID debugging
 int32_t yaw_angle_fdb_js, yaw_angle_ref_js;
 int32_t pit_angle_fdb_js, pit_angle_ref_js;
@@ -151,11 +149,11 @@ void gimbal_task(void const *argument)
         if(prc_info->mouse.r || rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK)
         {
           if(auto_aiming_pitch!=0)
-           gimbal_set_pitch_speed(pgimbal,auto_aiming_pitch);
+           gimbal_set_pitch_speed(pgimbal, auto_aiming_pitch-pitch_autoaim_offset);
           if(auto_aiming_yaw!=0)
-           gimbal_set_yaw_speed(pgimbal, auto_aiming_yaw);
-          //auto_aiming_pitch = 0;
-          //auto_aiming_yaw = 0;
+           gimbal_set_yaw_speed(pgimbal, auto_aiming_yaw-yaw_autoaim_offset);
+          auto_aiming_pitch = 0;
+          auto_aiming_yaw = 0;
         }
 
         float square_ch1 = (float)prc_info->ch1 * abs(prc_info->ch1) / RC_CH_SCALE;
@@ -320,8 +318,8 @@ static void auto_gimbal_adjust(gimbal_t pgimbal)
 {
   if (auto_adjust_f)
   {
-    pid_struct_init(&pid_pit, 2000, 0, 60, 0, 0);
-    pid_struct_init(&pid_pit_spd, 30000, 3000, 60, 0.2, 0);
+    pid_struct_init(&pid_pit, 2000, 0, 30, 0.001, 0);
+    pid_struct_init(&pid_pit_spd, 30000, 8000, 200, 0, 0);
     while (1)
     {
       gimbal_imu_update(pgimbal);
