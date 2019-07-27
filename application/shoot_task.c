@@ -25,10 +25,6 @@
 int32_t shoot_firction_toggle(shoot_t pshoot, uint8_t toggled);
 int32_t shoot_lid_toggle(shoot_t pshoot, uint8_t toggled);
 
-enum shoot_state shoot_state_watch;
-uint8_t shoot_cmd_watch;
-uint8_t trigger_state_watch;
-int32_t trigger_wheel_watch;
 
 /**Edited by Y.H. Liu
  * @Jun 13, 2019: change the FSM for shooting
@@ -175,12 +171,6 @@ void shoot_task(void const *argument)
     shoot_execute(pshoot);
 		shoot_execute(pshoot2);//Leo
     osDelayUntil(&period, 5);
-
-    /*-------- For shoot_task debug --------*/
-    shoot_state_watch = pshoot->state;
-    shoot_cmd_watch = pshoot->cmd;
-    trigger_state_watch = pshoot->trigger_key;
-    trigger_wheel_watch = prc_dev->rc_info.wheel;
   }
 }
 
