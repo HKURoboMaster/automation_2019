@@ -38,23 +38,23 @@
 #define SPEED_RATIO 1.0f
 
 
-#define INTEGRAL_LIM 20
+#define INTEGRAL_LIM 5
 
 //Kalman filter related define
 //#define ACC_KALMAN
 #ifndef ACC_KALMAN
 kalman_filter_init_t yaw_kalman_filter_para = {
   .P_data = {2, 0, 0, 2},					// Co-variance Matrix
-  .A_data = {1, 0.003, 0, 1},			// Predict function Transfer parameter 1000Hz?
+  .A_data = {1, 0.0022, 0, 1},			// Predict function Transfer parameter 1000Hz?
   .H_data = {1, 0, 0, 1},					// Measurement transfer parameter
   .Q_data = {1, 0, 0, 1},					// Co-variance of progress matrix
-  .R_data = {600, 0, 0, 600}		// Co-Variance of Measurement Observe matrix.
+  .R_data = {600, 0, 0, 1200}		// Co-Variance of Measurement Observe matrix.
 };
 
 kalman_filter_init_t pit_kalman_filter_para = 
 {
   .P_data = {2, 0, 0, 2},
-  .A_data = {1, 0.002, 0, 1},
+  .A_data = {1, 0.0022, 0, 1},
   .H_data = {1, 0, 0, 1},
   .Q_data = {1, 0, 0, 1},
   .R_data = {2000, 0, 0, 5000}		// Basic Idea is kalman filter uses co-variance data.
