@@ -439,7 +439,7 @@ static int32_t shoot_pid_input_convert(struct controller *ctrl, void *input)
 static uint8_t trigger_motor_status(struct shoot * shoot)
 {
   #ifndef HERO_ROBOT
-  int32_t  bullet_passing_offset = mod(shoot->motor.data.total_angle%360, 45);
+  int32_t  bullet_passing_offset = shoot->motor.data.total_angle%360 % 45;
   bullet_passing_offset = abs(bullet_passing_offset);
   if(bullet_passing_offset>=5 && bullet_passing_offset<40 && shoot->motor.data.ecd!=shoot->motor.data.last_ecd)
     return TRIG_BOUNCE_UP;
