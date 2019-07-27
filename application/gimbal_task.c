@@ -192,8 +192,13 @@ void gimbal_task(void const *argument)
 					gimbal_set_yaw_mode(pgimbal,GYRO_MODE);
 					//pgimbal->gyro_target_angle = pgimbal->sensor.gyro_angle;
 				}
-        pit_delta =  (float)prc_info->ch2 * GIMBAL_RC_PITCH + (float)pit_mouse * GIMBAL_MOUSE_PITCH;
-        yaw_delta =      square_ch1       * GIMBAL_RC_YAW   + (float)yaw_mouse * GIMBAL_MOUSE_YAW;
+        //pit_delta =  (float)prc_info->ch2 * GIMBAL_RC_PITCH + (float)pit_mouse * GIMBAL_MOUSE_PITCH;
+        //yaw_delta =      square_ch1       * GIMBAL_RC_YAW   + (float)yaw_mouse * GIMBAL_MOUSE_YAW;
+
+
+        // To do check positive negative direction.
+        pit_delta =  (float)prc_info->ch2 * GIMBAL_RC_PITCH + (float)prc->mouse.y * GIMBAL_MOUSE_PITCH;
+        yaw_delta =      square_ch1       * GIMBAL_RC_YAW   + (float)prc->mouse.x * GIMBAL_MOUSE_YAW;
         yaw_delta += prc_info->kb.bit.E ? YAW_KB_SPEED : 0;
         yaw_delta -= prc_info->kb.bit.Q ? YAW_KB_SPEED : 0;
         gimbal_set_pitch_delta(pgimbal, pit_delta);

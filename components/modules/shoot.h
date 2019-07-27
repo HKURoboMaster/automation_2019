@@ -32,8 +32,8 @@
 #define SHOOT_CONTINUOUS_CMD (2u)
 
 #define FRIC_STOP_SPEED 100u
-#define FRIC_MAX_SPEED 190u //MAX=200u, for safety set it to be 160 //160 results in overheater
-#define FRIC_CON_SPEED 190u
+#define FRIC_MAX_SPEED 150u //MAX=200u, for safety set it to be 160 //160 results in overheater
+#define FRIC_CON_SPEED 150u // Safe speed. default 190u
 #define FRIC_MIN_SPEED 99u
 
 #define BLOCK_CURRENT_DEFAULT 9500.0F
@@ -42,7 +42,7 @@
 #define BLOCK_CHECK_TIMEOUT_DEFAULT 80
 // Edited By Eric Chen.
 // Specified for drone.
-#define TURN_SPEED_DEFAULT 3000
+#define TURN_SPEED_DEFAULT 3500 // shoot frequency can be optimized.
 
 
 enum trigger_state
