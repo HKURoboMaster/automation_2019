@@ -53,6 +53,7 @@ uint8_t sensor_offline = 0;
   * @Jun 18, 2019: chassis current control
   * @Jun 20, 2019: adaption for hero
   * @Jul 27, 2019: confirm the control signals for supercapacitor
+  * @Jul 27, 2019: add the logic to handle the sensor offline
   *
   * Implement the customized control logic and FSM, details in Control.md
 */
@@ -163,12 +164,15 @@ void chassis_task(void const *argument)
       do
       {
         chassis_imu_update(pchassis);
-        if(sensor_offline & CURRENT_OFFLINE)
-        {
-          //TODO: what if current sensor offline
-        }
         chassis_execute(pchassis);
         get_chassis_power(&chassis_power); // Power Value Getter
+        if(sensor_offline & CURRENT_OFFLINE)
+        {// if offline, then use the returned current from the motors to determine the current
+          chassis_power.current =(abs(pchassis->motor[0].data.given_current)+
+                                  abs(pchassis->motor[1].data.given_current)+
+                                  abs(pchassis->motor[2].data.given_current)+
+                                  abs(pchassis->motor[3].data.given_current))/1000;
+        }
         osDelayUntil(&period, 2);
         /*-------- Then, adjust the power --------*/
       //get the buffer
@@ -188,13 +192,13 @@ void chassis_task(void const *argument)
         {
           current_excess_flag = 0;
         }
-        if(chassis_power.voltage<LOW_VOLTAGE || sensor_offline&VOLTAGE_OFFLINE)
+        if(chassis_power.voltage<LOW_VOLTAGE)
           low_volatge_flag = 1;          
         else
           low_volatge_flag = 0;
       //control the supercap
         uint8_t sw = superCapacitor_Ctrl(pchassis,low_volatge_flag);
-        if(sw)
+        if(sw || sensor_offline&VOLTAGE_OFFLINE) //either offline or must use the super cap
           WRITE_HIGH_CAPACITOR();
         else
           WRITE_LOW_CAPACITOR();
