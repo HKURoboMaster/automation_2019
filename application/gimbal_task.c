@@ -334,29 +334,7 @@ void gimbal_task(void const *argument)
 				
 				pc_js1 = (int)(auto_aiming_yaw*1000);
 				pc_js2 = (int)(auto_aiming_pitch*1000);
-				// Normally kalman filter
-				/*
-				if(auto_aiming_yaw != 0 && auto_aiming_pitch != 0)
-				{
-					speed_calc_time = HAL_GetTick() - speed_calc_last_time;
-					speed_calc_last_time = HAL_GetTick();
-					// Why use offset : To calculate relative angular speed and angle.
-					yaw_angle_raw = auto_aiming_yaw;
-					pit_angle_raw = auto_aiming_pitch ;
-					auto_aiming_pitch = 0;
-					auto_aiming_yaw = 0;
-				}
-				else
-				{
-					lost_target_counter++;
-					if(lost_target_counter<LOST_THRESHOLD)
-					{
-						goto kalman_over;
-					}
-				}
-				*/
-				// PC send Zero if track is lost
-				// If track is lost then it should listen to operator
+				
 				if(time_pc != time_last)
 				{
 					// Update the Time sent From PC.
@@ -367,7 +345,7 @@ void gimbal_task(void const *argument)
 					speed_calc_last_time = HAL_GetTick();
 					
 					yaw_angle_raw = auto_aiming_yaw;
-					pit_angle_raw = auto_aiming_pitch ;
+					pit_angle_raw = auto_aiming_pitch;
 					// Unit Degree per second
 					ref_yaw_speed = pgimbal->sensor.rate.yaw_rate;
 					ref_pit_speed = pgimbal->sensor.rate.pitch_rate;
@@ -375,47 +353,7 @@ void gimbal_task(void const *argument)
 					// Unit Degree Per second
           yaw_speed_raw = target_speed_calc(&yaw_speed_struct,speed_calc_time,yaw_angle_raw);
 				  pit_speed_raw = target_speed_calc(&pit_speed_struct,speed_calc_time,pit_angle_raw); 
-					// When a frame is lost, it started to counting lost frame.
 					
-					/* //Reason: set_speed(0) + set_speed(10) == set_speed(10);
-          if(yaw_angle_raw ==0 && pit_angle_raw ==0)
-          {
-            lost_target_counter++;
-          }
-          else
-          {
-            lost_target_counter -= 10;
-						if(lost_target_counter<=0)
-							lost_target_counter = 0;
-          }
-					*/
-          // Logic: When there are too long we cannot detect target
-          // The control should be completely hand over to operator.
-					/*  //Reason: set_speed(0) + set_speed(10) == set_speed(10);
-          if(lost_target_counter>LOST_THRESHOLD)
-          {
-            goto kalman_over;
-          }
-					*/
-					//auto_aiming_pitch = 0;
-					//auto_aiming_yaw = 0;
-				}
-				// The "else" happens when PC is disconnected to the board
-				// It will disable the control from pc
-				// Wait for PC for too long.
-				/*//Reason: set_speed(0) + set_speed(10) == set_speed(10);
-				else
-				{
-					lost_target_counter++;
-					if(lost_target_counter>LOST_THRESHOLD)
-					{
-						goto kalman_over;
-					}
-				}
-				*/
-				// Edited By Eric Chen;
-				// PITCH and YAW speed calc using the relative speed between gimbal and the object.
-				
 				delta_pit_speed = pgimbal->sensor.rate.pitch_rate - ref_pit_speed;
 				delta_yaw_speed = pgimbal->sensor.rate.yaw_rate - ref_yaw_speed;
 				// If they share same ratio
@@ -440,20 +378,16 @@ void gimbal_task(void const *argument)
 				kalman_yaw_js[2] = yaw_kf_data[2];
 				#else
 				
-				// Implement a accumulated error term to cancel out constant error lead by reaction
-				// gim_tim_ms is time gap between each calculation
-				yaw_angle_raw += yaw_speed*gim_tim_ms/1000;
-        pit_angle_raw += pit_speed*gim_tim_ms/1000;
-				// Data pass through Kalman filter.
-				// Bug Fixed...
+				//yaw_angle_raw += yaw_speed*gim_tim_ms/1000;
+        //pit_angle_raw += pit_speed*gim_tim_ms/1000;
 				yaw_kf_data = kalman_filter_calc(&yaw_kalman_filter,yaw_angle_raw,yaw_speed);
 				pit_kf_data = kalman_filter_calc(&pit_kalman_filter,pit_angle_raw,pit_speed);
-				kalman_yaw_js[0] = (int)(yaw_kf_data[0]*1000);
+				kalman_yaw_js[0] = (int)((yaw_kf_data[0] + yaw_kf_data[1]*0.1)*10000);
 				kalman_yaw_js[1] = (int)(yaw_kf_data[1]*1000);
-				kalman_pit_js[0] = (int)(pit_kf_data[0]*1000);
+				kalman_pit_js[0] = (int)((pit_kf_data[0]+pit_kf_data[1]*0.1)*1000);
 				kalman_pit_js[1] = (int)(pit_kf_data[1]*1000);
 				#endif
-				// Pure auto aiming.........
+
 				if(prc_info->mouse.r || rc_device_get_state(prc_dev,RC_S2_UP)==RM_OK)
 				{
 					
@@ -461,12 +395,12 @@ void gimbal_task(void const *argument)
 					// The PC_counter make it possible to converge.
 					if(pc_counter==200)
 					{
-					//gimbal_set_yaw_angle(pgimbal,pgimbal->cascade[0].outer.get+yaw_kf_data[0],ENCODER_MODE);	
-					//gimbal_set_pitch_angle(pgimbal,pgimbal->cascade[1].outer.get+pit_kf_data[0]);
+					
 					// Equavalent to P only control. Need a I term.
 					// Set angle speed is no matter what set the difference of angle
-					gimbal_set_yaw_speed(pgimbal,yaw_kf_data[0]);
-					gimbal_set_pitch_speed(pgimbal,pit_kf_data[0]);
+					gimbal_set_yaw_speed(pgimbal,0.2*(yaw_kf_data[0] + yaw_kf_data[1]*0.1));
+				  //gimbal_set_yaw_speed(pgimbal,0.1*yaw_kf_data[0]);
+					gimbal_set_pitch_speed(pgimbal,0.2*(pit_kf_data[0] + pit_kf_data[1]*0.1));
 					}
 					else
 						pc_counter++;
