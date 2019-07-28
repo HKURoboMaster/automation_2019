@@ -7,6 +7,7 @@ bounded_movement_settings_t bmove = {0, 0}; // bounded movement settings
 middle_dodge_settings_t mdodge = {0, 0, 0};
 int chassis_loc = 0; // [for rail: __/--] 0: __ 1: / 2: --
 int curr_loc_delta = 0, last_loc_delta = 0;
+float chassis_position = 0;
 float accumulated_distance = 0;
 int acc_dis_js = 0;
 
@@ -16,8 +17,11 @@ int acc_dis_js = 0;
  * @param speed: constant speed of the state
  * @retval chassis output
  */
-float chassis_random_movement(float speed) {
+float chassis_random_movement(chassis_t pchassis, float speed) {
     uint32_t now = HAL_GetTick();
+    struct chassis_info info;
+    chassis_get_info(pchassis, &info);
+    chassis_position = info.position_y_mm;
     if (now - movement.start_time > movement.duration) {
         generate_movement(); // current movement expires, generate a new one
         if (mdodge.activated) {
@@ -27,11 +31,9 @@ float chassis_random_movement(float speed) {
     }
     float output = movement.spd_ind * speed;
     if (bmove.activated) {
-        if (accumulated_distance > bmove.range || accumulated_distance < -bmove.range) {
+        if (chassis_position > bmove.right_position || chassis_position < bmove.left_position) {
             generate_movement();
-            output = movement.spd_ind * speed;
         }
-        accumulated_distance += output / 100;
     }
     if (mdodge.activated) {
         last_loc_delta = curr_loc_delta;
@@ -137,8 +139,9 @@ void set_duration(int new_duration_floor, int new_duration_ceiling) {
  */
 void activate_bounded_movement(int range) {
     bmove.activated = 1;
-    bmove.range = range;
     accumulated_distance = 0;
+    bmove.left_position = chassis_position - range;
+    bmove.right_position = chassis_position + range;
 }
 
 /**
@@ -147,7 +150,6 @@ void activate_bounded_movement(int range) {
  */
 void deactivate_bounded_movement(void) {
     bmove.activated = 0;
-    bmove.range = 0;
     accumulated_distance = 0;
 }
 

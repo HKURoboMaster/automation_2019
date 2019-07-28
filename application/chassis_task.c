@@ -109,7 +109,7 @@ void chassis_task(void const *argument)
 
   set_state(&state, IDLE_STATE); // default state: idle
 
-  activate_bounded_movement(50000);
+  //activate_bounded_movement(50000);
 
   #ifdef HERO_ROBOT
   static int8_t   twist_sign = 1;
@@ -153,7 +153,7 @@ void chassis_task(void const *argument)
 
       } else {
 
-        vy = chassis_random_movement(get_spd(&state));
+        vy = chassis_random_movement(pchassis, get_spd(&state));
         vy_js = vy * 1000;
 
       }

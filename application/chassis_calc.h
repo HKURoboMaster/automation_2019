@@ -62,7 +62,8 @@ typedef struct duration_settings {
 
 typedef struct bounded_movement_settings {
   int activated; // if this is true, random movement will fall in a certain range
-  float range; // sentry is bounded in this range if bounded_movemwnt is set to true
+  float left_position;
+  float right_position;
 } bounded_movement_settings_t;
 
 typedef struct middle_dodge_settings {
@@ -71,7 +72,7 @@ typedef struct middle_dodge_settings {
   uint32_t start_time;
 } middle_dodge_settings_t;
 
-float chassis_random_movement(float speed);
+float chassis_random_movement(chassis_t pchassis, float speed);
 void generate_movement(void);
 void forced_movement(int spd_ind, int duration);
 void set_duration(int new_duration_floor, int new_duration_ceiling);
