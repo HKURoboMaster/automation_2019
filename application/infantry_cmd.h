@@ -115,9 +115,9 @@ struct cmd_gimbal_angle
   union {
     uint8_t flag;
     struct {
-      uint8_t front:1;
-      uint8_t left_back:1;
-      uint8_t right_back:1;
+      uint8_t gimbal_front:1;
+      uint8_t chassis_rear_left:1;
+      uint8_t chassis_rear_right:1;
     } bit;
   } occurrence;
 };
