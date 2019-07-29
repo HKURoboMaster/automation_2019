@@ -111,6 +111,15 @@ struct cmd_gimbal_angle
   } ctrl;
   float pitch;
   float yaw;
+  uint32_t time_pc;
+  union {
+    uint8_t flag;
+    struct {
+      uint8_t front:1;
+      uint8_t left_back:1;
+      uint8_t right_back:1;
+    } bit;
+  } occurrence;
 };
 
 struct cmd_chassis_speed
