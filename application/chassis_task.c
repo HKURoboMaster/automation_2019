@@ -116,7 +116,7 @@ void chassis_task(void const *argument)
 		
 		if (rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK) {
 			if (rc_device_get_state(prc_dev, RC_S2_MID) == RM_OK) {	// if using rc for debugging
-				vy = -(float)prc_info->ch1 / 660 * MAX_CHASSIS_VY_SPEED;
+				vy = -(float)prc_info->ch3 / 660 * MAX_CHASSIS_VY_SPEED;
 			}
 			else if (rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK) {	// if using autonomous
 				vy = chassis_random_movement(pchassis, get_spd(&state));
