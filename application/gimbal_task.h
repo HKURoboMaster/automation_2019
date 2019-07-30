@@ -25,6 +25,7 @@
 #endif
 
 #include "sys.h"
+#include "kalman_filter.h"
   
 void gimbal_task(void const * argument);
 void gimbal_auto_adjust_start(void);

@@ -289,7 +289,7 @@ int32_t chassis_set_relative_angle(float angle)
  * @Jun 2019: Define the function & current
  * @Jul 23, 2019: Change the current to be *current* by Y.H. Liu
  * 
- * BRIEF: refresh the power of the chassis
+ * BRIEF: refresh the power of 2 chassis
  * PARAM: chassis_power ---- struct storing the power data
  *        -  current_debug ---- raw data from current sensor
  *        -  voltage_debug ---- raw data from voltage sensor
