@@ -59,6 +59,8 @@ int32_t pit_angle_fdb_js, pit_angle_ref_js;
 int32_t yaw_spd_fdb_js, yaw_spd_ref_js;
 int32_t pit_spd_fdb_js, pit_spd_ref_js;
 int32_t yaw_ecd_angle_js, pit_ecd_angle_js;
+
+int new_flag = 0;
 /** Edited by Y.H. Liu
  * @Jun 12, 2019: modified the mode switch
  * @Jul 6, 2019: polar coordinate for mouse movement
@@ -178,27 +180,36 @@ void gimbal_task(void const *argument)
         }
         
         
-				gimbal_set_pitch_mode(pgimbal, ENCODER_MODE);
+				
 				// Edited By Eric Chen 
 				// Added 'Breath holding' feature.
 				// When SHIFT key is pressed. Shift to GYRO_MODE. using current angle as 
 				// target for both mode to set delta.
 				if(prc_info->kb.bit.SHIFT != 1)
 				{
+					
 					gimbal_set_yaw_mode(pgimbal, ENCODER_MODE);
+					//new_flag = 0;
 				}
 				else
 				{
+					/*
+					if(new_flag==0)
+					{
+						pgimbal->gyro_target_angle.yaw = pgimbal->sensor.gyro_angle.yaw;
+						new_flag = 1;
+					}
+					*/
 					gimbal_set_yaw_mode(pgimbal,GYRO_MODE);
-					//pgimbal->gyro_target_angle = pgimbal->sensor.gyro_angle;
 				}
+				gimbal_set_pitch_mode(pgimbal, ENCODER_MODE);
         //pit_delta =  (float)prc_info->ch2 * GIMBAL_RC_PITCH + (float)pit_mouse * GIMBAL_MOUSE_PITCH;
         //yaw_delta =      square_ch1       * GIMBAL_RC_YAW   + (float)yaw_mouse * GIMBAL_MOUSE_YAW;
 
 
         // To do check positive negative direction.
-        pit_delta =  (float)prc_info->ch2 * GIMBAL_RC_PITCH + (float)prc->mouse.y * GIMBAL_MOUSE_PITCH;
-        yaw_delta =      square_ch1       * GIMBAL_RC_YAW   + (float)prc->mouse.x * GIMBAL_MOUSE_YAW;
+        pit_delta =  (float)prc_info->ch2 * GIMBAL_RC_PITCH + (float)prc_info->mouse.y * GIMBAL_MOUSE_PITCH;
+        yaw_delta =      square_ch1       * GIMBAL_RC_YAW   + (float)prc_info->mouse.x * GIMBAL_MOUSE_YAW;
         yaw_delta += prc_info->kb.bit.E ? YAW_KB_SPEED : 0;
         yaw_delta -= prc_info->kb.bit.Q ? YAW_KB_SPEED : 0;
         gimbal_set_pitch_delta(pgimbal, pit_delta);
@@ -271,12 +282,12 @@ static int32_t gimbal_imu_update(void *argc)
   mahony_ahrs_updateIMU(&mpu_sensor, &mahony_atti);
 
   gimbal_pitch_gyro_update(pgimbal, -mahony_atti.pitch);
-  gimbal_yaw_gyro_update(pgimbal, -mahony_atti.yaw);
+  gimbal_yaw_gyro_update(pgimbal, mahony_atti.yaw);
 	// Edited By Eric Chen: 
 	// Using ecd rate as rate, avoid mechanical inconsistance between board and motor
 	// Orientation changed.
-	
-  gimbal_rate_update(pgimbal, mpu_sensor.wz * RAD_TO_DEG, -pitch_ecd_rate * RAD_TO_DEG);
+	//if(pgimbal->mode.bit.yaw_mode == ENCODER_MODE)
+	gimbal_rate_update(pgimbal, mpu_sensor.wz * RAD_TO_DEG, -pitch_ecd_rate * RAD_TO_DEG);
   // Eric Chen'e Edition end.
   mpu_pit = mahony_atti.pitch * 1000;
   mpu_yaw = mahony_atti.yaw   * 1000;

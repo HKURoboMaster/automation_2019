@@ -34,7 +34,7 @@ void gimbal_init_state_reset(void);
 #define RC_CH_SCALE        660
 #define GIMBAL_RC_PITCH    0.0008f
 #define GIMBAL_RC_YAW      0.0007f
-#define GIMBAL_MOUSE_PITCH 0.0003f
-#define GIMBAL_MOUSE_YAW   0.0005f
+#define GIMBAL_MOUSE_PITCH 0.0015f
+#define GIMBAL_MOUSE_YAW   0.0020f
 
 #endif // __GIMBAL_TASK_H__
