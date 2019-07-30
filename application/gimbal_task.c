@@ -413,7 +413,6 @@ void gimbal_task(void const *argument)
 				//kalman_over:lost_target_counter = lost_target_counter;
 				float square_ch1 = (float)prc_info->ch1 * abs(prc_info->ch1) / RC_CH_SCALE;
         /*-------- Map mouse coordinates into polar coordiantes --------*/
-				/* To be modified
         int16_t yaw_mouse,pit_mouse;
         int16_t radius = (int16_t)sqrt(prc_info->mouse.y * prc_info->mouse.y + prc_info->mouse.x * prc_info->mouse.x);
         int16_t tanTheta = prc_info->mouse.y / prc_info->mouse.x;
@@ -432,7 +431,6 @@ void gimbal_task(void const *argument)
           yaw_mouse = prc_info->mouse.x;
           pit_mouse = prc_info->mouse.y;
         }
-        */
         
 
         gimbal_set_yaw_mode(pgimbal, GYRO_MODE);

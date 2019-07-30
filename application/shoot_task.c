@@ -69,13 +69,14 @@ void shoot_task(void const *argument)
 			shoot_set_fric_speed(pshoot,FRIC_MIN_SPEED,FRIC_MIN_SPEED);
       shoot_firction_toggle(pshoot,1); //assume that currently the fric is on
       shoot_firction_toggle(pshoot2,1); //Leo assume that currently the fric is on
+      fric_on &= ~fric_on;
       continue;
     }
     shoot_enable(pshoot);
     #ifdef HERO_ROBOT
     shoot_enable(pshoot2);
     #else
-    shoot_disable(pshoot2);
+    controller_disable(&(pshoot2->ctrl));
     #endif
     if (rc_device_get_state(prc_dev, RC_S1_MID2UP) == RM_OK)
     {
@@ -168,8 +169,16 @@ void shoot_task(void const *argument)
       }
     }
     #endif
+    else
+    {
+      shoot_set_cmd(pshoot, SHOOT_STOP_CMD, 0);
+      shoot_set_cmd(pshoot2, SHOOT_STOP_CMD, 0);
+    }
+    
     shoot_execute(pshoot);
+    #ifdef HERO_ROBOT
 		shoot_execute(pshoot2);//Leo
+    #endif
     osDelayUntil(&period, 5);
   }
 }

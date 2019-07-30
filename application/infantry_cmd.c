@@ -72,7 +72,7 @@ int32_t gimbal_adjust_cmd(uint8_t *buff, uint16_t len)
  * for chassis power debugging via gimbal
  */
 uint8_t current_excess, low_voltage;
-int32_t current_detecting_js, voltage_detecting_js, buffer_remained_js;
+int32_t current_detecting_js, voltage_detecting_js, buffer_remained_js, shooter_heat0_js, shooter_heat1_js, robot_level_js;
 
 /** Edited by Y.H. Liu
  *  @Jun 12, 2019: disbable the auto mode and implement the auto_aiming
@@ -372,6 +372,8 @@ int32_t shooter_data_callback(uint8_t *buff, uint16_t len)
   {
     shooter_heat_data[0] = *(uint16_t *)buff;
     shooter_heat_data[1] = *(uint16_t *)(buff+2);
+    shooter_heat0_js = shooter_heat_data[0];
+    shooter_heat1_js = shooter_heat_data[1];
   }
   return RM_OK;
 }
@@ -401,5 +403,6 @@ int32_t robot_state_data_callback(uint8_t *buff, uint16_t len)
 }
 uint8_t get_robot_level(void)
 {
+  robot_level_js = robot_level;
   return robot_level;
 }
