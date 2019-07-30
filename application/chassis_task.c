@@ -53,17 +53,18 @@ uint8_t sensor_offline = 0;
   * @Jun 18, 2019: chassis current control
   * @Jun 20, 2019: adaption for hero
   * @Jul 27, 2019: confirm the control signals for supercapacitor
+  * @Jul 27, 2019: add the logic to handle the sensor offline
   *
   * Implement the customized control logic and FSM, details in Control.md
 */
 #ifdef CHASSIS_POWER_CTRL
   #include "referee_system.h"
-  static uint8_t superCapacitor_Ctrl(chassis_t pchassis, uint8_t low_cap_flag);
+  static uint8_t superCapacitor_Ctrl(chassis_t pchassis, uint8_t low_cap_flag, uint8_t extra_current, uint8_t last_sw);
 #endif
 
 #define km_dodge          prc_info->kb.bit.V == 1
 
-uint8_t dodging = 0;
+static uint8_t dodging = 0;
 void chassis_task(void const *argument)
 {
   uint32_t period = osKernelSysTick();
@@ -92,6 +93,7 @@ void chassis_task(void const *argument)
   #endif
   while (1)
   {
+    static uint8_t sw, extra_current;
     float vx, vy, wz;
     if (rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK || rc_device_get_state(prc_dev, RC_S2_MID) == RM_OK)
     { //not disabled
@@ -148,12 +150,17 @@ void chassis_task(void const *argument)
       }
 
       chassis_set_offset(pchassis, ROTATE_X_OFFSET, ROTATE_Y_OFFSET);
+      if(abs(vx)>2*MAX_CHASSIS_VX_SPEED/3 || abs(vy)>=2*MAX_CHASSIS_VY_SPEED/3 || abs(wz)>=2*MAX_CHASSIS_VW_SPEED/3)
+        extra_current = 1;
+      else
+        extra_current = 0;
       chassis_set_speed(pchassis, vx, vy, wz);
     }
     else
     {
       chassis_set_speed(pchassis, 0, 0, 0);
       chassis_disable(pchassis);
+      WRITE_LOW_CAPACITOR();
     }
     chassis_set_acc(pchassis, 0, 0, 0);
 
@@ -163,12 +170,15 @@ void chassis_task(void const *argument)
       do
       {
         chassis_imu_update(pchassis);
-        if(sensor_offline & CURRENT_OFFLINE)
-        {
-          //TODO: what if current sensor offline
-        }
         chassis_execute(pchassis);
         get_chassis_power(&chassis_power); // Power Value Getter
+        if(sensor_offline & CURRENT_OFFLINE)
+        {// if offline, then use the returned current from the motors to determine the current
+          chassis_power.current =(abs(pchassis->motor[0].data.given_current)+
+                                  abs(pchassis->motor[1].data.given_current)+
+                                  abs(pchassis->motor[2].data.given_current)+
+                                  abs(pchassis->motor[3].data.given_current))/1000*MOTOR_TORQUE_CURRENT_CO;
+        }
         osDelayUntil(&period, 2);
         /*-------- Then, adjust the power --------*/
       //get the buffer
@@ -193,8 +203,8 @@ void chassis_task(void const *argument)
         else
           low_volatge_flag = 0;
       //control the supercap
-        uint8_t sw = superCapacitor_Ctrl(pchassis,low_volatge_flag);
-        if(sw)
+        sw = superCapacitor_Ctrl(pchassis,low_volatge_flag, extra_current, sw);
+        if(sw) //either offline or must use the super cap
           WRITE_HIGH_CAPACITOR();
         else
           WRITE_LOW_CAPACITOR();
@@ -240,17 +250,32 @@ static void chassis_imu_update(void *argc)
 }
 
 #ifdef CHASSIS_POWER_CTRL
-static uint8_t superCapacitor_Ctrl(chassis_t pchassis, uint8_t low_cap_flag)
+/**Added by Y.H. Liu
+ * @Jul 2X, 2019: define the function
+ * @Jul 28, 2019: modify the logic
+ * 
+ * RetVal: 0----write low to the relay, supercapacitor is charging
+ *         1----write high to the relay, supercapacitor is discharging
+ */
+static uint8_t superCapacitor_Ctrl(chassis_t pchassis, uint8_t low_cap_flag, uint8_t extra_current_need, uint8_t last_sw)
 {
-  if(!low_cap_flag)
+  static uint32_t last_operation_time=0;
+  if(extra_current_need)
+    return 1; // as long as the current excess the limitation, then switch on the supercapacitor
+  else // no longer excessing
   {
-    for(int i=0; i<4; i++)
+    if(get_time_ms()-last_operation_time<SUPER_CAP_HOLDING_TIME)
+      return last_sw; 
+    else
     {
-      if(abs(pchassis->motor[i].data.speed_rpm) < abs(pchassis->mecanum.wheel_rpm[i])/2)
+      last_operation_time = get_time_ms();
+      if(low_cap_flag)
+        return 0; // no excess & timeout & (low volatge or offline)
+      else 
         return 1;
     }
   }
-  return 0; //charge the super capacitor
+  
 }
 #endif
 
