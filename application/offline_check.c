@@ -60,15 +60,11 @@ void offline_init(void)
 
   detect_device_register(&offline_dev, "detect", 0, 0);
 
-  #ifdef RC_CONNECTED
   detect_device_add_event(&offline_dev, RC_OFFLINE_EVENT, 100, rc_offline_callback, NULL);
-  #endif
 
   if (app == CHASSIS_APP)
   {
-    //detect_device_add_event(&offline_dev, MOTOR1_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[1]);
     detect_device_add_event(&offline_dev, MOTOR2_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[2]);
-    //detect_device_add_event(&offline_dev, MOTOR3_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[3]);
     detect_device_add_event(&offline_dev, MOTOR4_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[4]);
   }
   else
@@ -76,9 +72,6 @@ void offline_init(void)
     detect_device_add_event(&offline_dev, YAW_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[5]);
     detect_device_add_event(&offline_dev, PITCH_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[6]);
     detect_device_add_event(&offline_dev, TURN_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[7]);
-  #ifdef HERO_ROBOT
-    detect_device_add_event(&offline_dev, TURN2_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[8]);
-  #endif
   }
 
   soft_timer_register(offline_check, NULL, 20);
@@ -93,8 +86,11 @@ int32_t offline_check(void *argc)
   if(detect_device_get_event(&offline_dev) & TURN_OFFLINE_EVENT)
     shoot_disable(pshoot);
 
-  if(detect_device_get_event(&offline_dev) == 0)
-	  LED_R_OFF();
+  if(detect_device_get_event(&offline_dev) == 0) {
+		offline_beep_set_times(&offline_beep_times[0]);
+		LED_R_OFF();
+	}
+	
   return 0;
 }
 
@@ -125,28 +121,26 @@ int32_t can1_detect_update(CAN_RxHeaderTypeDef *header, uint8_t *rx_data)
   switch (header->StdId)
   {
   case 0x201:
-    detect_device_update(&offline_dev, MOTOR1_OFFLINE_EVENT);
     break;
   case 0x202:
     detect_device_update(&offline_dev, MOTOR2_OFFLINE_EVENT);
     break;
   case 0x203:
-    detect_device_update(&offline_dev, MOTOR3_OFFLINE_EVENT);
     break;
   case 0x204:
     detect_device_update(&offline_dev, MOTOR4_OFFLINE_EVENT);
     break;
   case 0x205:
-    detect_device_update(&offline_dev, YAW_OFFLINE_EVENT);
+    //detect_device_update(&offline_dev, YAW_OFFLINE_EVENT);
     break;
   case 0x206:
-    detect_device_update(&offline_dev, PITCH_OFFLINE_EVENT);
+    //detect_device_update(&offline_dev, PITCH_OFFLINE_EVENT);
     break;
   case 0x207:
-    detect_device_update(&offline_dev, TURN_OFFLINE_EVENT);
+    //detect_device_update(&offline_dev, TURN_OFFLINE_EVENT);
     break;
   case 0x208:
-    detect_device_update(&offline_dev, TURN2_OFFLINE_EVENT);
+    //detect_device_update(&offline_dev, TURN2_OFFLINE_EVENT);
     break;
   default:
     break;

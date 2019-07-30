@@ -999,6 +999,21 @@
             </File>
           </Files>
         </Group>
+        <Group>
+          <GroupName>power</GroupName>
+          <Files>
+            <File>
+              <FileName>motor_current.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\power\motor_current.c</FilePath>
+            </File>
+            <File>
+              <FileName>motor_current.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\power\motor_current.h</FilePath>
+            </File>
+          </Files>
+        </Group>
       </Groups>
     </Target>
   </Targets>

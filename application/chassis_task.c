@@ -23,7 +23,7 @@
 #include "ahrs.h"
 #include "drv_imu.h"
 #include "smooth_filter.h"
-#include <math.h>
+#include "math.h"
 #include "drv_io.h"
 #define RAD_TO_DEG 57.296f // 180/PI
 #define MAPPING_INDEX_CRT 1.0f
@@ -32,10 +32,8 @@
 float follow_relative_angle;
 struct pid pid_follow = {0}; //angle control
 static void chassis_imu_update(void *argc);
-
-// =======uncomment this if using rc, not random movement=======
-// #define USING_RC_CTRL_VY
-#define RC_CONNECTED
+float enforce_direction(float vy, int direction);
+void reset_dir_enforcing(void);
 
 //=======ir & control global var========
 int left_blocked = 0, right_blocked = 0;  //IR detects if left or right side is blocked
@@ -49,6 +47,10 @@ power_event_t power_eve = POWER_NORMAL;
 armor_event_t armor_eve = NO_HIT_FOR_X_SEC;
 int vy_js = 0; // for debugging vy
 int chassis_yaw_js = 0;
+
+/* chassis cv request handling */
+uint8_t chassis_cam_L = 0;
+uint8_t chassis_cam_R = 0;
 
 /**Eric Edited get data from ADC
   * @Jul 3, 2019: Add power gettter function: get_chassis_power
@@ -79,9 +81,8 @@ uint8_t sensor_offline = 0;
   static uint8_t superCapacitor_Ctrl(chassis_t pchassis, uint8_t low_cap_flag);
 #endif
 
-#define km_dodge          prc_info->kb.bit.V == 1
-
 uint8_t dodging = 0;
+
 void chassis_task(void const *argument)
 {
   uint32_t period = osKernelSysTick();
@@ -103,88 +104,58 @@ void chassis_task(void const *argument)
 
   pid_struct_init(&pid_follow, MAX_CHASSIS_VW_SPEED*0.85f, 50, 7.673848152f, 0.0f, 2.0f);
 
-  chassis_disable(pchassis);
-
   generate_movement(); // initialize a movement
 
   set_state(&state, IDLE_STATE); // default state: idle
 
-  //activate_bounded_movement(50000);
-
-  #ifdef HERO_ROBOT
-  static int8_t   twist_sign = 1;
-  #endif
-      
   while (1)
   {
     check_ir_signal(); // check ir signals
     
     float vx, vy, wz;
-    #ifdef RC_CONNECTED
-		if (rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK || rc_device_get_state(prc_dev, RC_S2_MID) == RM_OK)
-		{ //not disabled
-    #endif
+		
+		if (rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK) {
+			if (rc_device_get_state(prc_dev, RC_S2_MID) == RM_OK) {	// if using rc for debugging
+				vy = -(float)prc_info->ch1 / 660 * MAX_CHASSIS_VY_SPEED;
+			}
+			else if (rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK) {	// if using autonomous
+				vy = chassis_random_movement(pchassis, get_spd(&state));
+				vy_js = vy * 1000;
+				float raw_vy = vy;
+				vy = direction_control(vy); // direction control
+				
+				if (chassis_cam_L && !chassis_cam_R) {
+					enforce_direction(vy, -1.0);
+				}
+				else if (chassis_cam_R && !chassis_cam_L) {
+					enforce_direction(vy, 1.0);
+				}
+				else if (chassis_cam_R && chassis_cam_L) {
+					
+				}
+				else {
+					reset_dir_enforcing();
+				}
+				
+				if (vy == 0) {
+					generate_movement(); // bounce off by another movement
+					adjust_accumulated_distance(raw_vy);
+				}
+			}
+		}
 
+		chassis_set_offset(pchassis, 0, 0);
+		chassis_set_speed(pchassis, 0, vy, 0);
+		chassis_set_acc(pchassis, 0, 0, 0);					
+		
+		if (rc_device_get_state(prc_dev, RC_S2_DOWN) == RM_OK) {
+			chassis_disable(pchassis);
+		}
+		else {
 			chassis_enable(pchassis);
-
-      if (rc_device_get_state(prc_dev, RC_S2_MID) == RM_OK) {
-
-        int32_t key_x_speed = MAX_CHASSIS_VX_SPEED/2;
-        int32_t key_y_speed = MAX_CHASSIS_VY_SPEED/2;
-        if(prc_info->kb.bit.SHIFT)
-        {
-          key_x_speed = MAX_CHASSIS_VX_SPEED;
-          key_y_speed = MAX_CHASSIS_VY_SPEED;
-        }
-        else if (prc_info->kb.bit.CTRL)
-        {
-          key_x_speed /= 2;
-          key_y_speed /= 2;
-        }
-        float square_ch4 = ((float)prc_info->ch4 * fabsf(prc_info->ch4) / RC_CH_SCALE) / RC_CH_SCALE;
-        float square_ch3 = ((float)prc_info->ch3 * fabsf(prc_info->ch3) / RC_CH_SCALE) / RC_CH_SCALE;
-
-        float temp_vx = square_ch4 * MAX_CHASSIS_VX_SPEED;
-        temp_vx += (prc_info->kb.bit.W - prc_info->kb.bit.S)* key_x_speed;
-        float temp_vy = -square_ch3 * MAX_CHASSIS_VY_SPEED;
-        temp_vy += (prc_info->kb.bit.A - prc_info->kb.bit.D)* key_y_speed;
-        vx = temp_vx * cos(-follow_relative_angle / RAD_TO_DEG) - temp_vy * sin(-follow_relative_angle / RAD_TO_DEG);
-        vy = temp_vx * sin(-follow_relative_angle / RAD_TO_DEG) + temp_vy * cos(-follow_relative_angle / RAD_TO_DEG);
-
-      } else {
-
-        vy = chassis_random_movement(pchassis, get_spd(&state));
-        vy_js = vy * 1000;
-
-      }
-
-      chassis_set_offset(pchassis, ROTATE_X_OFFSET, ROTATE_Y_OFFSET);
-
-      float raw_vy = vy;
-      vy = direction_control(vy); // direction control
-
-      if (rc_device_get_state(prc_dev, RC_S2_MID) == RM_OK) {
-        // if blocked by wall
-        if (vy == 0) {
-          generate_movement(); // bounce off by another movement
-          adjust_accumulated_distance(raw_vy);
-        }
-      }
-
-      chassis_set_speed(pchassis, 0, vy, 0);
-
-    #ifdef RC_CONNECTED
-    }
-    else
-    {
-      chassis_set_speed(pchassis, 0, 0, 0);
-      chassis_disable(pchassis);
-    }
-    #endif
-    
-    chassis_set_acc(pchassis, 0, 0, 0);
-
-    #ifdef CHASSIS_POWER_CTRL
+		}
+		
+		#ifdef CHASSIS_POWER_CTRL
       uint8_t current_excess_flag = 0;
       uint8_t low_volatge_flag = 0xFF;
       do
@@ -197,7 +168,6 @@ void chassis_task(void const *argument)
         chassis_execute(pchassis);
         get_chassis_power(&chassis_power); // Power Value Getter
         osDelayUntil(&period, 2);
-        /*-------- Then, adjust the power --------*/
       //get the buffer
         ext_power_heat_data_t * referee_power = get_heat_power();
         shooter_data_sent_by_can(referee_power);
@@ -253,6 +223,7 @@ void chassis_task(void const *argument)
                         pchassis->motor[3].current;
     #endif
   }
+
 }
 
 

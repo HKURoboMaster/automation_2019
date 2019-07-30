@@ -11,6 +11,11 @@ float chassis_position = 0;
 float accumulated_distance = 0;
 int acc_dis_js = 0;
 
+/* variables to accomodate direction enforcing */
+float enforce_dir_prob = 1.0;
+float enforce_dir_decay = 0.9;
+int enforce_cnt = 0;
+
 /**
  * Jerry 14 Jul
  * @brief Calculate and output chassis random movement speed.
@@ -197,4 +202,26 @@ chassis_state_name_t get_state(const chassis_state_t * state) {
  */
 float get_spd(const chassis_state_t * state) {
   return state->constant_spd;
+}
+
+/**
+ * Aslan 30 Jul
+ * @brief Probabilistic enforcing of chassis movement due to enemy detection via cv camera on chassis
+ */
+float enforce_direction(float vy, int direction) {
+  float prob = ((int)rand() % 101);
+	if (prob / 100.0 <= enforce_dir_prob) {
+		enforce_dir_prob *= enforce_dir_decay;
+		return direction * vy;
+	}
+	else 
+		return vy;
+}
+
+/**
+ * Aslan 30 Jul
+ * @brief Reset probabilistic enforcing of chassis direction, call after no enemy detection
+ */
+void reset_dir_enforcing(void) {
+	enforce_dir_prob = 1.0;
 }

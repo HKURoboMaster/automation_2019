@@ -42,6 +42,10 @@
 float auto_patrol_pitch = 0, auto_patrol_yaw = 0;
 int pitch_increaser = 1;
 
+/* gimbal cv request handling */
+uint8_t gimbal_cam_L = 0;
+uint8_t gimbal_cam_R = 0;
+
 float pit_delta, yaw_delta;
 extern float auto_aiming_pitch;
 extern float auto_aiming_yaw;
@@ -221,7 +225,22 @@ void gimbal_task(void const *argument)
 
     if(rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK)
     {
-      gimbal_patrol(pgimbal);
+			if (gimbal_cam_L && !gimbal_cam_R) {
+				if (fabs(pgimbal->ecd_angle.yaw - 1.0472) > 0.01)
+					gimbal_set_yaw_angle(pgimbal, 1.0472, 0);
+				else
+					gimbal_cam_L = 0;
+			}
+			else if (gimbal_cam_R && !gimbal_cam_L) {
+				if (fabs(pgimbal->ecd_angle.yaw - 2.618) > 0.01)
+					gimbal_set_yaw_angle(pgimbal, 2.618, 0);
+				else
+					gimbal_cam_R = 0;
+			}
+			else if (gimbal_cam_R && gimbal_cam_L) {
+			}
+			else
+				gimbal_patrol(pgimbal);
     }
 
     if(rc_device_get_state(prc_dev, RC_S2_DOWN) == RM_OK)
