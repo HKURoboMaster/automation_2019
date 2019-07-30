@@ -290,7 +290,7 @@ int32_t gimbal_push_info(void *argc)
   gimbal_get_info(pgimbal, &info);
 
   cmd_gimbal_info.mode = info.mode;
-  cmd_gimbal_info.pitch_ecd_angle = info.pitch_ecd_angle * 10;
+  cmd_gimbal_info.pitch_ecd_angle = info.pitch_ecd_angle[0] * 10;
   cmd_gimbal_info.pitch_gyro_angle = info.pitch_gyro_angle * 10;
   cmd_gimbal_info.pitch_rate = info.pitch_rate * 10;
   cmd_gimbal_info.yaw_ecd_angle = info.yaw_ecd_angle * 10;

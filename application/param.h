@@ -33,6 +33,7 @@ typedef struct
 {
   uint16_t yaw_offset;
   uint16_t pitch_offset;
+  uint16_t pit2_offset;
   uint8_t calied_done; //0x55:already calied
 } gim_cali_t;
 
@@ -46,6 +47,6 @@ void cali_param_init(void);
 cali_sys_t *get_cali_param(void);
 void cali_data_read(void);
 void save_cali_data(void);
-void gimbal_save_data(uint16_t pit_ecd, uint16_t yaw_ecd);
+void gimbal_save_data(uint16_t yaw_ecd, uint16_t pit_ecd, uint16_t pit2_ecd);
 
 #endif // __PARAM_H__

@@ -248,7 +248,7 @@ void gimbal_task(void const *argument)
 	//#endif
   if (pparam->gim_cali_data.calied_done == CALIED_FLAG)
   {
-    gimbal_set_offset(pgimbal, pparam->gim_cali_data.yaw_offset, pparam->gim_cali_data.pitch_offset);
+    gimbal_set_offset(pgimbal, pparam->gim_cali_data.yaw_offset, pparam->gim_cali_data.pitch_offset, pparam->gim_cali_data.pit2_offset); 
   }
   else
   {
@@ -382,9 +382,9 @@ void gimbal_task(void const *argument)
         //pit_angle_raw += pit_speed*gim_tim_ms/1000;
 				yaw_kf_data = kalman_filter_calc(&yaw_kalman_filter,yaw_angle_raw,yaw_speed);
 				pit_kf_data = kalman_filter_calc(&pit_kalman_filter,pit_angle_raw,pit_speed);
-				kalman_yaw_js[0] = (int)((yaw_kf_data[0] + yaw_kf_data[1]*0.1)*1000);
+				kalman_yaw_js[0] = (int)((yaw_kf_data[0] + yaw_kf_data[1]*0.1f)*1000);
 				kalman_yaw_js[1] = (int)(yaw_kf_data[1]*1000);
-				kalman_pit_js[0] = (int)((pit_kf_data[0]+pit_kf_data[1]*0.1)*1000);
+				kalman_pit_js[0] = (int)((pit_kf_data[0]+pit_kf_data[1]*0.1f)*1000);
 				kalman_pit_js[1] = (int)(pit_kf_data[1]*1000);
 				#endif
 
@@ -398,9 +398,9 @@ void gimbal_task(void const *argument)
 					
 					// Equavalent to P only control. Need a I term.
 					// Set angle speed is no matter what set the difference of angle
-					gimbal_set_yaw_speed(pgimbal,0.1*(yaw_kf_data[0] + yaw_kf_data[1]*0.1)+yaw_autoaim_offset);
-				  //gimbal_set_yaw_speed(pgimbal,0.1*yaw_kf_data[0]);
-					gimbal_set_pitch_speed(pgimbal,0.1*(pit_kf_data[0] + pit_kf_data[1]*0.1));
+					gimbal_set_yaw_speed(pgimbal,0.1f*(yaw_kf_data[0] + yaw_kf_data[1]*0.1f));
+				  //gimbal_set_yaw_speed(pgimbal,0.1f*yaw_kf_data[0]);
+					gimbal_set_pitch_speed(pgimbal,0.1f*(pit_kf_data[0] + pit_kf_data[1]*0.1f));
 					}
 					else
 						pc_counter++;
@@ -452,7 +452,7 @@ void gimbal_task(void const *argument)
           if(!prc_info->kb.bit.CTRL)
           {
             pgimbal->param.yaw_ecd_center += ((float)prc_info->wheel/RC_CH_SCALE);
-            gimbal_set_offset(pgimbal, pgimbal->param.yaw_ecd_center, pgimbal->param.pitch_ecd_center);
+            gimbal_set_offset(pgimbal, pgimbal->param.yaw_ecd_center, pgimbal->param.pitch_ecd_center, pgimbal->param.pit2_ecd_center);
           }
           else
           {
@@ -544,7 +544,7 @@ volatile uint32_t pit_time, yaw_time;
 uint32_t pit_cnt;
 uint32_t pit_timeout_cnt=0;
 volatile uint16_t yaw_ecd_r, yaw_ecd_l;
-volatile uint16_t pit_ecd_c, yaw_ecd_c;
+volatile uint16_t pit_ecd_c, yaw_ecd_c, pit2_ecd_c;
 
 void send_gimbal_current(int16_t iq1, int16_t iq2, int16_t iq3)
 {
@@ -574,38 +574,12 @@ static void auto_gimbal_adjust(gimbal_t pgimbal)
 {
   if (auto_adjust_f)
   {
-    pid_struct_init(&pid_pit, 2000, 0, 30, 0.001, 0);
-    pid_struct_init(&pid_pit_spd, 30000, 8000, 200, 0, 0);
-    while (1)
-    {
-      gimbal_imu_update(pgimbal);
-      pid_calculate(&pid_pit, -pgimbal->sensor.gyro_angle.pitch, -90);
-      pid_calculate(&pid_pit_spd, -pgimbal->sensor.rate.pitch_rate, pid_pit.out);
-
-      send_gimbal_current(0, pid_pit_spd.out, 0);
-
-      HAL_Delay(2);
-
-      if ((fabs(pgimbal->sensor.gyro_angle.pitch-85) < 0.1))
-      {
-        pit_cnt++;
-        pit_timeout_cnt = 0;
-      }
-      else
-      {
-        pit_cnt = 0;
-        pit_timeout_cnt++;
-      }
-      if (pit_cnt > 1000 || pit_timeout_cnt>2000)
-      {
-        pit_ecd_c = pgimbal->motor[PITCH_MOTOR_INDEX].data.ecd;
-        break;
-      }
-    }
+    pit_ecd_c = pgimbal->motor[PITCH_MOTOR_INDEX].data.ecd;
+    pit2_ecd_c = -1*pgimbal->motor[PIICH_ASSIT_INDEX].data.ecd;
     yaw_ecd_c = pgimbal->motor[YAW_MOTOR_INDEX].data.ecd;
 
-    gimbal_save_data(yaw_ecd_c, pit_ecd_c);
-    gimbal_set_offset(pgimbal, yaw_ecd_c, pit_ecd_c);
+    gimbal_save_data(yaw_ecd_c, pit_ecd_c, pit2_ecd_c);
+    gimbal_set_offset(pgimbal, yaw_ecd_c, pit_ecd_c, pit2_ecd_c);
     auto_adjust_f = 0;
     __disable_irq();
     NVIC_SystemReset();

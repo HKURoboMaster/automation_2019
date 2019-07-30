@@ -33,6 +33,7 @@
 #define PITCH_OFFLINE_EVENT  EVENT_6BIT
 #define TURN_OFFLINE_EVENT   EVENT_7BIT
 #define TURN2_OFFLINE_EVENT  EVENT_8BIT
+#define PITCH2_OFFLINE_EVENT EVENT_9BIT
 
 void offline_init(void);
 struct detect_device *get_offline_dev(void);

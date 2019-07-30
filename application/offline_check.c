@@ -76,6 +76,7 @@ void offline_init(void)
   #ifdef HERO_ROBOT
     detect_device_add_event(&offline_dev, TURN2_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[8]);
   #endif
+    detect_device_add_event(&offline_dev, PITCH2_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[8]);
   }
 
   soft_timer_register(offline_check, NULL, 20);
@@ -144,6 +145,9 @@ int32_t can1_detect_update(CAN_RxHeaderTypeDef *header, uint8_t *rx_data)
     break;
   case 0x208:
     detect_device_update(&offline_dev, TURN2_OFFLINE_EVENT);
+    break;
+  case 0x209:
+    detect_device_update(&offline_dev, PITCH2_OFFLINE_EVENT);
     break;
   default:
     break;

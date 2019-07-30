@@ -62,10 +62,11 @@ void cali_param_init(void)
   *        the offset is absolute encoder value
   * @usage called in gimbal task loop 
   */
-void gimbal_save_data(uint16_t yaw_ecd, uint16_t pitch_ecd)
+void gimbal_save_data(uint16_t yaw_ecd, uint16_t pitch_ecd, uint16_t pit2_ecd)
 {
   cali_param.gim_cali_data.yaw_offset   = yaw_ecd;
   cali_param.gim_cali_data.pitch_offset = pitch_ecd;
+  cali_param.gim_cali_data.pitch_offset = pit2_ecd;
   cali_param.gim_cali_data.calied_done  = CALIED_FLAG;
   save_cali_data();
 }
