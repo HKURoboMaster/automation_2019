@@ -205,7 +205,7 @@ int32_t shoot_execute(struct shoot *shoot)
   shoot_cmd_ctrl(shoot);
 
   pdata = motor_device_get_data(&(shoot->motor));
-
+	
   controller_set_input(&(shoot->ctrl), shoot->target.motor_speed);
   controller_execute(&(shoot->ctrl), (void *)pdata);
   controller_get_output(&(shoot->ctrl), &motor_out);
