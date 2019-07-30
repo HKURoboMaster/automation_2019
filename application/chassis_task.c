@@ -125,10 +125,10 @@ void chassis_task(void const *argument)
 				vy = direction_control(vy); // direction control
 				
 				if (chassis_cam_L && !chassis_cam_R) {
-					enforce_direction(vy, -1.0);
+					vy = enforce_direction(vy, -1.0);
 				}
 				else if (chassis_cam_R && !chassis_cam_L) {
-					enforce_direction(vy, 1.0);
+					vy = enforce_direction(vy, 1.0);
 				}
 				else if (chassis_cam_R && chassis_cam_L) {
 					
@@ -138,8 +138,8 @@ void chassis_task(void const *argument)
 				}
 				
 				if (vy == 0) {
-					generate_movement(); // bounce off by another movement
-					adjust_accumulated_distance(raw_vy);
+					//generate_movement(); // bounce off by another movement
+					//adjust_accumulated_distance(raw_vy);
 				}
 			}
 		}

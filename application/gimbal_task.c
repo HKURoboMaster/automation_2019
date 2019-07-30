@@ -45,6 +45,8 @@ int pitch_increaser = 1;
 /* gimbal cv request handling */
 uint8_t gimbal_cam_L = 0;
 uint8_t gimbal_cam_R = 0;
+float cam_L_target_angle = 0;
+int cam_L_call = 0;
 
 float pit_delta, yaw_delta;
 extern float auto_aiming_pitch;
@@ -192,8 +194,6 @@ void gimbal_task(void const *argument)
           pit_mouse = prc_info->mouse.y;
         }
         
-        
-
         gimbal_set_yaw_mode(pgimbal, GYRO_MODE);
         pit_delta =  (float)prc_info->ch2 * GIMBAL_RC_PITCH + (float)pit_mouse * GIMBAL_MOUSE_PITCH;
         yaw_delta =      square_ch1       * GIMBAL_RC_YAW   + (float)yaw_mouse * GIMBAL_MOUSE_YAW;
@@ -225,22 +225,37 @@ void gimbal_task(void const *argument)
 
     if(rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK)
     {
+			gimbal_set_yaw_mode(pgimbal, ENCODER_MODE);
+			
+			if (!cam_L_call) {
+				//cam_L_target_angle = pgimbal->ecd_angle.yaw + 50;
+				gimbal_set_yaw_delta(pgimbal, 120);
+				cam_L_call = 1;
+			}
+			//gimbal_set_yaw_delta(pgimbal, 120);
+			
 			if (gimbal_cam_L && !gimbal_cam_R) {
-				if (fabs(pgimbal->ecd_angle.yaw - 1.0472) > 0.01)
-					gimbal_set_yaw_angle(pgimbal, 1.0472, 0);
+				if (fabs(pgimbal->ecd_angle.yaw - 300) > 1) {
+					gimbal_set_yaw_mode(pgimbal, ENCODER_MODE);
+					gimbal_set_yaw_angle(pgimbal, 300, 0);
+				}
 				else
 					gimbal_cam_L = 0;
 			}
 			else if (gimbal_cam_R && !gimbal_cam_L) {
-				if (fabs(pgimbal->ecd_angle.yaw - 2.618) > 0.01)
-					gimbal_set_yaw_angle(pgimbal, 2.618, 0);
+				if (fabs(pgimbal->ecd_angle.yaw - 120) > 0.01) {
+					gimbal_set_yaw_mode(pgimbal, ENCODER_MODE);
+					gimbal_set_yaw_angle(pgimbal, 120, 0);
+				}
 				else
 					gimbal_cam_R = 0;
 			}
 			else if (gimbal_cam_R && gimbal_cam_L) {
 			}
-			else
-				gimbal_patrol(pgimbal);
+			else {
+				
+				//gimbal_patrol(pgimbal);
+			}
     }
 
     if(rc_device_get_state(prc_dev, RC_S2_DOWN) == RM_OK)
@@ -447,6 +462,8 @@ void gimbal_patrol(gimbal_t pgimbal) {
   auto_patrol_pitch += pitch_increaser * PATROL_PITCH_SPEED;
   auto_patrol_yaw += PATROL_YAW_SPEED;
   if (auto_patrol_yaw > 180.0f) auto_patrol_yaw -= 180.0f;
+	gimbal_set_pitch_mode(pgimbal, ENCODER_MODE);
+	gimbal_set_yaw_mode(pgimbal, ENCODER_MODE);
   gimbal_set_pitch_angle(pgimbal, auto_patrol_pitch);
   gimbal_set_yaw_angle(pgimbal, auto_patrol_yaw, 0);
 }

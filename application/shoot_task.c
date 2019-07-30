@@ -76,11 +76,7 @@ void shoot_task(void const *argument)
       continue;
     }
     shoot_enable(pshoot);
-    #ifdef HERO_ROBOT
-    shoot_enable(pshoot2);
-    #else
     shoot_disable(pshoot2);
-    #endif
     if (rc_device_get_state(prc_dev, RC_S1_MID2UP) == RM_OK)
     {
       shoot_firction_toggle(pshoot, fric_on);

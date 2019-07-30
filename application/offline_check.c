@@ -71,7 +71,7 @@ void offline_init(void)
   {
     detect_device_add_event(&offline_dev, YAW_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[5]);
     detect_device_add_event(&offline_dev, PITCH_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[6]);
-    detect_device_add_event(&offline_dev, TURN_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[7]);
+    //detect_device_add_event(&offline_dev, TURN_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[7]);
   }
 
   soft_timer_register(offline_check, NULL, 20);
@@ -131,10 +131,10 @@ int32_t can1_detect_update(CAN_RxHeaderTypeDef *header, uint8_t *rx_data)
     detect_device_update(&offline_dev, MOTOR4_OFFLINE_EVENT);
     break;
   case 0x205:
-    //detect_device_update(&offline_dev, YAW_OFFLINE_EVENT);
+    detect_device_update(&offline_dev, YAW_OFFLINE_EVENT);
     break;
   case 0x206:
-    //detect_device_update(&offline_dev, PITCH_OFFLINE_EVENT);
+    detect_device_update(&offline_dev, PITCH_OFFLINE_EVENT);
     break;
   case 0x207:
     //detect_device_update(&offline_dev, TURN_OFFLINE_EVENT);

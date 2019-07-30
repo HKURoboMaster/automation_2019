@@ -13,8 +13,7 @@ int acc_dis_js = 0;
 
 /* variables to accomodate direction enforcing */
 float enforce_dir_prob = 1.0;
-float enforce_dir_decay = 0.9;
-int enforce_cnt = 0;
+float enforce_dir_decay = 0.999;
 
 /**
  * Jerry 14 Jul
@@ -212,7 +211,7 @@ float enforce_direction(float vy, int direction) {
   float prob = ((int)rand() % 101);
 	if (prob / 100.0 <= enforce_dir_prob) {
 		enforce_dir_prob *= enforce_dir_decay;
-		return direction * vy;
+		return direction * fabs(vy);
 	}
 	else 
 		return vy;
