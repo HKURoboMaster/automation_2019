@@ -21,7 +21,7 @@
 #include "sys.h"
 
 #define MAX_QUEUE_SPACE 50
-#define DELAY	1
+#define DELAY	10
 #define __infinity 0x7F800000
 
 struct angle_queue

@@ -1,4 +1,4 @@
-/****************************************************************************
+/***************************************************************************
  *  Copyright (C) 2019 RoboMaster.
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -45,19 +45,19 @@
 #ifndef ACC_KALMAN
 kalman_filter_init_t yaw_kalman_filter_para = {
   .P_data = {2, 0, 0, 2},					// Co-variance Matrix
-  .A_data = {1, 0.0022, 0, 1},			// Predict function Transfer parameter 1000Hz?
+  .A_data = {1, 0.0028, 0, 1},			// Predict function Transfer parameter 1000Hz?
   .H_data = {1, 0, 0, 1},					// Measurement transfer parameter
   .Q_data = {1, 0, 0, 1},					// Co-variance of progress matrix
-  .R_data = {600, 0, 0, 1200}		// Co-Variance of Measurement Observe matrix.
+  .R_data = {500, 0, 0, 1000}		// Co-Variance of Measurement Observe matrix.
 };
 
 kalman_filter_init_t pit_kalman_filter_para = 
 {
   .P_data = {2, 0, 0, 2},
-  .A_data = {1, 0.0022, 0, 1},
+  .A_data = {1, 0.0028, 0, 1},
   .H_data = {1, 0, 0, 1},
   .Q_data = {1, 0, 0, 1},
-  .R_data = {2000, 0, 0, 5000}		// Basic Idea is kalman filter uses co-variance data.
+  .R_data = {800, 0, 0, 1600}		// Basic Idea is kalman filter uses co-variance data.
 };	// Only consider the variance instead of co-variance.
 // Kalman Filter
 #else
@@ -353,14 +353,14 @@ void gimbal_task(void const *argument)
 					// Unit Degree Per second
           yaw_speed_raw = target_speed_calc(&yaw_speed_struct,speed_calc_time,yaw_angle_raw);
 				  pit_speed_raw = target_speed_calc(&pit_speed_struct,speed_calc_time,pit_angle_raw); 
-					
+				}
 				delta_pit_speed = pgimbal->sensor.rate.pitch_rate - ref_pit_speed;
 				delta_yaw_speed = pgimbal->sensor.rate.yaw_rate - ref_yaw_speed;
 				// If they share same ratio
 				// For CV the angular ratio is uncertain.
 				// BUG Fixed
-				pit_speed = pit_speed_raw -  delta_pit_speed;
-				yaw_speed = yaw_speed_raw -  delta_yaw_speed;
+				pit_speed = pit_speed_raw ;//-  delta_pit_speed;
+				yaw_speed = yaw_speed_raw ;//-  delta_yaw_speed;
 				// Since speed data is irrelavant from historical data.
 				// Each time speed need to delta the speed of gimbal compared with
 				// The time when reference was settled
@@ -382,7 +382,7 @@ void gimbal_task(void const *argument)
         //pit_angle_raw += pit_speed*gim_tim_ms/1000;
 				yaw_kf_data = kalman_filter_calc(&yaw_kalman_filter,yaw_angle_raw,yaw_speed);
 				pit_kf_data = kalman_filter_calc(&pit_kalman_filter,pit_angle_raw,pit_speed);
-				kalman_yaw_js[0] = (int)((yaw_kf_data[0] + yaw_kf_data[1]*0.1)*10000);
+				kalman_yaw_js[0] = (int)((yaw_kf_data[0] + yaw_kf_data[1]*0.1)*1000);
 				kalman_yaw_js[1] = (int)(yaw_kf_data[1]*1000);
 				kalman_pit_js[0] = (int)((pit_kf_data[0]+pit_kf_data[1]*0.1)*1000);
 				kalman_pit_js[1] = (int)(pit_kf_data[1]*1000);
@@ -398,9 +398,9 @@ void gimbal_task(void const *argument)
 					
 					// Equavalent to P only control. Need a I term.
 					// Set angle speed is no matter what set the difference of angle
-					gimbal_set_yaw_speed(pgimbal,0.2*(yaw_kf_data[0] + yaw_kf_data[1]*0.1));
+					gimbal_set_yaw_speed(pgimbal,0.1*(yaw_kf_data[0] + yaw_kf_data[1]*0.1)+yaw_autoaim_offset);
 				  //gimbal_set_yaw_speed(pgimbal,0.1*yaw_kf_data[0]);
-					gimbal_set_pitch_speed(pgimbal,0.2*(pit_kf_data[0] + pit_kf_data[1]*0.1));
+					gimbal_set_pitch_speed(pgimbal,0.1*(pit_kf_data[0] + pit_kf_data[1]*0.1));
 					}
 					else
 						pc_counter++;
