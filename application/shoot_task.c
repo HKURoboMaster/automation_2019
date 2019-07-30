@@ -176,6 +176,7 @@ void shoot_task(void const *argument)
 
 /**Modified by Y.H. Liu
  * @Jun 13, 2019: to support the control by keyboards
+ * @Jul 30, 2019: use strlen to determine whether the shooter is shoot2
  * 
  * Switch on/off the friction wheel
  * @param toggled 0----not turned on yet, so turn the devices on
@@ -187,14 +188,14 @@ int32_t shoot_firction_toggle(shoot_t pshoot, uint8_t toggled)
   {
     shoot_set_fric_speed(pshoot, FRIC_STOP_SPEED, FRIC_STOP_SPEED);
     turn_off_laser();
-	  if(0==strncmp(pshoot->parent.name, "shoot2",OBJECT_NAME_MAX_LEN))//Leo: If the given struct is shoot2
+	  if(6==strlen(pshoot->parent.name))//Leo: If the given struct is shoot2
 		  shoot_set_cmd(pshoot, SHOOT_STOP_CMD, 0);		 //Leo: Stop the trigger motor
   }
   else
   {
     shoot_set_fric_speed(pshoot, FRIC_MAX_SPEED, FRIC_MAX_SPEED);
     turn_on_laser();
-    if(0==strncmp(pshoot->parent.name, "shoot2",OBJECT_NAME_MAX_LEN) && pshoot->ctrl.enable)//Leo: If the given struct is shoot2
+    if(6==strlen(pshoot->parent.name) && pshoot->ctrl.enable)//Leo: If the given struct is shoot2
 		  shoot_set_cmd(pshoot, SHOOT_CONTINUOUS_CMD, CONTIN_BULLET_NUM);	    //Leo: Continue to shoot the bullets
   }
   return 0;

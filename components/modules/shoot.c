@@ -374,6 +374,7 @@ static int32_t shoot_cmd_ctrl(struct shoot *shoot)
 
 /**Edited by Y.H. Liu
  * @Jul 8, 2019: Slow down the speeding up
+ * @Jul 30, 2019: Use strlen to determine whether the given shooter is shoot2
  * 
  * Send the friction wheel motor signals by PWM
  */
@@ -416,7 +417,7 @@ static int32_t shoot_fric_ctrl(struct shoot *shoot)
   VAL_LIMIT(shoot->fric_spd[0], FRIC_STOP_SPEED, FRIC_MAX_SPEED);
   VAL_LIMIT(shoot->fric_spd[1], FRIC_STOP_SPEED, FRIC_MAX_SPEED);
 
-  if(strncmp(shoot->parent.name, "shoot2",OBJECT_NAME_MAX_LEN))
+  if(6==strlen(shoot->parent.name))
 	  fric_set_output((uint16_t)shoot->fric_spd[0], (uint16_t)shoot->fric_spd[1]);
 	return RM_OK;
 }
