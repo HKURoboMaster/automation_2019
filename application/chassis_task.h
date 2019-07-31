@@ -53,7 +53,7 @@ int get_chassis_power(struct chassis_power *chassis_power);
 #define CHASSIS_POWER_CTRL
 
 #ifdef HERO_ROBOT
-#define DODGING_TH 30.0f
+#define DODGING_TH 25.0f
 #endif
 #ifdef CHASSIS_POWER_CTRL
 #define MOTOR_TORQUE_CURRENT_CO 0.25F

@@ -382,9 +382,9 @@ void gimbal_task(void const *argument)
         //pit_angle_raw += pit_speed*gim_tim_ms/1000;
 				yaw_kf_data = kalman_filter_calc(&yaw_kalman_filter,yaw_angle_raw,yaw_speed);
 				pit_kf_data = kalman_filter_calc(&pit_kalman_filter,pit_angle_raw,pit_speed);
-				kalman_yaw_js[0] = (int)((yaw_kf_data[0] + yaw_kf_data[1]*0.1)*1000);
+				kalman_yaw_js[0] = (int)((yaw_kf_data[0] + yaw_kf_data[1]*0.1f)*1000);
 				kalman_yaw_js[1] = (int)(yaw_kf_data[1]*1000);
-				kalman_pit_js[0] = (int)((pit_kf_data[0]+pit_kf_data[1]*0.1)*1000);
+				kalman_pit_js[0] = (int)((pit_kf_data[0]+pit_kf_data[1]*0.1f)*1000);
 				kalman_pit_js[1] = (int)(pit_kf_data[1]*1000);
 				#endif
 
@@ -398,9 +398,9 @@ void gimbal_task(void const *argument)
 					
 					// Equavalent to P only control. Need a I term.
 					// Set angle speed is no matter what set the difference of angle
-					gimbal_set_yaw_speed(pgimbal,0.1*(yaw_kf_data[0] + yaw_kf_data[1]*0.1)+yaw_autoaim_offset);
-				  //gimbal_set_yaw_speed(pgimbal,0.1*yaw_kf_data[0]);
-					gimbal_set_pitch_speed(pgimbal,0.1*(pit_kf_data[0] + pit_kf_data[1]*0.1));
+					gimbal_set_yaw_speed(pgimbal,0.1f*(yaw_kf_data[0] + yaw_kf_data[1]*0.1f));
+				  //gimbal_set_yaw_speed(pgimbal,0.1f*yaw_kf_data[0]);
+					gimbal_set_pitch_speed(pgimbal,0.1f*(pit_kf_data[0] + pit_kf_data[1]*0.1f));
 					}
 					else
 						pc_counter++;
