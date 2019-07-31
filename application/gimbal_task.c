@@ -1,4 +1,4 @@
-/****************************************************************************
+/***************************************************************************
  *  Copyright (C) 2019 RoboMaster.
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -33,6 +33,9 @@
 #define GIMBAL_PERIOD 2
 /* gimbal back center time (ms) */
 #define BACK_CENTER_TIME 3000
+#define MAX_TRACK_ANGLE 35
+#define LOST_THRESHOLD 200 // 400ms
+#define SPEED_RATIO 1.0f
 
 #define MAX_YAW_PATROL_ANGLE 90.0f
 
@@ -42,8 +45,149 @@
 
 
 // Aiming related
+
+#define INTEGRAL_LIM 5
+
+//Kalman filter related define
+//#define ACC_KALMAN
+#ifndef ACC_KALMAN
+kalman_filter_init_t yaw_kalman_filter_para = {
+  .P_data = {2, 0, 0, 2},					// Co-variance Matrix
+  .A_data = {1, 0.0028, 0, 1},			// Predict function Transfer parameter 1000Hz?
+  .H_data = {1, 0, 0, 1},					// Measurement transfer parameter
+  .Q_data = {1, 0, 0, 1},					// Co-variance of progress matrix
+  .R_data = {500, 0, 0, 1000}		// Co-Variance of Measurement Observe matrix.
+};
+
+kalman_filter_init_t pit_kalman_filter_para = 
+{
+  .P_data = {2, 0, 0, 2},
+  .A_data = {1, 0.0028, 0, 1},
+  .H_data = {1, 0, 0, 1},
+  .Q_data = {1, 0, 0, 1},
+  .R_data = {800, 0, 0, 1600}		// Basic Idea is kalman filter uses co-variance data.
+};	// Only consider the variance instead of co-variance.
+// Kalman Filter
+#else
+kalman_filter_3d_init_t yaw_kalman_filter_para = {
+	.P_data = {2, 0, 0, 0, 2, 0, 0, 0, 2},
+  .A_data = {1, 0.002, 0, 0, 1, 0.002, 0, 0, 1},
+  .H_data = {1, 0, 0, 0, 1, 0, 0, 0, 1},
+  .Q_data = {1, 0, 0, 0, 1, 0, 0, 0, 1},
+  .R_data = {1000, 0, 0, 0, 2000, 0, 0, 0, 4500}		// Basic Idea is kalman filter uses co-variance data.
+};
+
+kalman_filter_3d_init_t pit_kalman_filter_para = 
+{
+  .P_data = {2, 0, 0, 0, 2, 0, 0, 0, 2},
+  .A_data = {1, 0.002, 0, 0, 1, 0.002, 0, 0, 1},
+  .H_data = {1, 0, 0, 0, 1, 0, 0, 0, 1},
+  .Q_data = {1, 0, 0, 0, 1, 0, 0, 0, 1},
+  .R_data = {2000, 0, 0, 0, 5000, 0, 0, 0, 11000}		// Basic Idea is kalman filter uses co-variance data.
+};
+
+kalman_filter_3d_t yaw_kalman_filter;
+kalman_filter_3d_t pit_kalman_filter;
+
+
+#endif
+
+kalman_filter_t yaw_kalman_filter;
+kalman_filter_t pit_kalman_filter;
+uint32_t   gim_tim_ms = 0; 
+uint32_t   gim_last_tim = 0;
+
+#ifndef ACC_KALMAN
+int kalman_yaw_js[2];
+int kalman_pit_js[2];
+#endif
+
+#ifdef ACC_KALMAN 
+int kalman_yaw_js[3];
+int kalman_pit_js[3];
+#endif
+
+
+int pc_js1;
+int pc_js2;
+int lost_target_counter = 0;
+float yaw_angle_raw = 0;
+float pit_angle_raw = 0;
+
+// Edited By Eric Chen 
+// Complement the motion of gimbal itself when using kalman filtered motion prediction of object.
+
+float ref_yaw_speed = 0;
+float ref_pit_speed = 0;
+
+float delta_pit_speed = 0;
+float delta_yaw_speed = 0;
+
+float yaw_speed = 0.0f;
+float pit_speed = 0.0f;
+
+float integral_error_yaw = 0;
+float integral_error_pit = 0;
+
+float yaw_i = 0.001;
+float pit_i = 0.001;
+
+
+// Eric Chen's Edition End.
+
+int speed_calc_time=0;
+int speed_calc_last_time=0;
+typedef struct  // speed_calc_data_t
+{
+  int delay_cnt;
+  int freq;
+  int last_time;
+  float last_position;
+  float speed;
+  float last_speed;
+  float processed_speed;
+} speed_calc_data_t;
+
+// Acceleration typedef
+typedef struct
+{
+	int delay_cnt;
+	int freq;
+	int last_time;
+	float last_speed;
+	float acceleration;
+	float last_acceleration;
+	float processed_acceleration;
+}acc_calc_data_t;
+
+speed_calc_data_t yaw_speed_struct;
+speed_calc_data_t pit_speed_struct;
+
+acc_calc_data_t yaw_acc_struct;
+acc_calc_data_t pit_acc_struct;
+
+
+
+static float yaw_speed_raw;
+static float pit_speed_raw;
+
+//static float yaw_acc_raw;
+//static float pit_acc_raw;
+
+float *yaw_kf_data;
+float *pit_kf_data;
+
+
+int pc_counter = 0;
+
+float target_speed_calc(speed_calc_data_t *S,uint32_t time,float position);
+float target_acc_calc(acc_calc_data_t *A,uint32_t time, float speed);
+#define KALMAN
+// Aimming related
 extern float auto_aiming_pitch;
 extern float auto_aiming_yaw;
+extern uint32_t time_pc;
+uint32_t time_last = 0;
 // Function declaration
 static void imu_temp_ctrl_init(void);
 static int32_t gimbal_imu_update(void *argc);
@@ -78,6 +222,9 @@ float yaw_patrol_counter = 0.0f ;
  */
 void gimbal_task(void const *argument)
 {
+  // Edited By Eric Chen 2019.7.20
+  //gim_tim_ms = HAL_GetTick() - gim_last_tim;  // For speed calculation
+  //gim_last_tim = HAL_GetTick();
   uint32_t period = osKernelSysTick();
   rc_device_t prc_dev = NULL;
   rc_info_t prc_info = NULL;
@@ -97,12 +244,20 @@ void gimbal_task(void const *argument)
   float yaw_autoaim_offset = 0.0f;
   float pitch_autoaim_offset = 0.0f;
   float pit_delta, yaw_delta;
-
+  // Added By Eric Chen : Init Kalman filter params
+	//#ifdef KALMAN
+	yaw_kalman_filter_para.xhat_data[0] = 0;
+	yaw_kalman_filter_para.xhat_data[1] = 0;
+	pit_kalman_filter_para.xhat_data[0] = 0;
+	pit_kalman_filter_para.xhat_data[1] = 0;
+  kalman_filter_init(&yaw_kalman_filter,&yaw_kalman_filter_para);
+  kalman_filter_init(&pit_kalman_filter,&pit_kalman_filter_para);
+	//#else
   struct angle_queue yawQ;
   struct angle_queue pitQ; 
   queue_init(&yawQ);
   queue_init(&pitQ);
-
+	//#endif
   if (pparam->gim_cali_data.calied_done == CALIED_FLAG)
   {
     gimbal_set_offset(pgimbal, pparam->gim_cali_data.yaw_offset, pparam->gim_cali_data.pitch_offset);
@@ -128,7 +283,26 @@ void gimbal_task(void const *argument)
   imu_temp_ctrl_init();
   while (1)
   {
-    //Queue for auto-aiming
+		#ifdef KALMAN
+    // Added By Eric Chen: Enable Kalman filter function
+    gim_tim_ms = HAL_GetTick() - gim_last_tim;  // For speed calculation
+    gim_last_tim = HAL_GetTick();
+    // Eric Chen Edition End.
+		
+		#ifdef ACC_KALMAN
+		mat_init(*yaw_kalman_filter.Q,3,3,yaw_kalman_filter_para.Q_data);
+		mat_init(*pit_kalman_filter.Q,3,3,pit_kalman_filter_para.Q_data);
+		
+		#else
+    mat_init(&yaw_kalman_filter.Q,2,2,yaw_kalman_filter_para.Q_data);
+    mat_init(&pit_kalman_filter.Q,2,2,pit_kalman_filter_para.Q_data);
+		#endif
+		//Each time update
+    #endif
+		// The reason using a queue is : Make a 10 ms delay when receive the data;
+		// Since each 10 ms the data will be updated from PC
+		// Encoder angle will be enqueue.each time and the encoder
+		//#ifndef KALMAN
     if(yawQ.len>=DELAY)
     {
       do
@@ -143,7 +317,7 @@ void gimbal_task(void const *argument)
         pitch_autoaim_offset = pgimbal->ecd_angle.pitch - deQueue(&pitQ);
       }while(pitQ.len>=DELAY);
     }
-
+		//#endif
     if(rc_device_get_state(prc_dev, RC_S2_DOWN2MID) == RM_OK)
     {
       //switched out disabled mode
@@ -155,9 +329,100 @@ void gimbal_task(void const *argument)
       //manual control mode i.e. chassis follow gimbal
       if(prc_info->kb.bit.X != 1)
       {
+        //auto_aimming
+				#ifndef KALMAN
+        if(prc_info->mouse.r || rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK)
+        {
+          if(auto_aiming_pitch!=0)
+            gimbal_set_yaw_delta(pgimbal, auto_aiming_yaw-yaw_autoaim_offset);
+          auto_aiming_pitch = 0;	// Make sure the only data sent by pc will be used
+          auto_aiming_yaw = 0;
+        }
+				#endif
+				// Auto aiming kalman testing
+				// PC data toggle
+				#ifdef KALMAN
+				
+				pc_js1 = (int)(auto_aiming_yaw*1000);
+				pc_js2 = (int)(auto_aiming_pitch*1000);
+				
+				if(time_pc != time_last)
+				{
+					// Update the Time sent From PC.
+					// For checking wheather PC sent data to me.
+					time_last = time_pc;
+					// Using STM32 Clock to calculate the time interval between 2 measurement.
+					speed_calc_time = HAL_GetTick() - time_last;
+					speed_calc_last_time = HAL_GetTick();
+					
+					yaw_angle_raw = auto_aiming_yaw;
+					pit_angle_raw = auto_aiming_pitch;
+					// Unit Degree per second
+					ref_yaw_speed = pgimbal->sensor.rate.yaw_rate;
+					ref_pit_speed = pgimbal->sensor.rate.pitch_rate;
+					// By default the time input is time Gap in ms
+					// Unit Degree Per second
+          yaw_speed_raw = target_speed_calc(&yaw_speed_struct,speed_calc_time,yaw_angle_raw);
+				  pit_speed_raw = target_speed_calc(&pit_speed_struct,speed_calc_time,pit_angle_raw); 
+				}
+				delta_pit_speed = pgimbal->sensor.rate.pitch_rate - ref_pit_speed;
+				delta_yaw_speed = pgimbal->sensor.rate.yaw_rate - ref_yaw_speed;
+				// If they share same ratio
+				// For CV the angular ratio is uncertain.
+				// BUG Fixed
+				pit_speed = pit_speed_raw ;//-  delta_pit_speed;
+				yaw_speed = yaw_speed_raw ;//-  delta_yaw_speed;
+				// Since speed data is irrelavant from historical data.
+				// Each time speed need to delta the speed of gimbal compared with
+				// The time when reference was settled
+				#ifdef ACC_KALMAN
+				yaw_acc_raw d= target_acc_calc(&yaw_acc_struct,speed_calc_time/1000,yaw_speed_raw);
+				pit_acc_raw = target_acc_calc(&pit_acc_struct,speed_calc_time/1000,pit_speed_raw);
+				yaw_kf_data = kalman_filter_3d_calc(&yaw_kalman_filter,yaw_angle_raw,yaw_speed_raw,yaw_acc_raw);
+				pit_kf_data = kalman_filter_3d_calc(&pit_kalman_filter,pit_angle_raw,pit_speed_raw,pit_acc_raw);
+				kalman_pit_js[0] = pit_kf_data[0];
+				kalman_pit_js[1] = pit_kf_data[1];
+				kalman_pit_js[2] = pit_kf_data[2];
+				
+				kalman_yaw_js[0] = yaw_kf_data[0];
+				kalman_yaw_js[1] = yaw_kf_data[1];
+				kalman_yaw_js[2] = yaw_kf_data[2];
+				#else
+				
+				//yaw_angle_raw += yaw_speed*gim_tim_ms/1000;
+        //pit_angle_raw += pit_speed*gim_tim_ms/1000;
+				yaw_kf_data = kalman_filter_calc(&yaw_kalman_filter,yaw_angle_raw,yaw_speed);
+				pit_kf_data = kalman_filter_calc(&pit_kalman_filter,pit_angle_raw,pit_speed);
+				kalman_yaw_js[0] = (int)((yaw_kf_data[0] + yaw_kf_data[1]*0.1f)*1000);
+				kalman_yaw_js[1] = (int)(yaw_kf_data[1]*1000);
+				kalman_pit_js[0] = (int)((pit_kf_data[0]+pit_kf_data[1]*0.1f)*1000);
+				kalman_pit_js[1] = (int)(pit_kf_data[1]*1000);
+				#endif
 
-
-        float square_ch1 = (float)prc_info->ch1 * abs(prc_info->ch1) / RC_CH_SCALE;
+				if(prc_info->mouse.r || rc_device_get_state(prc_dev,RC_S2_UP)==RM_OK)
+				{
+					
+					// The reason to implement PC counter is that kalman filter need time to converge
+					// The PC_counter make it possible to converge.
+					if(pc_counter==200)
+					{
+					
+					// Equavalent to P only control. Need a I term.
+					// Set angle speed is no matter what set the difference of angle
+					gimbal_set_yaw_speed(pgimbal,0.1f*(yaw_kf_data[0] + yaw_kf_data[1]*0.1f)+yaw_autoaim_offset);
+				  //gimbal_set_yaw_speed(pgimbal,0.1*yaw_kf_data[0]);
+					gimbal_set_pitch_speed(pgimbal,0.1f*(pit_kf_data[0] + pit_kf_data[1]*0.1f));
+					}
+					else
+						pc_counter++;
+				}
+				else
+				{
+					pc_counter = 0;
+				}
+				#endif
+				//kalman_over:lost_target_counter = lost_target_counter;
+				float square_ch1 = (float)prc_info->ch1 * abs(prc_info->ch1) / RC_CH_SCALE;
         /*-------- Map mouse coordinates into polar coordiantes --------*/
         int16_t yaw_mouse,pit_mouse;
         int16_t radius = (int16_t)sqrt(prc_info->mouse.y * prc_info->mouse.y + prc_info->mouse.x * prc_info->mouse.x);
@@ -178,11 +443,10 @@ void gimbal_task(void const *argument)
           pit_mouse = prc_info->mouse.y;
         }
         
-        
 
         gimbal_set_yaw_mode(pgimbal, GYRO_MODE);
-        pit_delta =  (float)prc_info->ch2 * GIMBAL_RC_PITCH + (float)pit_mouse * GIMBAL_MOUSE_PITCH;
-        yaw_delta =      square_ch1       * GIMBAL_RC_YAW   + (float)yaw_mouse * GIMBAL_MOUSE_YAW;
+        pit_delta =  -1 * (float)prc_info->ch2 * GIMBAL_RC_PITCH + (float)pit_mouse * GIMBAL_MOUSE_PITCH;
+        yaw_delta =           square_ch1       * GIMBAL_RC_YAW   + (float)yaw_mouse * GIMBAL_MOUSE_YAW;
         yaw_delta += prc_info->kb.bit.E ? YAW_KB_SPEED : 0;
         yaw_delta -= prc_info->kb.bit.Q ? YAW_KB_SPEED : 0;
         gimbal_set_pitch_delta(pgimbal, pit_delta);
@@ -216,8 +480,10 @@ void gimbal_task(void const *argument)
     }
 		if( rc_device_get_state(prc_dev, RC_S2_MID2UP) == RM_OK)
 		{
+			
+			//gimbal patrol set zero
 			//gimbal_set_yaw_angle(pgimbal, pgimbal->ecd_angle.yaw * (1 - ramp_calculate(&yaw_ramp)), 0);
-			gimbal_set_yaw_angle(pgimbal, 0, 0 ); 
+			//gimbal_set_yaw_angle(pgimbal, 0, 0 ); 
 		}
 		//Gimbal Patrol + auto aiming
 		if(rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK || rc_device_get_state(prc_dev, RC_S2_MID2UP ) == RM_OK )
@@ -276,6 +542,8 @@ void gimbal_task(void const *argument)
     enQueue(&pitQ, pgimbal->ecd_angle.pitch);
     gimbal_imu_update(pgimbal);
     gimbal_execute(pgimbal);
+    // The period is calculated from very beginning.
+    // If time excess then do this task. Fake real time.
     osDelayUntil(&period, 2);
   }
 }
@@ -365,7 +633,7 @@ static void auto_gimbal_adjust(gimbal_t pgimbal)
 
       HAL_Delay(2);
 
-      if ((fabs(pgimbal->sensor.gyro_angle.pitch-85) < 0.1))
+      if ((fabs(pgimbal->sensor.gyro_angle.pitch-85) < 0.1f))
       {
         pit_cnt++;
         pit_timeout_cnt = 0;
@@ -434,3 +702,76 @@ static void gimbal_state_init(gimbal_t pgimbal)
     }
   }
 }
+
+/* Modified By Eric Chen.
+ * Changed real time into time gap to for adaptation
+ */
+float speed_threshold = 10.0f;
+float target_speed_calc(speed_calc_data_t *S, uint32_t time, float position)
+{
+  //S->delay_cnt++;
+	// This time speed calculate in MS per second.
+	S->speed = ((position - S->last_position) / time) * 1000; 
+  //S->speed = (position - S->last_position) / (time - S->last_time) * 1000;
+#if 1
+  if ((S->speed - S->processed_speed) < -speed_threshold)
+  {
+      S->processed_speed = S->processed_speed - speed_threshold;
+  }
+  else if ((S->speed - S->processed_speed) > speed_threshold)
+  {
+      S->processed_speed = S->processed_speed + speed_threshold;
+  }
+  else 
+#endif
+  S->processed_speed = S->speed;
+    
+  S->last_time = time;
+  S->last_position = position;
+  S->last_speed = S->speed;
+  S->delay_cnt = 0;
+	// Since we have implemented lost connection checking, delay mechinism is improper.
+	
+  //if(S->delay_cnt > 200) // delay 200ms speed = 0
+  //{
+  //  S->processed_speed = 0;
+  //}
+  return S->processed_speed;
+}
+
+float acc_threshold = 10.0f;
+
+float target_acc_calc(acc_calc_data_t *A,uint32_t time, float speed)
+{
+  A->delay_cnt++;
+
+  if (time != A->last_time)
+  {
+    A->acceleration = (speed - A->last_speed) / (time - A->last_time) * 1000;
+#if 1
+    if ((A->acceleration - A->processed_acceleration) < -acc_threshold)
+    {
+        A->processed_acceleration = A->processed_acceleration - acc_threshold;
+    }
+    else if ((A->acceleration - A->processed_acceleration) > acc_threshold)
+    {
+        A->processed_acceleration = A->processed_acceleration + acc_threshold;
+    }
+    else 
+#endif
+      A->processed_acceleration = A->acceleration;
+    
+    A->last_time = time;
+    A->last_acceleration = A->acceleration;
+    A->last_acceleration = A->acceleration;
+    A->delay_cnt = 0;
+  }
+  
+  if(A->delay_cnt > 200) // delay 200ms speed = 0
+  {
+    A->processed_acceleration = 0;
+  }
+
+  return A->processed_acceleration;
+}
+

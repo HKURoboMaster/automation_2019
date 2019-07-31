@@ -56,5 +56,10 @@ int get_chassis_power(struct chassis_power *chassis_power);
 #ifdef HERO_ROBOT
 #define DODGING_TH 30.0f
 #endif
+#ifdef CHASSIS_POWER_CTRL
+#define MOTOR_TORQUE_CURRENT_CO 0.25F
+#define SUPER_CAP_HOLDING_TIME 300u
+#define NO_MOVEMENT_TH 30
+#endif
 
 #endif // __CHASSIS_TASK_H__

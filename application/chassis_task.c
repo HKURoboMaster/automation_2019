@@ -7,8 +7,8 @@
  *  (at your option) any later version.
  *
  *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of 
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of 
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
@@ -35,6 +35,7 @@ static void chassis_imu_update(void *argc);
 float enforce_direction(float vy, int direction);
 void reset_dir_enforcing(void);
 
+int boost_state_flag = 1;
 //=======ir & control global var========
 int left_blocked = 0, right_blocked = 0;  //IR detects if left or right side is blocked
 int left_ir_js = 0, right_ir_js = 0;  // for jscope
@@ -106,7 +107,7 @@ void chassis_task(void const *argument)
 
   generate_movement(); // initialize a movement
 
-  set_state(&state, IDLE_STATE); // default state: idle
+  set_state(&state, 	NORMAL_STATE); // default state: NORMAL
 
   while (1)
   {
@@ -119,6 +120,8 @@ void chassis_task(void const *argument)
 				vy = -(float)prc_info->ch3 / 660 * MAX_CHASSIS_VY_SPEED;
 			}
 			else if (rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK) {	// if using autonomous
+				ext_power_heat_data_t * referee_power = get_heat_power();
+
 				vy = chassis_random_movement(pchassis, get_spd(&state));
 				vy_js = vy * 1000;
 				float raw_vy = vy;
@@ -126,17 +129,39 @@ void chassis_task(void const *argument)
 				
 				if (chassis_cam_L && !chassis_cam_R) {
 					vy = enforce_direction(vy, -1.0);
+					if (( referee_power->chassis_power_buffer > 75 ) && boost_state_flag == 1 ) 
+					{
+						set_state(&state, 	BOOST_STATE);
+						boost_state_flag = 0 ;
+					} 
 				}
 				else if (chassis_cam_R && !chassis_cam_L) {
 					vy = enforce_direction(vy, 1.0);
+					if (( referee_power->chassis_power_buffer > 75 ) && boost_state_flag == 1 ) 
+					{
+						set_state(&state, 	BOOST_STATE);
+						boost_state_flag = 0 ;
+					} 
 				}
 				else if (chassis_cam_R && chassis_cam_L) {
-					
+					if (( referee_power->chassis_power_buffer > 75 ) && boost_state_flag == 1 ) 
+					{
+						set_state(&state, 	BOOST_STATE);
+						boost_state_flag = 0 ;
+					} 
 				}
 				else {
+					set_state(&state, 	NORMAL_STATE);
 					reset_dir_enforcing();
 				}
-				
+				if(referee_power->chassis_power_buffer > 150 )
+				{
+					boost_state_flag = 1;
+				}
+				if (referee_power->chassis_power_buffer < 75)
+				{
+					set_state(&state, 	NORMAL_STATE);
+				}
 				if (vy == 0) {
 					//generate_movement(); // bounce off by another movement
 					//adjust_accumulated_distance(raw_vy);
