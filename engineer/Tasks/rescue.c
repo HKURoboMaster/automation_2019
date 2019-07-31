@@ -40,9 +40,10 @@ void rescue_task(void const* args)
 		{
 			ctrl_magnet(TURNON_MAG);
 		}
-		else if(prc_info->kb.bit.CTRL == 1)
+		// Disable mode the magnet will be turned off.
+		else if(prc_info->kb.bit.CTRL == 1 ||rc_device_get_state(prc_dev,RC_S2_DOWN)== RM_OK)
 		{
-			if(hold_counter < 200)
+			if(hold_counter < 200 && rc_device_get_state(prc_dev,RC_S2_DOWN)!= RM_OK)
 			{
 				hold_counter++;
 			}
