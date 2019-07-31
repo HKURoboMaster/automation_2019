@@ -4,8 +4,8 @@
 #include "stm32f4xx_hal.h"
 #include "main.h"
 
-#define GPIO_LEFT_MAG 0// Map a number.
-#define GPIO_RIGHT_MAG 1// Map a number.
+#define GPIO_LEFT_MAG  GPIO_PIN_0// Map a number.
+#define GPIO_RIGHT_MAG GPIO_PIN_1// Map a number.
 
 //gpio port F and pin 0 and 1 mapped to two I1 and I2 pins
 
