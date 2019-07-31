@@ -9,8 +9,8 @@ extern upper_ctrl upper_controller;
 /* END of VARIABLES: SEIZER - related */
 
 /* FUNCTIONS: SEIZER - related */
-void seizer_seize();
-void seizer_release();
+void seizer_seize(void);
+void seizer_release(void);
 
 int32_t seizer_execute(struct upper_info* upperinf, upper_ctrl* upperctrl) {
 	if (upperinf == NULL || upperctrl == NULL)
@@ -24,7 +24,7 @@ int32_t seizer_execute(struct upper_info* upperinf, upper_ctrl* upperctrl) {
 	return RM_OK;
 }
 
-void seizer_seize() {
+void seizer_seize(void) {
 	if (seizer.state != SEIZER_SEIZED) {
 		pneum_1head_HIGH(&(seizer.cylinderX1));
 		osDelay(SEIZER_SEIZE_MS);
@@ -32,7 +32,7 @@ void seizer_seize() {
 	}
 }
 
-void seizer_release() {
+void seizer_release(void) {
 	if (seizer.state != SEIZER_RELEASED) {
 		pneum_1head_LOW(&(seizer.cylinderX1));
 		osDelay(SEIZER_RELEASE_MS);

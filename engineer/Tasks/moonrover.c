@@ -36,12 +36,6 @@ int32_t moonrover_pid_register(Engineer* engineer, const char *name, enum device
     pid_struct_init(&engineer->motor_pid[i], 15000, 500, 6.5f, 0.1, 0);
   }
 
-  engineer->mecanum.param.wheel_perimeter = PERIMETER;
-  engineer->mecanum.param.wheeltrack = WHEELTRACK;
-  engineer->mecanum.param.wheelbase = WHEELBASE;
-  engineer->mecanum.param.rotate_x_offset = ROTATE_X_OFFSET;
-  engineer->mecanum.param.rotate_y_offset = ROTATE_Y_OFFSET;
-
   memcpy(&motor_name[0][name_len], "_MR\0", 4);
   memcpy(&motor_name[1][name_len], "_ML\0", 4);
 
@@ -72,33 +66,40 @@ int32_t moonrover_pid_register(Engineer* engineer, const char *name, enum device
 int32_t moonrover_execute(Engineer* engineer, chassis_t pchassis, rc_device_t prc_dev, rc_info_t prc_info) {
   if (engineer == NULL)
     return -RM_INVAL;
-  	
+ 
+	float lmotor_out, rmotor_out;
+	struct motor_data *pdata_lm, *pdata_rm;
+	
+	float motor_speed;
+	
 	if (engineer->ENGINEER_BIG_STATE == LOWERPART && engineer->ENGINEER_SMALL_STATE == CHASSIS &&
-			(rc_device_get_state(prc_dev, RC_WHEEL_DOWN) == RM_OK && prc_dev->last_rc_info.wheel > -300)) {
-		engineer->mecanum.speed.vx = pchassis->mecanum.speed.vx;
-    engineer->mecanum.speed.vy = pchassis->mecanum.speed.vy;
-    engineer->mecanum.speed.vw = pchassis->mecanum.speed.vw;
-		
-		float motor_out;
-		struct motor_data *pdata;
-		struct mecanum_motor_fdb wheel_fdb[2];
-		mecanum_calculate(&(engineer->mecanum));
-		motor_out = ROTATION_SPEED;
-		for (int i = 0; i < 2; i++)
-		{
-			pdata = motor_device_get_data(&(engineer->motor[i]));
-
-			wheel_fdb[i].total_ecd = pdata->total_ecd;
-			wheel_fdb[i].speed_rpm = pdata->speed_rpm;
-		
-			controller_set_input(&engineer->ctrl[i], engineer->mecanum.wheel_rpm[i]);
-			controller_execute(&engineer->ctrl[i], (void *)pdata);
-			controller_get_output(&engineer->ctrl[i], &motor_out);
-
-			motor_device_set_current(&engineer->motor[i], (int16_t)motor_out);
-		}
-		mecanum_position_measure(&(engineer->mecanum), wheel_fdb);
+			rc_device_get_state(prc_dev, RC_WHEEL_DOWN) == RM_OK) {
+		motor_speed = ROTATION_SPEED;
 	}
+	else if (engineer->ENGINEER_BIG_STATE == LOWERPART && engineer->ENGINEER_SMALL_STATE == CHASSIS &&
+			rc_device_get_state(prc_dev, RC_WHEEL_UP) == RM_OK) {
+		motor_speed = -ROTATION_SPEED;
+	}
+	else {
+		motor_device_set_current(&engineer->motor[LEFT_MOONROVER_INDEX], (int16_t)0);
+		motor_device_set_current(&engineer->motor[RIGHT_MOONROVER_INDEX], (int16_t)0);
+		return RM_OK;
+	}
+	
+	pdata_lm = motor_device_get_data(&(engineer->motor[LEFT_MOONROVER_INDEX]));
+	pdata_rm = motor_device_get_data(&(engineer->motor[RIGHT_MOONROVER_INDEX]));
+				
+	controller_set_input(&engineer->ctrl[LEFT_MOONROVER_INDEX], motor_speed);
+	controller_set_input(&engineer->ctrl[RIGHT_MOONROVER_INDEX], -motor_speed);
+				
+	controller_execute(&engineer->ctrl[LEFT_MOONROVER_INDEX], (void *)pdata_lm);
+	controller_execute(&engineer->ctrl[RIGHT_MOONROVER_INDEX], (void *)pdata_rm);
+				
+	controller_get_output(&engineer->ctrl[LEFT_MOONROVER_INDEX], &lmotor_out);
+	controller_get_output(&engineer->ctrl[RIGHT_MOONROVER_INDEX], &rmotor_out);	
+			
+	motor_device_set_current(&engineer->motor[LEFT_MOONROVER_INDEX], (int16_t)lmotor_out);
+	motor_device_set_current(&engineer->motor[RIGHT_MOONROVER_INDEX], (int16_t)rmotor_out);
 	
   return RM_OK;
 }

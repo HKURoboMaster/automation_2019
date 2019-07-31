@@ -27,8 +27,8 @@
 #include "protocol.h"
 #include "referee_system.h"
 
-#define MANIFOLD2_CHASSIS_SIGNAL (1 << 0)
-#define MANIFOLD2_UPPER_SIGNAL (1 << 1)
+#define MANIFOLD2_CHASSIS_SIGNAL 		 (1 << 0)
+#define UPPER_SIGNAL 								 (1 << 1)
 #define MANIFOLD2_CHASSIS_ACC_SIGNAL (1 << 2)
 
 extern osThreadId cmd_task_t;
@@ -36,6 +36,7 @@ extern osThreadId cmd_task_t;
 struct cmd_chassis_info cmd_chassis_info;
 struct cmd_upper_info cmd_upper_info;
 struct manifold_cmd manifold_cmd;
+struct upper_cmd upper_cmd;
 
 struct manifold_cmd *get_manifold_cmd(void)
 {
@@ -49,6 +50,7 @@ int32_t student_data_transmit(uint8_t *buff, uint16_t len);
 
 int32_t rc_data_forword_by_can(uint8_t *buff, uint16_t len)
 {
+  protocol_send(UPPER_ADDRESS, CMD_RC_DATA_FORWORD, buff, len);
   return 0;
 }
 
@@ -69,11 +71,11 @@ void infantry_cmd_task(void const *argument)
     protocol_rcv_cmd_register(CMD_STUDENT_DATA, student_data_transmit);
     protocol_rcv_cmd_register(CMD_SET_CHASSIS_SPEED, chassis_speed_ctrl);
     protocol_rcv_cmd_register(CMD_SET_CHASSIS_SPD_ACC, chassis_spd_acc_ctrl);
+		protocol_rcv_cmd_register(CMD_UPPER_CTRL, upper_rcv_info);
   }
   else
   {
     prc_dev = rc_device_find("can_rc");
-		protocol_rcv_cmd_register(CMD_GET_UPPER_CTRL, upper_rcv_info);
   }
 
   while (1)
@@ -85,7 +87,7 @@ void infantry_cmd_task(void const *argument)
     }
     else
     {
-      event = osSignalWait(MANIFOLD2_CHASSIS_SIGNAL | MANIFOLD2_CHASSIS_ACC_SIGNAL | MANIFOLD2_UPPER_SIGNAL,
+      event = osSignalWait(MANIFOLD2_CHASSIS_SIGNAL | MANIFOLD2_CHASSIS_ACC_SIGNAL | UPPER_SIGNAL,
                            500);
 
       if (event.status == osEventSignal)
@@ -99,13 +101,6 @@ void infantry_cmd_task(void const *argument)
           chassis_set_speed(pchassis, pspeed->vx, pspeed->vy, pspeed->vw / 10.0f);
         }
 				
-				if (event.value.signals & MANIFOLD2_UPPER_SIGNAL)
-				{
-					struct cmd_upper_info* upper;
-					upper = &manifold_cmd.upper_info;
-					set_upper_info(upper->mode);
-				}
-
         if (event.value.signals & MANIFOLD2_CHASSIS_ACC_SIGNAL)
         {
           struct cmd_chassis_spd_acc *pacc;
@@ -146,7 +141,7 @@ int32_t upper_push_info(void *argc)
 	struct upper_info* upper = (struct upper_info*)argc;
   cmd_upper_info.mode = upper->mode;
 
-  protocol_send(MANIFOLD2_ADDRESS, CMD_PUSH_UPPER_CTRL, &cmd_upper_info, sizeof(cmd_upper_info));
+  protocol_send(CHASSIS_ADDRESS, CMD_UPPER_CTRL, &cmd_upper_info, sizeof(struct cmd_upper_info));
 
   return 0;
 }
@@ -155,8 +150,11 @@ int32_t upper_rcv_info(uint8_t *buff, uint16_t len)
 {
   if (len == sizeof(struct cmd_upper_info))
   {
-    memcpy(&manifold_cmd.upper_info, buff, len);
-    osSignalSet(cmd_task_t, MANIFOLD2_UPPER_SIGNAL);
+    memcpy(&upper_cmd.upper_info, buff, len);
+    osSignalSet(cmd_task_t, UPPER_SIGNAL);
+		struct cmd_upper_info* upper;
+		upper = &upper_cmd.upper_info;
+		set_upper_info(upper->mode);
   }
   return 0;
 }

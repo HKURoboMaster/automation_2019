@@ -8,8 +8,10 @@
 #include "dbus.h"
 #include "dualmotor.h"
 #include "engg_gpio.h"
+#include "upper.h"
 
 /* VARIABLES: ENGINEER - related */
+extern struct upper_info upper;
 /* VARIABLES: END of ENGINEER - related */
 
 /* CONSTANTS: ENGINEER - related */
@@ -18,7 +20,7 @@ Engineer engg;
 
 /* FUNCTIONS: ENGINEER - related */
 static void engineer_state_handler(rc_device_t prc_dev, rc_info_t prc_info) {
-	if (rc_device_get_state(prc_dev, RC_S1_UP)) {
+	if (rc_device_get_state(prc_dev, RC_S1_UP) == RM_OK) {
 		engg.ENGINEER_BIG_STATE = UPPERPART;
 		if (rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK)
 			engg.ENGINEER_SMALL_STATE = SINGLE_LOCATE;
@@ -36,7 +38,7 @@ static void engineer_state_handler(rc_device_t prc_dev, rc_info_t prc_info) {
 		if (rc_device_get_state(prc_dev, RC_S2_DOWN) == RM_OK)
 			engg.ENGINEER_SMALL_STATE = UNLOAD;
 	}
-	if (rc_device_get_state(prc_dev, RC_S1_DOWN)) {
+	if (rc_device_get_state(prc_dev, RC_S1_DOWN) == RM_OK) {
 		engg.ENGINEER_BIG_STATE = MANAGE;
 		if (rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK)
 			engg.ENGINEER_SMALL_STATE = RESET;
@@ -61,7 +63,7 @@ void engineer_task(void const *argument)
   {
     prc_info = rc_device_get_info(prc_dev);
   }
-
+	
 	for(;;) {
 		engineer_state_handler(prc_dev, prc_info);
 		

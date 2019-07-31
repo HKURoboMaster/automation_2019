@@ -21,4 +21,6 @@ typedef struct Flipper {
 	int state;
 } Flipper;
 
+void flipper_task(void const *argument);
+
 #endif

@@ -10,8 +10,8 @@ extern upper_ctrl upper_controller;
 /* END of VARIABLES: EXTENDER - related */
 
 /* FUNCTIONS: EXTENDER - related */
-void extender_extend();
-void extender_retract();
+void extender_extend(void);
+void extender_retract(void);
 
 int32_t extender_execute(struct upper_info* upperinf, upper_ctrl* upperctrl) {
 	if (upperinf == NULL || upperctrl == NULL)
@@ -25,7 +25,7 @@ int32_t extender_execute(struct upper_info* upperinf, upper_ctrl* upperctrl) {
 	return RM_OK;
 }
 
-void extender_extend() {
+void extender_extend(void) {
 	if (extender.state != EXTENDER_EXTENDED) {
 		pneum_1head_LOW(&(extender.cylinderX1));
 		osDelay(EXTENDER_RETRACT_MS);
@@ -33,7 +33,7 @@ void extender_extend() {
 	}
 }
 
-void extender_retract() {
+void extender_retract(void) {
 	if (extender.state != EXTENDER_RETRACTED) {
 		pneum_1head_HIGH(&(extender.cylinderX1));
 		osDelay(EXTENDER_RETRACT_MS);

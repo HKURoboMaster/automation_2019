@@ -63,6 +63,7 @@
 #include "init.h"
 #include "engg_gpio.h"
 #include "servos.h"
+#include "adc.h"
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -131,6 +132,7 @@ int main(void)
   hw_init();
   task_init();
 	PCA9685_init();
+	MX_ADC1_Init();
   /* USER CODE END 2 */
 
   /* Call init function for freertos objects (in freertos.c) */

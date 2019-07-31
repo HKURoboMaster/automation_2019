@@ -41,6 +41,9 @@
 #include "moonrover.h"
 #include "upper.h"
 #include "sub_engineer.h"
+#include "raiser.h"
+
+#include "flipper.h"
 
 struct chassis chassis;
 static struct rc_device rc_dev;
@@ -82,6 +85,8 @@ void hw_init(void)
     chassis_disable(&chassis);
 		moonrover_pid_register(&engg, "moonrover", DEVICE_CAN1);
 		moonrover_disable(&engg);
+		raiser_cascade_register(&engg, "raiser", DEVICE_CAN1);
+		raiser_disable(&engg);
   }
 	else if (glb_sys_cfg == UPPER_APP) {
 		rc_device_register(&rc_dev, "can_rc", 0);
@@ -103,6 +108,9 @@ osThreadId grab_task_t;
 osThreadId locomotion_task_t;
 osThreadId upper_task_t;
 osThreadId subengineer_task_t;
+osThreadId raiser_task_t;
+
+osThreadId flipper_task_t;
 
 void task_init(void)
 {
@@ -132,8 +140,8 @@ void task_init(void)
 		osThreadDef(LOCOMOTION_TASK, locomotion_task, osPriorityNormal, 0, 512);
 		locomotion_task_t = osThreadCreate(osThread(LOCOMOTION_TASK), NULL);
 		
-		osThreadDef(GRAB_TASK, grab_task, osPriorityNormal, 0, 512);
-		grab_task_t = osThreadCreate(osThread(GRAB_TASK), NULL);
+		osThreadDef(RAISER_TASK, raiser_task, osPriorityNormal, 0, 512);
+		raiser_task_t = osThreadCreate(osThread(RAISER_TASK), NULL);
   }
 	else if (app == UPPER_APP)
 	{
@@ -145,5 +153,11 @@ void task_init(void)
 		
 		osThreadDef(SUBENGINEER_TASK, sub_engineer_task, osPriorityNormal, 0, 512);
 		subengineer_task_t = osThreadCreate(osThread(SUBENGINEER_TASK), NULL);
+		
+		osThreadDef(GRAB_TASK, grab_task, osPriorityNormal, 0, 512);
+		grab_task_t = osThreadCreate(osThread(GRAB_TASK), NULL);
+		
+		osThreadDef(FLIPPER_TASK, flipper_task, osPriorityNormal, 0, 512);
+		flipper_task_t = osThreadCreate(osThread(FLIPPER_TASK), NULL);
 	}
 }

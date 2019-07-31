@@ -1304,16 +1304,6 @@
           </GroupOption>
           <Files>
             <File>
-              <FileName>dualmotor.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\engineer\Tasks\dualmotor.c</FilePath>
-            </File>
-            <File>
-              <FileName>dualmotor.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\engineer\Tasks\dualmotor.h</FilePath>
-            </File>
-            <File>
               <FileName>engineer.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\engineer\Tasks\engineer.c</FilePath>
@@ -1344,16 +1334,6 @@
               <FilePath>..\engineer\Tasks\moonrover.h</FilePath>
             </File>
             <File>
-              <FileName>grab.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\engineer\Tasks\grab.c</FilePath>
-            </File>
-            <File>
-              <FileName>grab.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\engineer\Tasks\grab.h</FilePath>
-            </File>
-            <File>
               <FileName>locomotion.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\engineer\Tasks\locomotion.c</FilePath>
@@ -1362,6 +1342,16 @@
               <FileName>locomotion.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\engineer\Tasks\locomotion.h</FilePath>
+            </File>
+            <File>
+              <FileName>raiser.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\engineer\Tasks\raiser.c</FilePath>
+            </File>
+            <File>
+              <FileName>raiser.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\engineer\Tasks\raiser.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -1456,6 +1446,66 @@
               <FileName>sub_engineer.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\engineer\Upper\sub_engineer.h</FilePath>
+            </File>
+            <File>
+              <FileName>dualmotor.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\engineer\Upper\dualmotor.c</FilePath>
+            </File>
+            <File>
+              <FileName>dualmotor.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\engineer\Upper\dualmotor.h</FilePath>
+            </File>
+            <File>
+              <FileName>flipper.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\engineer\Upper\flipper.c</FilePath>
+            </File>
+            <File>
+              <FileName>flipper.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\engineer\Upper\flipper.h</FilePath>
+            </File>
+            <File>
+              <FileName>extender.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\engineer\Upper\extender.c</FilePath>
+            </File>
+            <File>
+              <FileName>extender.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\engineer\Upper\extender.h</FilePath>
+            </File>
+            <File>
+              <FileName>slider.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\engineer\Upper\slider.c</FilePath>
+            </File>
+            <File>
+              <FileName>slider.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\engineer\Upper\slider.h</FilePath>
+            </File>
+            <File>
+              <FileName>seizer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\engineer\Upper\seizer.c</FilePath>
+            </File>
+            <File>
+              <FileName>seizer.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\engineer\Upper\seizer.h</FilePath>
+            </File>
+            <File>
+              <FileName>grab.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\engineer\Upper\grab.c</FilePath>
+            </File>
+            <File>
+              <FileName>grab.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\engineer\Upper\grab.h</FilePath>
             </File>
           </Files>
         </Group>

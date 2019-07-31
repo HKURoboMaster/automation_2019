@@ -25,6 +25,29 @@ void PCA9685_transmit(uint8_t no, uint16_t on, uint16_t off) {
 	uint8_t msg[5] = {0x06 + 4*no, on, (on >> 8), off, (off >> 8)};
 	HAL_I2C_Master_Transmit(&hi2c2, SLAVE, msg, 5, 1);
 }
+
+int SERVO_raiseTo(Servo* servo, int to) {
+	if (servo->current_index < to) {
+		PCA9685_transmit(servo->servoNo, 0, servo->step_size * servo->current_index);
+		servo->current_index += 1;
+		return SERVO_NOTDONE;
+	}
+	else {
+		return SERVO_DONE;
+	}
+}
+
+int SERVO_fallTo(Servo* servo, int to) {
+	if (servo->current_index < to) {
+		PCA9685_transmit(servo->servoNo, 0, servo->maxPulse - servo->step_size * servo->current_index);
+		servo->current_index += 1;
+		return SERVO_NOTDONE;
+	}
+	else {
+		return SERVO_DONE;
+	}
+}
+
 void SERVO_pwm(Servo* servo, int startAngle, int endAngle) {
 	/*
 		startAngle -> current servo angle. Note that this is relative, as it is the DELAY till servo rotates by (end_angle - current_angle)

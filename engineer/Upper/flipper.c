@@ -10,8 +10,8 @@ extern upper_ctrl upper_controller;
 /* END of VARIABLES: FLIPPER - related */
 
 /* FUNCTIONS: FLIPPER - related */
-void flipper_flip();
-void flipper_rest();
+void flipper_flip(void);
+void flipper_rest(void);
 
 int32_t flipper_execute(struct upper_info* upperinf, upper_ctrl* upperctrl) {
 	if (upperinf == NULL || upperctrl == NULL)
@@ -25,7 +25,7 @@ int32_t flipper_execute(struct upper_info* upperinf, upper_ctrl* upperctrl) {
 	return RM_OK;
 }
 
-void flipper_flip() {
+void flipper_flip(void) {
 	if (flipper.state != FLIPPER_FLIPPED) {
 		pneum_1head_HIGH(&(flipper.cylinderX2));
 		osDelay(FLIPPER_FLIPPED_MS);
@@ -33,7 +33,7 @@ void flipper_flip() {
 	}
 }
 
-void flipper_rest() {
+void flipper_rest(void) {
 	if (flipper.state != FLIPPER_RESTED) {
 		pneum_1head_LOW(&(flipper.cylinderX2));
 		osDelay(FLIPPER_RESTED_MS);

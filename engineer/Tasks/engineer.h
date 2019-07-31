@@ -3,23 +3,24 @@
 
 #include "motor.h"
 #include "pid_controller.h"
-#include "dualmotor.h"
+#include "raiser.h"
 #include "mecanum.h"
 #include "locomotion.h"
-#include "grab.h"
-
-/* VARIABLES: DUALMOTOR - related */
-#define LEFT_DUALMOTOR_INDEX 0
-#define RIGHT_DUALMOTOR_INDEX 1
-#define DUALMOTOR_OFFSET 0
-#define REST_ANGLE 0
-#define RISE_ANGLE 120
-/* END of VARIABLES: DUALMOTOR - related */
 
 /* VARIABLES: MOONROVER - related */
-#define MOONROVER_OFFSET 2 + DUALMOTOR_OFFSET
-#define ROTATION_SPEED 5
+#define MOONROVER_OFFSET 0
+#define LEFT_MOONROVER_INDEX 0
+#define RIGHT_MOONROVER_INDEX 1
+#define ROTATION_SPEED 	1000
 /* END of VARIABLES: MOONROVER - related */
+
+/* VARIABLES: RAISER - related */
+#define FRONT_RAISER_INDEX 0
+#define REAR_RAISER_INDEX 1
+#define RAISER_OFFSET 2
+#define LOWER 0
+#define RAISE 1
+/* END of VARIABLES: RAISER - related */
 
 /* VARIABLES: CLIMBING - related */
 #define PITCH_2_ASSIST 1
@@ -65,18 +66,19 @@ typedef struct Engineer {
 	
 	int ENGINEER_BIG_STATE;
 	int ENGINEER_SMALL_STATE;
-	
 	int HALT_CHASSIS;
-	struct motor_device motor[2];
 	
+	struct motor_device motor[2];
 	struct pid motor_pid[2];
 	struct pid_feedback motor_feedback[2];
-	struct mecanum mecanum;
+	struct controller ctrl[2];
 	
-	struct Grabber grabber;
-		
-  struct controller ctrl[2];
+	struct motor_device raiser_motor[2];
+  struct cascade raiser_cascade[2];
+  struct cascade_feedback raiser_cascade_fdb[2];
+  struct controller raiser_ctrl[2];
 	
+	struct raiser raiser;
 	int reloader;
 } Engineer;
 

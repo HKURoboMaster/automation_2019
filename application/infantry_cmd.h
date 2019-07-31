@@ -50,8 +50,7 @@
 #define CMD_GET_CHASSIS_PARAM               (0x0204u)
 #define CMD_SET_CHASSIS_SPD_ACC             (0x0205u)
 
-#define CMD_PUSH_UPPER_CTRL									(0x0206u)
-#define CMD_GET_UPPER_CTRL									(0x0207u)
+#define CMD_UPPER_CTRL											(0x0206u)
 
 #define CMD_RC_DATA_FORWORD                 (0x0401u)
 #define CMD_PUSH_UWB_INFO                   (0x0402u)
@@ -111,8 +110,12 @@ struct cmd_chassis_spd_acc
 struct manifold_cmd
 {
   struct cmd_chassis_speed chassis_speed;
-	struct cmd_upper_info upper_info;
   struct cmd_chassis_spd_acc chassis_spd_acc;
+};
+
+struct upper_cmd
+{
+	struct cmd_upper_info upper_info;
 };
 
 int32_t rc_data_forword_by_can(uint8_t *buff, uint16_t len);

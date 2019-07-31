@@ -25,7 +25,7 @@ enum object_info_type
   Object_Info_Contoller = 2,
   Object_Info_Chassis = 3,
   Object_Info_DualMotor = 4,
-  Object_Info_Shoot = 5,
+  Object_Info_Raiser = 5,
   Object_Info_Unknown, /**< The object is unknown. */
 };
 
@@ -46,7 +46,7 @@ static struct object_information object_container[Object_Info_Unknown] =
         /* initialize object container - Controller */
         {Object_Class_DualMotor, _OBJ_CONTAINER_LIST_INIT(Object_Info_DualMotor)},
         /* initialize object container - Controller */
-        {Object_Class_Shoot, _OBJ_CONTAINER_LIST_INIT(Object_Info_Shoot)},
+        {Object_Class_Raiser, _OBJ_CONTAINER_LIST_INIT(Object_Info_Raiser)},
 };
 
 struct object_information *

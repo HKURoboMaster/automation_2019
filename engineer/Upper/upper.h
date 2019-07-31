@@ -4,6 +4,25 @@
 #include "dualmotor.h"
 #include "motor.h"
 #include "pid_controller.h"
+#include "slider.h"
+
+/* VARIABLES: DUALMOTOR - related */
+#define LEFT_DUALMOTOR_INDEX 0
+#define RIGHT_DUALMOTOR_INDEX 1
+#define DUALMOTOR_OFFSET 0
+#define REST_ANGLE 0
+#define RISE_ANGLE 120
+/* END of VARIABLES: DUALMOTOR - related */
+
+/* VARIABLES: UPPER - related */
+#define NO_GRAB 0
+#define START_GRAB 1
+/* END of VARIABLES: UPPER - related */
+
+/* VARIABLES: REQUEST (except for slider) - related */
+#define NULL_REQ 0
+#define PNEU_REQ 1
+/* END of VARIABLES: REQUEST (except for slider) - related */
 
 struct upper_info
 {
@@ -18,6 +37,8 @@ typedef struct upper_ctrl
 	struct dualMotor dualMotor;
   struct cascade_feedback cascade_fdb[2];
   struct controller ctrl[2];
+		
+  int START_GRABBING;
 	
 } upper_ctrl;
 

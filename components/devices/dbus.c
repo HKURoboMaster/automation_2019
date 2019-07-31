@@ -154,6 +154,16 @@ static void get_dr16_data(rc_device_t rc_dev, uint8_t *buff)
 
   rc->kb.key_code = buff[14] | buff[15] << 8; // key borad code
   rc->wheel = (buff[16] | buff[17] << 8) - 1024;
+	
+	 if ((abs(rc->ch1) > 660) || \
+      (abs(rc->ch2) > 660) || \
+      (abs(rc->ch3) > 660) || \
+      (abs(rc->ch4) > 660) || \
+      (abs(rc->wheel) > 660))
+  {
+    memset(rc, 0, sizeof(struct rc_info));
+    return ;
+  }
 }
 
 static void get_dr16_state(rc_device_t rc_dev)
@@ -227,5 +237,22 @@ static void get_dr16_state(rc_device_t rc_dev)
     {
       rc_dev->state |= RC_S2_MID2DOWN;
     }
+  }
+	
+	/*------ For the RC wheel ------*/
+  if(rc_dev->rc_info.wheel>300)
+  {
+    rc_dev->state |= RC_WHEEL_UP;
+    rc_dev->state &= ~RC_WHEEL_DOWN;
+  }
+  else if(rc_dev->rc_info.wheel<-300)
+  {
+    rc_dev->state |= RC_WHEEL_DOWN;
+    rc_dev->state &= ~RC_WHEEL_UP;
+  }
+  else
+  {
+    rc_dev->state &= ~RC_WHEEL_DOWN;
+    rc_dev->state &= ~RC_WHEEL_UP;
   }
 }

@@ -3,32 +3,38 @@
 #include "dbus.h"
 #include "servos.h"
 #include "engg_gpio.h"
+#include "upper.h"
 
 /* VARIABLES: LOCOMOTION - related */
 extern Engineer engg;
+extern struct upper_info upper;
+extern int camservo_state;
 Servo reload_0 = {
-	0, 0, 180, 0, 4096
+	0, 0, 270, 0, 4096, 0, 180, 16
 };
 	
 Servo reload_1 = {
-	1, 0, 180, 0, 4096
+	1, 0, 270, 0, 4096, 0, 180, 16
 };
+
+extern Servo RMcam;
 /* END of VARIABLES: LOCOMOTION - related */
 
 /* FUNCTIONS: LOCOMOTION - related */
-int32_t locomotion_execute(Engineer* engineer, rc_device_t prc_dev, rc_info_t prc_info) {
+int unlock_ammobox();
+int lock_ammobox();
+int ungate_ammobox();
+int gate_ammobox();
+int permlock_ammobox(Ammobox* ammobox);
+int permunlock_ammobox(Ammobox* ammobox);
+
+int32_t locomotion_execute(Engineer* engineer, Ammobox* ammobox, rc_device_t prc_dev, rc_info_t prc_info) {
 	if (engineer == NULL)
 		return -RM_INVAL;
 	
 	if (engineer->ENGINEER_BIG_STATE != LOWERPART) {
 		// look forward and close servos
-		use_front_cam();
-		if (engineer->reloader == OPEN) {
-			SERVO_pwm(&reload_0, 180, 0);
-			SERVO_pwm(&reload_1, 180, 0);
-			engineer->reloader = CLOSE;
-		}
-		return RM_OK;
+		permlock_ammobox(ammobox);
 	}
 	else {
 		if (engineer->HALT_CHASSIS != 0)
@@ -36,28 +42,95 @@ int32_t locomotion_execute(Engineer* engineer, rc_device_t prc_dev, rc_info_t pr
 	}
 	
 	if (engineer->ENGINEER_SMALL_STATE != UNLOAD) {
-		if (engineer->reloader == OPEN) {
-			SERVO_pwm(&reload_0, 180, 0);
-			SERVO_pwm(&reload_1, 180, 0);
-			engineer->reloader = CLOSE;
-		}
+		permlock_ammobox(ammobox);
 	}
 	
 	if (engineer->ENGINEER_SMALL_STATE == CHASSIS) {
-		use_front_cam();
+		camservo_state = use_RMcam();
 	}
 	else if (engineer->ENGINEER_SMALL_STATE == REVERSE_CHASSIS) {
 		use_rear_cam();
 	}
 	else if (engineer->ENGINEER_SMALL_STATE == UNLOAD) {
-		if (engineer->reloader == CLOSE) {
-			SERVO_pwm(&reload_0, 0, 180);
-			SERVO_pwm(&reload_1, 0, 180);
-			engineer->reloader = OPEN;
+		permunlock_ammobox(ammobox);
+	}
+	
+	if (engineer->ENGINEER_BIG_STATE == UPPERPART) {
+		use_front_cam();
+		if (upper.mode == LOCATED) {
+			engineer->HALT_CHASSIS = 1;
 		}
+		else {
+			engineer->HALT_CHASSIS = 0;
+		}
+	}
+	
+	if (engineer->ENGINEER_BIG_STATE == MANAGE) {
+		camservo_state = use_RMcam();
 	}
 
 	return RM_OK;
+}
+
+int unlock_ammobox() {
+	if (SERVO_fallTo(&reload_1, 160) == SERVO_DONE) {
+		reload_1.current_index = 0;
+		return UNLOCKED;
+	}
+	return LOCKED;
+}
+
+int lock_ammobox() {
+	if (SERVO_raiseTo(&reload_1, 16) == SERVO_DONE) {
+		reload_1.current_index = 0;
+		return LOCKED;
+	}
+	return UNLOCKED;
+	
+}
+
+int ungate_ammobox() {
+	if (SERVO_fallTo(&reload_0, 190) == SERVO_DONE) {
+		reload_0.current_index = 0;
+		return UNGATED;
+	}
+	return GATED;
+}
+
+int gate_ammobox() {
+	if (SERVO_raiseTo(&reload_0, 190) == SERVO_DONE) {
+		reload_0.current_index = 0;
+		return GATED;
+	}
+	return UNGATED;
+}
+
+int permlock_ammobox(Ammobox* ammobox) {
+	if (ammobox->boxgate_state == UNGATED) {
+		ammobox->boxgate_state = gate_ammobox();
+		osDelay(5);
+		return PERM_UNLOCKED;
+	}
+	if (ammobox->boxlock_state == UNLOCKED) {
+		ammobox->boxlock_state = lock_ammobox();
+		osDelay(5);
+		return PERM_UNLOCKED;
+	}
+	return PERM_LOCKED;
+}
+
+int permunlock_ammobox(Ammobox* ammobox) {
+	if (ammobox->boxlock_state == LOCKED) {
+		ammobox->boxlock_state = unlock_ammobox();
+		osDelay(5);
+		return PERM_LOCKED;
+	}
+	if (ammobox->boxgate_state == GATED) {
+		ammobox->boxgate_state = ungate_ammobox();
+		osDelay(5);
+		return PERM_LOCKED;
+	}
+	return PERM_UNLOCKED;
 }
 /* END of FUNCTIONS: LOCOMOTION - related */
 
@@ -75,8 +148,27 @@ void locomotion_task(void const *argument)
     prc_info = rc_device_get_info(prc_dev);
   }
 	
+	Ammobox ammobox;
+	
+	for (int i = 0; i < 255; ++i) {
+		PCA9685_transmit(reload_0.servoNo, 0, reload_0.maxPulse - reload_0.step_size * i);
+		PCA9685_transmit(reload_1.servoNo, 0, reload_1.step_size * i);
+	}
+	osDelay(100);
+	for (int i = 0; i < 255; ++i) {
+		PCA9685_transmit(reload_0.servoNo, 0, reload_0.step_size * i);
+	}
+	
+	for (int i = 0; i < 51; ++i) {
+		PCA9685_transmit(RMcam.servoNo, 0, RMcam.step_size * i);
+	}
+	
+	ammobox.boxlock_state = UNLOCKED;
+	ammobox.boxgate_state = GATED;
+	camservo_state = FRONT;	
+	
 	for(;;) {
-		locomotion_execute(&engg, prc_dev, prc_info);
+		locomotion_execute(&engg, &ammobox, prc_dev, prc_info);
     osDelayUntil(&period, 2);
 	}
 }

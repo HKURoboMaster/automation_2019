@@ -77,7 +77,7 @@ void communicate_task(void const *argument)
   if (app == CHASSIS_APP)
   {
     protocol_local_init(CHASSIS_ADDRESS);
-    protocol_can_interface_register("upperp_can2", 4096, 1, PROTOCOL_CAN_PORT2, UPPER_CAN_ID, CHASSIS_CAN_ID, can2_send_data);
+    protocol_can_interface_register("upper_can2", 4096, 1, PROTOCOL_CAN_PORT2, UPPER_CAN_ID, CHASSIS_CAN_ID, can2_send_data);
     protocol_set_route(UPPER_ADDRESS, "upper_can2");
 		protocol_set_route(MANIFOLD2_ADDRESS, "upper_can2");
   }

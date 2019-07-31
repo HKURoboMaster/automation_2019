@@ -11,11 +11,11 @@ extern upper_ctrl upper_controller;
 /* END of VARIABLES: SLIDER - related */
 
 /* FUNCTIONS: SLIDER - related */
-void slider_toLeft();
-void slider_toCenterLeft();
-void slider_toCenter();
-void slider_toCenterRight();
-void slider_toRight();
+void slider_toLeft(void);
+void slider_toCenterLeft(void);
+void slider_toCenter(void);
+void slider_toCenterRight(void);
+void slider_toRight(void);
 
 int32_t slider_execute(struct upper_info* upperinf, upper_ctrl* upperctrl) {
 	if (upperinf == NULL || upperctrl == NULL)

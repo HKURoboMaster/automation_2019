@@ -11,7 +11,7 @@ Sub_Engineer sub_engg;
 
 /* FUNCTIONS: SUB_ENGINEER - related */
 static void sub_engineer_state_handler(rc_device_t prc_dev, rc_info_t prc_info) {
-	if (rc_device_get_state(prc_dev, RC_S1_UP)) {
+	if (rc_device_get_state(prc_dev, RC_S1_UP) == RM_OK) {
 		sub_engg.ENGINEER_BIG_STATE = UPPERPART;
 		if (rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK)
 			sub_engg.ENGINEER_SMALL_STATE = SINGLE_LOCATE;
@@ -29,7 +29,7 @@ static void sub_engineer_state_handler(rc_device_t prc_dev, rc_info_t prc_info) 
 		if (rc_device_get_state(prc_dev, RC_S2_DOWN) == RM_OK)
 			sub_engg.ENGINEER_SMALL_STATE = UNLOAD;
 	}
-	if (rc_device_get_state(prc_dev, RC_S1_DOWN)) {
+	if (rc_device_get_state(prc_dev, RC_S1_DOWN) == RM_OK) {
 		sub_engg.ENGINEER_BIG_STATE = MANAGE;
 		if (rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK)
 			sub_engg.ENGINEER_SMALL_STATE = RESET;
