@@ -31,6 +31,7 @@ int32_t shoot_lid_toggle(shoot_t pshoot, uint8_t toggled);
  * @Jun 20, 2019: adaption for hero
  * @Jul 3, 2019: retrieve the heat data from refree system
  * @Jul 7, 2019: modify the adaption for hero
+ * @Jul 31, 2019: narrow the shooter heat limitation
  * 
  * Implement the control logic described in Control.md
  */
@@ -70,6 +71,10 @@ void shoot_task(void const *argument)
       shoot_firction_toggle(pshoot,1); //assume that currently the fric is on
       shoot_firction_toggle(pshoot2,1); //Leo assume that currently the fric is on
       fric_on &= ~fric_on;
+      shoot_execute(pshoot);
+      #ifdef HERO_ROBOT
+		  shoot_execute(pshoot2);//Leo
+      #endif
       continue;
     }
     shoot_enable(pshoot);
@@ -127,7 +132,7 @@ void shoot_task(void const *argument)
     uint16_t heatLimit = get_heat_limit();
 
     #ifndef HERO_ROBOT
-    if (shooter_heat_ptr[0]< heatLimit && rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK && fric_on) //not in disabled mode
+    if (shooter_heat_ptr[0]< heatLimit-40 && rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK && fric_on) //not in disabled mode
     {
       if (rc_device_get_state(prc_dev, RC_WHEEL_UP) == RM_OK
         || mouse_shoot_control(prc_dev)==press)
@@ -148,7 +153,7 @@ void shoot_task(void const *argument)
       }
     }
     #else
-    if (shooter_heat_ptr[1] < heatLimit && rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK && fric_on) //not in disabled mode
+    if (shooter_heat_ptr[1] < heatLimit-40 && rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK && fric_on) //not in disabled mode
     {
       if (rc_device_get_state(prc_dev, RC_WHEEL_UP) == RM_OK && prc_dev->last_rc_info.wheel < 300)
       {

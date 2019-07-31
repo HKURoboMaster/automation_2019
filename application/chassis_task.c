@@ -54,6 +54,7 @@ uint8_t sensor_offline = 0;
   * @Jun 20, 2019: adaption for hero
   * @Jul 27, 2019: confirm the control signals for supercapacitor
   * @Jul 27, 2019: add the logic to handle the sensor offline
+  * @Jul 31, 2019: change the dodging logic for Hero
   *
   * Implement the customized control logic and FSM, details in Control.md
 */
@@ -88,8 +89,10 @@ void chassis_task(void const *argument)
 
   chassis_disable(pchassis);
 
+  chassis_set_offset(pchassis, ROTATE_X_OFFSET, ROTATE_Y_OFFSET);
   #ifdef HERO_ROBOT
-  static int8_t   twist_sign = 1;
+  static int8_t   twist_cnt = 1;
+  static float    last_relative_angle;
   #endif
   while (1)
   {
@@ -125,35 +128,37 @@ void chassis_task(void const *argument)
         #ifndef HERO_ROBOT
         wz = MAX_CHASSIS_VW_SPEED;
         #else
-          if(fabsf(follow_relative_angle) >= DODGING_TH)
-            twist_sign *= -1;
-          if(!dodging) //first in dodging
-            wz = twist_sign * MAX_CHASSIS_VW_SPEED / 15;
-          else
-            wz = twist_sign * sin(PI * fabs(follow_relative_angle) / DODGING_TH);
+        if(!dodging)
+        {
+          twist_cnt = 1;
+        }
+        else if(last_relative_angle * follow_relative_angle <= 0 || 
+                (follow_relative_angle>=DODGING_TH-2.5f && last_relative_angle<=DODGING_TH-2.5f)|| 
+                (follow_relative_angle<=-DODGING_TH+2.5f && last_relative_angle>=-DODGING_TH+2.5f))
+        {
+          twist_cnt += 1;
+        }
+        last_relative_angle = follow_relative_angle;
+        int8_t delta_wz = (twist_cnt/2)%2 ? DODGING_TH : -DODGING_TH;
+        wz  = pid_calculate(&pid_follow, follow_relative_angle, delta_wz);
         #endif
         dodging |= 1;
-        if(vx!=0 || vy!=0)
-        {
-          vx*=0.6f;
-          vy*=0.6f;
-          wz*=0.8f;
-        }
       }
       else
       {
         wz  = pid_calculate(&pid_follow, follow_relative_angle, 0);
         dodging &= 0;
-        #ifdef HERO_ROBOT
-        twist_sign = 1;
-        #endif
       }
-
-      chassis_set_offset(pchassis, ROTATE_X_OFFSET, ROTATE_Y_OFFSET);
       if(abs(vx)>2*MAX_CHASSIS_VX_SPEED/3 || abs(vy)>=2*MAX_CHASSIS_VY_SPEED/3 || abs(wz)>=2*MAX_CHASSIS_VW_SPEED/3)
         extra_current = 1;
       else
         extra_current = 0;
+      if(dodging&&(vx!=0 || vy!=0))
+      {
+        vx*=0.6f;
+        vy*=0.6f;
+        wz*=0.8f;
+      }
       chassis_set_speed(pchassis, vx, vy, wz);
     }
     else
@@ -203,7 +208,7 @@ void chassis_task(void const *argument)
         else
           low_volatge_flag = 0;
       //control the supercap
-        sw = superCapacitor_Ctrl(pchassis,low_volatge_flag, extra_current, sw);
+        sw = superCapacitor_Ctrl(pchassis,low_volatge_flag, extra_current | current_excess_flag, sw);
         if(sw) //either offline or must use the super cap
           WRITE_HIGH_CAPACITOR();
         else

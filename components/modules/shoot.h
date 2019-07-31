@@ -32,7 +32,7 @@
 #define SHOOT_CONTINUOUS_CMD (2u)
 
 #define FRIC_STOP_SPEED 100u
-#define FRIC_MAX_SPEED 145u //MAX=200u, for safety set it to be 160 //160 results in overheater
+#define FRIC_MAX_SPEED 149u //MAX=200u, for safety set it to be 160 //160 results in overheater
 #define FRIC_CON_SPEED 140u
 #define FRIC_MIN_SPEED 99u
 
@@ -40,7 +40,7 @@
 #define BLOCK_SPEED_DEFAULT -1650
 #define BLOCK_TIMEOUT_DEFAULT 200
 #define BLOCK_CHECK_TIMEOUT_DEFAULT 80
-#define TURN_SPEED_DEFAULT 2000
+#define TURN_SPEED_DEFAULT 2700
 
 
 enum trigger_state
