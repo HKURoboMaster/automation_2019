@@ -398,9 +398,9 @@ void gimbal_task(void const *argument)
 					
 					// Equavalent to P only control. Need a I term.
 					// Set angle speed is no matter what set the difference of angle
-					gimbal_set_yaw_speed(pgimbal,0.1*(yaw_kf_data[0] + yaw_kf_data[1]*0.1)+yaw_autoaim_offset);
+					gimbal_set_yaw_speed(pgimbal,0.12*(yaw_kf_data[0] + yaw_kf_data[1]*0.15));
 				  //gimbal_set_yaw_speed(pgimbal,0.1*yaw_kf_data[0]);
-					gimbal_set_pitch_speed(pgimbal,0.1*(pit_kf_data[0] + pit_kf_data[1]*0.1));
+					gimbal_set_pitch_speed(pgimbal,0.12*(pit_kf_data[0] + pit_kf_data[1]*0.15));
 					}
 					else
 						pc_counter++;
