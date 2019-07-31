@@ -42,6 +42,6 @@ int32_t get_offline_state(void);
 int32_t can1_detect_update(CAN_RxHeaderTypeDef *header, uint8_t *rx_data);
 int32_t can2_detect_update(CAN_RxHeaderTypeDef *header, uint8_t *rx_data);
 
-//#define HERO_ROBOT
+#define HERO_ROBOT
 
 #endif // __OFFLINE_CHECK_H__

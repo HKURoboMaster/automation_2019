@@ -25,7 +25,6 @@
 #include "offline_check.h"
 #include "param.h"
 #include "ramp.h"
-#include "angle_queue.h"
 
 #define DEFAULT_IMU_TEMP 50
 
@@ -233,19 +232,13 @@ void gimbal_task(void const *argument)
   float pitch_autoaim_offset = 0.0f;
   float pit_delta, yaw_delta;
   // Added By Eric Chen : Init Kalman filter params
-  //#ifdef KALMAN
 	yaw_kalman_filter_para.xhat_data[0] = 0;
 	yaw_kalman_filter_para.xhat_data[1] = 0;
 	pit_kalman_filter_para.xhat_data[0] = 0;
 	pit_kalman_filter_para.xhat_data[1] = 0;
   kalman_filter_init(&yaw_kalman_filter,&yaw_kalman_filter_para);
   kalman_filter_init(&pit_kalman_filter,&pit_kalman_filter_para);
-  //#else
-  struct angle_queue yawQ;
-  struct angle_queue pitQ; 
-  queue_init(&yawQ);
-  queue_init(&pitQ);
-	//#endif
+
   if (pparam->gim_cali_data.calied_done == CALIED_FLAG)
   {
     gimbal_set_offset(pgimbal, pparam->gim_cali_data.yaw_offset, pparam->gim_cali_data.pitch_offset, pparam->gim_cali_data.pit2_offset); 
@@ -287,25 +280,7 @@ void gimbal_task(void const *argument)
 		#endif
 		//Each time update
     #endif
-		// The reason using a queue is : Make a 10 ms delay when receive the data;
-		// Since each 10 ms the data will be updated from PC
-		// Encoder angle will be enqueue.each time and the encoder
-		//#ifndef KALMAN
-    if(yawQ.len>=DELAY)
-    {
-      do
-      {
-        yaw_autoaim_offset = pgimbal->ecd_angle.yaw - deQueue(&yawQ);
-      }while(yawQ.len>=DELAY);
-    }
-    if(pitQ.len>=DELAY)
-    {
-      do
-      {
-        pitch_autoaim_offset = pgimbal->ecd_angle.pitch - deQueue(&pitQ);
-      }while(pitQ.len>=DELAY);
-    }
-		//#endif
+
     if(rc_device_get_state(prc_dev, RC_S2_DOWN2MID) == RM_OK)
     {
       //switched out disabled mode
@@ -452,6 +427,7 @@ void gimbal_task(void const *argument)
           if(!prc_info->kb.bit.CTRL)
           {
             pgimbal->param.yaw_ecd_center += ((float)prc_info->wheel/RC_CH_SCALE);
+            pgimbal->param.pit2_ecd_center += ((float)prc_info->wheel/RC_CH_SCALE);
             gimbal_set_offset(pgimbal, pgimbal->param.yaw_ecd_center, pgimbal->param.pitch_ecd_center, pgimbal->param.pit2_ecd_center);
           }
           else
@@ -489,10 +465,7 @@ void gimbal_task(void const *argument)
 		yaw_ecd_angle_js = pgimbal->ecd_angle.yaw;
 		pit_ecd_angle_js = pgimbal->ecd_angle.pitch;
 		
-		
-		
-    enQueue(&yawQ, pgimbal->ecd_angle.yaw);
-    enQueue(&pitQ, pgimbal->ecd_angle.pitch);
+
     gimbal_imu_update(pgimbal);
     gimbal_execute(pgimbal);
     // The period is calculated from very beginning.
@@ -509,9 +482,9 @@ static int32_t gimbal_imu_update(void *argc)
   mpu_get_data(&mpu_sensor);
   mahony_ahrs_updateIMU(&mpu_sensor, &mahony_atti);
 
-  gimbal_pitch_gyro_update(pgimbal, -mahony_atti.roll);
+  gimbal_pitch_gyro_update(pgimbal, mahony_atti.roll);
   gimbal_yaw_gyro_update(pgimbal, -mahony_atti.yaw);
-  gimbal_rate_update(pgimbal, mpu_sensor.wy * RAD_TO_DEG, -mpu_sensor.wx * RAD_TO_DEG);
+  gimbal_rate_update(pgimbal, mpu_sensor.wy * RAD_TO_DEG, mpu_sensor.wx * RAD_TO_DEG);
   
   mpu_pit = mahony_atti.pitch * 1000;
   mpu_yaw = mahony_atti.yaw   * 1000;
@@ -540,33 +513,14 @@ static int32_t imu_temp_keep(void *argc)
 }
 
 uint8_t auto_adjust_f;
-volatile uint32_t pit_time, yaw_time;
-uint32_t pit_cnt;
-uint32_t pit_timeout_cnt=0;
-volatile uint16_t yaw_ecd_r, yaw_ecd_l;
 volatile uint16_t pit_ecd_c, yaw_ecd_c, pit2_ecd_c;
 
-void send_gimbal_current(int16_t iq1, int16_t iq2, int16_t iq3)
-{
-  static uint8_t tx_data[8];
 
-  tx_data[0] = iq1 >> 8;
-  tx_data[1] = iq1;
-  tx_data[2] = iq2 >> 8;
-  tx_data[3] = iq2;
-  tx_data[4] = iq3 >> 8;
-  tx_data[5] = iq3;
-
-  can_msg_bytes_send(&hcan1, tx_data, 6, 0x1FF);
-}
-
-struct pid pid_pit = {0};
-struct pid pid_pit_spd = {0};
-
-/**Modified by Y.H. Liu
+/**Modified by Y.H. Liu & Eric Chen
  * @Jun 20, 2019: adaption for hero
  * @Jul 8, 2019: use the original methods to calculate the pitch centre
  * @Jul 17, 2019: use a queue for auto-aiming adaption
+ * @Jul 31, 2019: delete the queue, instead, a Kalman filter is used
  * 
  * Automatically adjust the netural position for gimbal
  */
@@ -612,19 +566,15 @@ static void gimbal_state_init(gimbal_t pgimbal)
     gimbal_set_pitch_mode(pgimbal, ENCODER_MODE);
     gimbal_set_yaw_mode(pgimbal, ENCODER_MODE);
     gimbal_yaw_disable(pgimbal);
-    gimbal_set_pitch_angle(pgimbal, pgimbal->ecd_angle.pitch * (1 - ramp_calculate(&pitch_ramp)));
-
+    gimbal_set_pitch_angle(pgimbal, 0);
     if ((pgimbal->ecd_angle.pitch != 0) && (pgimbal->ecd_angle.yaw != 0))
     {
-      if (fabs(pgimbal->ecd_angle.pitch) < 1.5f)
+      gimbal_yaw_enable(pgimbal);
+			// Rotate from current angle to 0 read from ecd
+      gimbal_set_yaw_angle(pgimbal, pgimbal->ecd_angle.yaw * (1 - ramp_calculate(&yaw_ramp)), 0);
+      if (fabs(pgimbal->ecd_angle.yaw) < 1.5f)
       {
-        gimbal_yaw_enable(pgimbal);
-				// Rotate from current angle to 0 read from ecd
-        gimbal_set_yaw_angle(pgimbal, pgimbal->ecd_angle.yaw * (1 - ramp_calculate(&yaw_ramp)), 0);
-        if (fabs(pgimbal->ecd_angle.yaw) < 1.5f)
-        {
-          auto_init_f = 1;
-        }
+        auto_init_f = 1;
       }
     }
   }
@@ -657,12 +607,7 @@ float target_speed_calc(speed_calc_data_t *S, uint32_t time, float position)
   S->last_position = position;
   S->last_speed = S->speed;
   S->delay_cnt = 0;
-	// Since we have implemented lost connection checking, delay mechinism is improper.
-	
-  //if(S->delay_cnt > 200) // delay 200ms speed = 0
-  //{
-  //  S->processed_speed = 0;
-  //}
+
   return S->processed_speed;
 }
 

@@ -283,7 +283,7 @@ static uint16_t get_heat_limit(void)
     #ifndef HERO_ROBOT
     limit = robot_level * 120 + 120;
     #else
-    limit = robotLevel * 100 + 100;
+    limit = robot_level * 100 + 100;
     #endif
   }
   return limit; 
