@@ -233,14 +233,14 @@ void gimbal_task(void const *argument)
   float pitch_autoaim_offset = 0.0f;
   float pit_delta, yaw_delta;
   // Added By Eric Chen : Init Kalman filter params
-	//#ifdef KALMAN
+  //#ifdef KALMAN
 	yaw_kalman_filter_para.xhat_data[0] = 0;
 	yaw_kalman_filter_para.xhat_data[1] = 0;
 	pit_kalman_filter_para.xhat_data[0] = 0;
 	pit_kalman_filter_para.xhat_data[1] = 0;
   kalman_filter_init(&yaw_kalman_filter,&yaw_kalman_filter_para);
   kalman_filter_init(&pit_kalman_filter,&pit_kalman_filter_para);
-	//#else
+  //#else
   struct angle_queue yawQ;
   struct angle_queue pitQ; 
   queue_init(&yawQ);
@@ -434,8 +434,8 @@ void gimbal_task(void const *argument)
         
 
         gimbal_set_yaw_mode(pgimbal, GYRO_MODE);
-        pit_delta =  -1 * (float)prc_info->ch2 * GIMBAL_RC_PITCH + (float)pit_mouse * GIMBAL_MOUSE_PITCH;
-        yaw_delta =           square_ch1       * GIMBAL_RC_YAW   + (float)yaw_mouse * GIMBAL_MOUSE_YAW;
+        pit_delta = (float)prc_info->ch2 * GIMBAL_RC_PITCH + -1 *  (float)pit_mouse * GIMBAL_MOUSE_PITCH;
+        yaw_delta =     square_ch1       * GIMBAL_RC_YAW   +       (float)yaw_mouse * GIMBAL_MOUSE_YAW;
         yaw_delta += prc_info->kb.bit.E ? YAW_KB_SPEED : 0;
         yaw_delta -= prc_info->kb.bit.Q ? YAW_KB_SPEED : 0;
         gimbal_set_pitch_delta(pgimbal, pit_delta);
