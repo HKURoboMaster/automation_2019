@@ -42,6 +42,7 @@
 #include "upper.h"
 #include "sub_engineer.h"
 #include "raiser.h"
+#include "rescue.h"
 
 #include "flipper.h"
 
@@ -72,7 +73,7 @@ void hw_init(void)
   system_config();
   ulog_init();
   ulog_console_backend_init();
-  
+  gpio_init(); // For rescue task.
   referee_param_init();
   usart3_rx_callback_register(referee_uart_rx_data_handle);
   referee_send_data_register(usart3_transmit);
@@ -111,6 +112,7 @@ osThreadId subengineer_task_t;
 osThreadId raiser_task_t;
 
 osThreadId flipper_task_t;
+osThreadId rescue_task_t;
 
 void task_init(void)
 {
@@ -142,6 +144,9 @@ void task_init(void)
 		
 		osThreadDef(RAISER_TASK, raiser_task, osPriorityNormal, 0, 512);
 		raiser_task_t = osThreadCreate(osThread(RAISER_TASK), NULL);
+		
+		osThreadDef(RESCUE_TASK,rescue_task, osPriorityNormal , 0 , 512);
+		rescue_task_t = osThreadCreate(osThread(RESCUE_TASK),NULL);
   }
 	else if (app == UPPER_APP)
 	{

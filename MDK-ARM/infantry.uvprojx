@@ -1353,6 +1353,16 @@
               <FileType>5</FileType>
               <FilePath>..\engineer\Tasks\raiser.h</FilePath>
             </File>
+            <File>
+              <FileName>rescue.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\engineer\Tasks\rescue.c</FilePath>
+            </File>
+            <File>
+              <FileName>rescue.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\engineer\Tasks\rescue.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
