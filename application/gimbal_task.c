@@ -398,9 +398,9 @@ void gimbal_task(void const *argument)
 					
 					// Equavalent to P only control. Need a I term.
 					// Set angle speed is no matter what set the difference of angle
-					gimbal_set_yaw_speed(pgimbal,0.1f*(yaw_kf_data[0] + yaw_kf_data[1]*0.1f));
-				  //gimbal_set_yaw_speed(pgimbal,0.1f*yaw_kf_data[0]);
-					gimbal_set_pitch_speed(pgimbal,0.1f*(pit_kf_data[0] + pit_kf_data[1]*0.1f));
+					gimbal_set_yaw_speed(pgimbal,0.12f*(yaw_kf_data[0] + yaw_kf_data[1]*0.15f));
+				  //gimbal_set_yaw_speed(pgimbal,0.1*yaw_kf_data[0]);
+					gimbal_set_pitch_speed(pgimbal,0.12f*(pit_kf_data[0] + pit_kf_data[1]*0.15f));
 					}
 					else
 						pc_counter++;
@@ -434,8 +434,8 @@ void gimbal_task(void const *argument)
         
 
         gimbal_set_yaw_mode(pgimbal, GYRO_MODE);
-        pit_delta =  -1 * (float)prc_info->ch2 * GIMBAL_RC_PITCH + (float)pit_mouse * GIMBAL_MOUSE_PITCH;
-        yaw_delta =           square_ch1       * GIMBAL_RC_YAW   + (float)yaw_mouse * GIMBAL_MOUSE_YAW;
+        pit_delta =  -1 * (float)prc_info->ch2 * GIMBAL_RC_PITCH + (float)prc_info->mouse.y * GIMBAL_MOUSE_PITCH;
+        yaw_delta =           square_ch1       * GIMBAL_RC_YAW   + (float)prc_info->mouse.x * GIMBAL_MOUSE_YAW;
         yaw_delta += prc_info->kb.bit.E ? YAW_KB_SPEED : 0;
         yaw_delta -= prc_info->kb.bit.Q ? YAW_KB_SPEED : 0;
         gimbal_set_pitch_delta(pgimbal, pit_delta);
