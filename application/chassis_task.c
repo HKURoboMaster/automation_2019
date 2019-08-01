@@ -146,7 +146,8 @@ void chassis_task(void const *argument)
       }
       else
       {
-        wz  = pid_calculate(&pid_follow, follow_relative_angle, 0);
+        // wz  = pid_calculate(&pid_follow, follow_relative_angle, 0);
+        wz = (float)prc_info->ch1/RC_CH_SCALE*MAX_CHASSIS_VW_SPEED*0.51f; //TODO: Change back to PID
         dodging &= 0;
       }
       if(abs(vx)>2*MAX_CHASSIS_VX_SPEED/3 || abs(vy)>=2*MAX_CHASSIS_VY_SPEED/3 || abs(wz)>=2*MAX_CHASSIS_VW_SPEED/3)
@@ -318,17 +319,17 @@ int get_chassis_power(struct chassis_power *chassis_power)
 	{
 		chassis_power->voltage_debug = HAL_ADC_GetValue(&hadc2);
 	}
-  // Check the offline # TODO: determine whether this is corrent
+  // Check the offline
   if(chassis_power->current_debug > 1200)
     sensor_offline |= CURRENT_OFFLINE;
   if(chassis_power->voltage_debug > 1200)
     sensor_offline |= VOLTAGE_OFFLINE;
   // Smoothed raw data
 	float current_smoothed = smooth_filter(10,((float)chassis_power->current_debug) * MAPPING_INDEX_CRT,weight)/2;
-	float voltage_smoothed = smooth_filter(10,((float)chassis_power->voltage_debug) * MAPPING_INDEX_VTG,weight); //TODO: change the coefficient
+	float voltage_smoothed = smooth_filter(10,((float)chassis_power->voltage_debug) * MAPPING_INDEX_VTG,weight); 
   // Store the real data
   chassis_power->current = (((current_smoothed-2048.0f)*25.0f/1024.0f)/10.0f-2.45f)*3; // Assume the sensor is 20 A
-  chassis_power->voltage = (((voltage_smoothed-2048.0f)*25.0f/1024.0f)/10.0f-2.45f)*3; // TODO: change the scaling
+  chassis_power->voltage = (((voltage_smoothed-2048.0f)*25.0f/1024.0f)/10.0f-2.45f)*3; 
 	chassis_power->power = chassis_power->current * chassis_power->voltage;
 	// Refresh the js variables
   current_js = (int) (chassis_power->current_debug*1000);
