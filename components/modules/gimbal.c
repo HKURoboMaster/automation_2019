@@ -325,6 +325,14 @@ int32_t gimbal_execute(struct gimbal *gimbal)
   if (gimbal == NULL)
     return -RM_INVAL;
 
+  //First update ECD values
+  pdata = motor_device_get_data(&(gimbal->motor[PITCH_MOTOR_INDEX]));
+  gimbal->ecd_angle.pitch = PITCH_MOTOR_POSITIVE_DIR * gimbal_get_ecd_angle(pdata->ecd, gimbal->param.pitch_ecd_center) / ENCODER_ANGLE_RATIO;
+  pdata = motor_device_get_data(&(gimbal->motor[PITCH_MOTOR_INDEX]));
+  gimbal->ecd_angle.pitch = PITCH_MOTOR_POSITIVE_DIR * gimbal_get_ecd_angle(pdata->ecd, gimbal->param.pitch_ecd_center) / ENCODER_ANGLE_RATIO;
+    pdata = motor_device_get_data(&(gimbal->motor[PIICH_ASSIT_INDEX]));
+  gimbal->ecd_angle.pit2 = PITCH_MOTOR_POSITIVE_DIR * gimbal_get_ecd_angle(-1*pdata->ecd, gimbal->param.pit2_ecd_center) / ENCODER_ANGLE_RATIO;
+
   if (gimbal->mode.bit.yaw_mode == GYRO_MODE)
   {
     struct controller *ctrl;
@@ -335,7 +343,7 @@ int32_t gimbal_execute(struct gimbal *gimbal)
     center_offset = gimbal->sensor.gyro_angle.yaw - gimbal->ecd_angle.yaw;
     ctrl = &(gimbal->ctrl[YAW_MOTOR_INDEX]);
 
-    //VAL_LIMIT(yaw, YAW_ANGLE_MIN + center_offset, YAW_ANGLE_MAX + center_offset);
+    VAL_LIMIT(yaw, YAW_ANGLE_MIN + center_offset, YAW_ANGLE_MAX + center_offset);
     controller_set_input(ctrl, yaw);
   }
   else
@@ -363,8 +371,23 @@ int32_t gimbal_execute(struct gimbal *gimbal)
 
     VAL_LIMIT(pitch[0], PITCH_ANGLE_MIN + center_offset[0], PITCH_ANGLE_MAX + center_offset[0]);
     VAL_LIMIT(pitch[1], PITCH_ANGLE_MIN + center_offset[1], PITCH_ANGLE_MAX + center_offset[1]);
-    controller_set_input(ctrl[0], pitch[0]);
-    controller_set_input(ctrl[1], pitch[1]);
+    
+    #ifdef PITCH_STEP
+    if(fabs(gimbal->ecd_angle.pitch - gimbal->ecd_angle.pit2)<0.044f) //whether the fdb for LAST EXECUTE is the same
+    {
+      if(pitch[0]>=0)
+        controller_set_input(ctrl[0], gimbal->ecd_angle.pitch+PITCH_STEP);
+      else
+        controller_set_input(ctrl[0], gimbal->ecd_angle.pitch-PITCH_STEP);
+      if(pitch[1]>=0)
+        controller_set_input(ctrl[1], gimbal->ecd_angle.pit2+PITCH_STEP);
+      else
+        controller_set_input(ctrl[1], gimbal->ecd_angle.pit2-PITCH_STEP);
+    }
+    #else
+      controller_set_input(ctrl[0], pitch[0]);
+      controller_set_input(ctrl[1], pitch[1]);
+    #endif
   }
   else
   {
@@ -376,18 +399,32 @@ int32_t gimbal_execute(struct gimbal *gimbal)
     ctrl[1] = &(gimbal->ctrl[PIICH_ASSIT_INDEX]);
     VAL_LIMIT(pitch[0], PITCH_ANGLE_MIN, PITCH_ANGLE_MAX);
     VAL_LIMIT(pitch[1], PITCH_ANGLE_MIN, PITCH_ANGLE_MAX);
-    controller_set_input(ctrl[0], pitch[0]);
-    controller_set_input(ctrl[1], pitch[1]);
+    #ifdef PITCH_STEP
+    if(fabs(gimbal->ecd_angle.pitch - gimbal->ecd_angle.pit2)<0.044f) //whether the fdb for LAST EXECUTE is the same
+    {
+      if(pitch[0]>=0)
+        controller_set_input(ctrl[0], gimbal->ecd_angle.pitch+PITCH_STEP);
+      else
+        controller_set_input(ctrl[0], gimbal->ecd_angle.pitch-PITCH_STEP);
+      if(pitch[1]>=0)
+        controller_set_input(ctrl[1], gimbal->ecd_angle.pit2+PITCH_STEP);
+      else
+        controller_set_input(ctrl[1], gimbal->ecd_angle.pit2-PITCH_STEP);
+    }
+    #else
+      controller_set_input(ctrl[0], pitch[0]);
+      controller_set_input(ctrl[1], pitch[1]);
+    #endif
   }
   
   pdata = motor_device_get_data(&(gimbal->motor[YAW_MOTOR_INDEX]));
-  gimbal->ecd_angle.yaw = YAW_MOTOR_POSITIVE_DIR * gimbal_get_ecd_angle(pdata->ecd, gimbal->param.yaw_ecd_center) / ENCODER_ANGLE_RATIO;
+  // gimbal->ecd_angle.yaw = YAW_MOTOR_POSITIVE_DIR * gimbal_get_ecd_angle(pdata->ecd, gimbal->param.yaw_ecd_center) / ENCODER_ANGLE_RATIO;
   controller_execute(&(gimbal->ctrl[YAW_MOTOR_INDEX]), (void *)gimbal);
   controller_get_output(&(gimbal->ctrl[YAW_MOTOR_INDEX]), &motor_out);
   motor_device_set_current(&(gimbal->motor[YAW_MOTOR_INDEX]), (int16_t)YAW_MOTOR_POSITIVE_DIR * motor_out);
 
   pdata = motor_device_get_data(&(gimbal->motor[PITCH_MOTOR_INDEX]));
-  gimbal->ecd_angle.pitch = PITCH_MOTOR_POSITIVE_DIR * gimbal_get_ecd_angle(pdata->ecd, gimbal->param.pitch_ecd_center) / ENCODER_ANGLE_RATIO;
+  // gimbal->ecd_angle.pitch = PITCH_MOTOR_POSITIVE_DIR * gimbal_get_ecd_angle(pdata->ecd, gimbal->param.pitch_ecd_center) / ENCODER_ANGLE_RATIO;
   controller_execute(&(gimbal->ctrl[PITCH_MOTOR_INDEX]), (void *)gimbal);
   controller_get_output(&(gimbal->ctrl[PITCH_MOTOR_INDEX]), &motor_out);
   motor_device_set_current(&(gimbal->motor[PITCH_MOTOR_INDEX]), (int16_t)PITCH_MOTOR_POSITIVE_DIR * motor_out);
