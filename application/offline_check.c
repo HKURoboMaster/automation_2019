@@ -76,7 +76,7 @@ void offline_init(void)
   #ifdef HERO_ROBOT
     detect_device_add_event(&offline_dev, TURN2_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[8]);
   #endif
-    detect_device_add_event(&offline_dev, PITCH2_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[8]);
+    detect_device_add_event(&offline_dev, PITCH2_OFFLINE_EVENT, 100, offline_beep_set_times, &offline_beep_times[9]);
   }
 
   soft_timer_register(offline_check, NULL, 20);
