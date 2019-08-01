@@ -189,6 +189,10 @@ void chassis_task(void const *argument)
       //get the buffer
         ext_power_heat_data_t * referee_power = get_heat_power();
         shooter_data_sent_by_can(referee_power);
+        if(referee_power->chassis_power_buffer == 0)
+          LED_R_ON();
+        else if(chassis_check_enable(pchassis))
+          LED_R_OFF(); 
       //set the current & voltage flags
         if(referee_power->chassis_power_buffer > LOW_BUFFER && chassis_power.voltage>LOW_VOLTAGE && 
            chassis_power.current > (CHASSIS_POWER_TH+LOW_BUFFER)/WORKING_VOLTAGE)
@@ -222,7 +226,7 @@ void chassis_task(void const *argument)
           chassis_set_vw(pchassis, pchassis->mecanum.speed.vw/prop);
           LED_R_ON();
         }
-        else if(chassis_check_enable(pchassis))
+        else if(chassis_check_enable(pchassis) && referee_power->chassis_power_buffer!=0)
         {
           LED_R_OFF(); 
         }
