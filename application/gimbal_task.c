@@ -482,9 +482,9 @@ static int32_t gimbal_imu_update(void *argc)
   mpu_get_data(&mpu_sensor);
   mahony_ahrs_updateIMU(&mpu_sensor, &mahony_atti);
 
-  gimbal_pitch_gyro_update(pgimbal, mahony_atti.roll);
+  gimbal_pitch_gyro_update(pgimbal, mahony_atti.pitch);
   gimbal_yaw_gyro_update(pgimbal, -mahony_atti.yaw);
-  gimbal_rate_update(pgimbal, mpu_sensor.wy * RAD_TO_DEG, mpu_sensor.wx * RAD_TO_DEG);
+  gimbal_rate_update(pgimbal, -mpu_sensor.wz * RAD_TO_DEG, mpu_sensor.wy * RAD_TO_DEG);
   
   mpu_pit = mahony_atti.pitch * 1000;
   mpu_yaw = mahony_atti.yaw   * 1000;
