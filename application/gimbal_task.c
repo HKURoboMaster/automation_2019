@@ -198,8 +198,10 @@ int32_t mpu_wx, mpu_wy, mpu_wz;
 // PID debugging
 int32_t yaw_angle_fdb_js, yaw_angle_ref_js;
 int32_t pit_angle_fdb_js, pit_angle_ref_js;
+int32_t pit2_angle_fdb_js, pit2_angle_ref_js;
 int32_t yaw_spd_fdb_js, yaw_spd_ref_js;
 int32_t pit_spd_fdb_js, pit_spd_ref_js;
+int32_t pit2_spd_fdb_js, pit2_spd_ref_js;
 int32_t yaw_ecd_angle_js, pit_ecd_angle_js;
 /** Edited by Y.H. Liu
  * @Jun 12, 2019: modified the mode switch
@@ -455,11 +457,15 @@ void gimbal_task(void const *argument)
     yaw_angle_ref_js = pgimbal->cascade[0].outer.set * 1000;
     pit_angle_fdb_js = pgimbal->cascade[1].outer.get * 1000;
     pit_angle_ref_js = pgimbal->cascade[1].outer.set * 1000;
+    pit2_angle_fdb_js = pgimbal->cascade[2].outer.get * 1000;
+    pit2_angle_ref_js = pgimbal->cascade[2].outer.set * 1000;
 
     yaw_spd_fdb_js = pgimbal->cascade[0].inter.get * 1000;
     yaw_spd_ref_js = pgimbal->cascade[0].inter.set * 1000;
     pit_spd_fdb_js = pgimbal->cascade[1].inter.get * 1000;
     pit_spd_ref_js = pgimbal->cascade[1].inter.set * 1000;
+    pit2_spd_fdb_js = pgimbal->cascade[2].inter.get * 1000;
+    pit2_spd_ref_js = pgimbal->cascade[2].inter.set * 1000;
 		
 		//Eric Edited Debug the ecd of pitch and yaw
 		yaw_ecd_angle_js = pgimbal->ecd_angle.yaw;

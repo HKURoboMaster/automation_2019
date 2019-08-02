@@ -77,6 +77,8 @@
 #define PITCH_DIRECTI -1
 #define YAW_DIRECT 0
 
+// #define PITCH_STEP 1 
+
 typedef struct gimbal *gimbal_t;
 
 struct gimbal_param
