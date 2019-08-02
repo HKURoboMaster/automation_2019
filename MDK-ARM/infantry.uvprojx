@@ -432,6 +432,11 @@
               <FileType>1</FileType>
               <FilePath>..\application\chassis_calc.c</FilePath>
             </File>
+            <File>
+              <FileName>gimbal_task_state.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\application\gimbal_task_state.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

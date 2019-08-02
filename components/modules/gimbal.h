@@ -27,10 +27,10 @@
 
 /* gimbal relevant */
 #ifndef HERO_ROBOT
-#define PITCH_ANGLE_MAX      20.0f
-#define PITCH_ANGLE_MIN      -15.0f
-#define YAW_ANGLE_MAX        180.0f
-#define YAW_ANGLE_MIN       -179.0f
+#define PITCH_ANGLE_MAX      0.0f
+#define PITCH_ANGLE_MIN      -23.0f
+#define YAW_ANGLE_MAX        135.0f
+#define YAW_ANGLE_MIN       -135.0f
 #else
 #define PITCH_ANGLE_MAX      -2.5f
 #define PITCH_ANGLE_MIN      17.5f

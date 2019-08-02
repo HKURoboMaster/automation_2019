@@ -25,6 +25,7 @@
 #include "smooth_filter.h"
 #include "math.h"
 #include "drv_io.h"
+
 #define RAD_TO_DEG 57.296f // 180/PI
 #define MAPPING_INDEX_CRT 1.0f
 #define MAPPING_INDEX_VTG 0.005f
@@ -53,6 +54,8 @@ int chassis_yaw_js = 0;
 uint8_t chassis_cam_L = 0;
 uint8_t chassis_cam_R = 0;
 
+uint8_t gimbal_cam_enemy = 0;
+
 /**Eric Edited get data from ADC
   * @Jul 3, 2019: Add power gettter function: get_chassis_power
 */
@@ -65,6 +68,9 @@ int32_t power_pidout_js;
 int32_t power_js;
 uint8_t current_excess_flag_js;
 uint8_t sensor_offline = 0;
+enum current_state_t {
+	NORMAL, EXCEED_WO_BUFF, EXCEED_W_BUFF
+} current_state;
 #define CURRENT_OFFLINE 0x0Fu
 #define VOLTAGE_OFFLINE 0xF0u
 
@@ -125,26 +131,27 @@ void chassis_task(void const *argument)
 				vy = chassis_random_movement(pchassis, get_spd(&state));
 				vy_js = vy * 1000;
 				float raw_vy = vy;
-				vy = direction_control(vy); // direction control
 				
-				if (chassis_cam_L && !chassis_cam_R) {
+				
+				if ((chassis_cam_L && !chassis_cam_R)|| gimbal_cam_enemy == 1) {
 					vy = enforce_direction(vy, -1.0);
-					if (( referee_power->chassis_power_buffer > 75 ) && boost_state_flag == 1 ) 
+					if ( boost_state_flag == 1 ) 
 					{
+						
 						set_state(&state, 	BOOST_STATE);
 						boost_state_flag = 0 ;
 					} 
 				}
 				else if (chassis_cam_R && !chassis_cam_L) {
 					vy = enforce_direction(vy, 1.0);
-					if (( referee_power->chassis_power_buffer > 75 ) && boost_state_flag == 1 ) 
+					if ( boost_state_flag == 1 ) 
 					{
 						set_state(&state, 	BOOST_STATE);
 						boost_state_flag = 0 ;
 					} 
 				}
 				else if (chassis_cam_R && chassis_cam_L) {
-					if (( referee_power->chassis_power_buffer > 75 ) && boost_state_flag == 1 ) 
+					if ( boost_state_flag == 1 ) 
 					{
 						set_state(&state, 	BOOST_STATE);
 						boost_state_flag = 0 ;
@@ -162,13 +169,19 @@ void chassis_task(void const *argument)
 				{
 					set_state(&state, 	NORMAL_STATE);
 				}
+				if (referee_power->chassis_power_buffer <30)
+				{
+					set_state(&state, IDLE_STATE);
+				}
+				
 				if (vy == 0) {
 					//generate_movement(); // bounce off by another movement
 					//adjust_accumulated_distance(raw_vy);
 				}
+				vy = direction_control(vy);
 			}
 		}
-
+    
 		chassis_set_offset(pchassis, 0, 0);
 		chassis_set_speed(pchassis, 0, vy, 0);
 		chassis_set_acc(pchassis, 0, 0, 0);					
@@ -186,18 +199,20 @@ void chassis_task(void const *argument)
       do
       {
         chassis_imu_update(pchassis);
+				
+        get_chassis_power(&chassis_power); // Power Value Getter
         if(sensor_offline & CURRENT_OFFLINE)
         {
-          //TODO: what if current sensor offline
+          chassis_power.current = (float)(abs(pchassis->motor[1].current) + abs(pchassis->motor[3].current))*0.001f/2;
         }
         chassis_execute(pchassis);
-        get_chassis_power(&chassis_power); // Power Value Getter
+				current_js_smooth = (int) (chassis_power.current*1000);
         osDelayUntil(&period, 2);
       //get the buffer
         ext_power_heat_data_t * referee_power = get_heat_power();
         shooter_data_sent_by_can(referee_power);
       //set the current & voltage flags
-        if(referee_power->chassis_power_buffer > LOW_BUFFER && chassis_power.voltage>LOW_VOLTAGE && 
+        if(referee_power->chassis_power_buffer > LOW_BUFFER && 
            chassis_power.current > (CHASSIS_POWER_TH+LOW_BUFFER)/WORKING_VOLTAGE)
         {
           current_excess_flag = 2;
@@ -221,12 +236,12 @@ void chassis_task(void const *argument)
         else
           WRITE_LOW_CAPACITOR();
       //control the speed ref if necessary
+				current_state = (enum current_state_t)current_excess_flag;
         if(current_excess_flag)
         {
           float prop = chassis_power.current / ((CHASSIS_POWER_TH+(current_excess_flag-1)*LOW_BUFFER)/WORKING_VOLTAGE);
           prop = sqrtf(prop);
-          chassis_set_vx_vy(pchassis, pchassis->mecanum.speed.vx/prop, pchassis->mecanum.speed.vy/prop);
-          chassis_set_vw(pchassis, pchassis->mecanum.speed.vw/prop);
+          chassis_set_vx_vy(pchassis, 0, pchassis->mecanum.speed.vy/prop);
           LED_R_ON();
         }
         else if(chassis_check_enable(pchassis))
@@ -313,20 +328,18 @@ int get_chassis_power(struct chassis_power *chassis_power)
 		chassis_power->voltage_debug = HAL_ADC_GetValue(&hadc2);
 	}
   // Check the offline # TODO: determine whether this is corrent
-  if(chassis_power->current_debug > 1200)
+  if(chassis_power->current_debug < 1400)
     sensor_offline |= CURRENT_OFFLINE;
-  if(chassis_power->voltage_debug > 1200)
+  if(chassis_power->voltage_debug < 1400)
     sensor_offline |= VOLTAGE_OFFLINE;
   // Smoothed raw data
-	float current_smoothed = smooth_filter(10,((float)chassis_power->current_debug) * MAPPING_INDEX_CRT,weight)/2;
-	float voltage_smoothed = smooth_filter(10,((float)chassis_power->voltage_debug) * MAPPING_INDEX_VTG,weight); //TODO: change the coefficient
   // Store the real data
-  chassis_power->current = (((current_smoothed-2048.0f)*25.0f/1024.0f)/10.0f-2.45f)*3; // Assume the sensor is 20 A
-  chassis_power->voltage = (((voltage_smoothed-2048.0f)*25.0f/1024.0f)/10.0f-2.45f)*3; // TODO: change the scaling
+	float current_smoothed = smooth_filter(10,((float)chassis_power->current_debug) * MAPPING_INDEX_CRT,weight)/2;
+  chassis_power->current = fabs((((current_smoothed-2048.0f)*25.0f/1024.0f)/10.0f-2.45f)*2.1f)/4; // Assume the sensor is 5 A
 	chassis_power->power = chassis_power->current * chassis_power->voltage;
 	// Refresh the js variables
   current_js = (int) (chassis_power->current_debug*1000);
-	current_js_smooth = (int) (chassis_power->current*1000);
+	// current_js_smooth = (int) (chassis_power->current*1000);
 	power_js = (int)(chassis_power->power*1000);
 	return chassis_power->power;
 }

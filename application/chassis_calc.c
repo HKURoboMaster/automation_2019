@@ -209,6 +209,14 @@ float get_spd(const chassis_state_t * state) {
  */
 float enforce_direction(float vy, int direction) {
   float prob = ((int)rand() % 101);
+	if ( enforce_dir_prob < 0.5)
+	{
+		if (prob / 100.0 <= 0.5) {
+			return direction * fabs(vy);
+		}
+		else 
+			return vy;
+	}
 	if (prob / 100.0 <= enforce_dir_prob) {
 		enforce_dir_prob *= enforce_dir_decay;
 		return direction * fabs(vy);

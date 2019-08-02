@@ -87,6 +87,10 @@ float auto_aiming_yaw   = 0;
  */
 uint32_t time_pc = 0;
 
+extern uint8_t chassis_cam_L;
+extern uint8_t chassis_cam_R;
+extern uint8_t gimbal_cam_enemy;
+
 void infantry_cmd_task(void const *argument)
 {
   uint8_t app;
@@ -165,39 +169,46 @@ void infantry_cmd_task(void const *argument)
 				auto_aiming_yaw = pangle->yaw; 
 				time_pc = pangle->time_pc;
 				
+				if (event.value.signals & MANIFOLD2_GIMBAL_SIGNAL)
+				{
+					chassis_cam_L = pangle->occurrence.bit.chassis_rear_left;
+					chassis_cam_R = pangle->occurrence.bit.chassis_rear_right;
+					gimbal_cam_enemy = pangle->occurrence.bit.gimbal_front;
+					if ((prc_dev->rc_info.mouse.r || rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK))
+					{
+						
+						//pangle = &manifold_cmd.gimbal_angle;
+						if (pangle->ctrl.bit.pitch_mode == 0)
+						{
+							gimbal_set_pitch_angle(pgimbal, pangle->pitch / 100.0f);
+						}
+						else
+						{
+							// gimbal_set_pitch_speed(pgimbal, pangle->pitch / 10.0f);
+							auto_aiming_pitch = pangle->pitch;
+						}
+						if (pangle->ctrl.bit.yaw_mode == 0)
+						{
+							gimbal_set_yaw_angle(pgimbal, pangle->yaw / 100.0f, 0);
+						}
+						else
+						{
+							// gimbal_set_yaw_speed(pgimbal, pangle->yaw / 10.0f);
+							auto_aiming_yaw = pangle->yaw;
+						}
+					}	
+				}
+				
 				// PC auto aiming mode is enabled
-        if ((prc_dev->rc_info.mouse.r || rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK)
-          && event.value.signals & MANIFOLD2_GIMBAL_SIGNAL)
+        
+       
+        if (event.value.signals & MANIFOLD2_SHOOT_SIGNAL)
         {
-          
-          //pangle = &manifold_cmd.gimbal_angle;
-          if (pangle->ctrl.bit.pitch_mode == 0)
-          {
-            gimbal_set_pitch_angle(pgimbal, pangle->pitch / 100.0f);
-          }
-          else
-          {
-            // gimbal_set_pitch_speed(pgimbal, pangle->pitch / 10.0f);
-            auto_aiming_pitch = pangle->pitch;
-          }
-          if (pangle->ctrl.bit.yaw_mode == 0)
-          {
-            gimbal_set_yaw_angle(pgimbal, pangle->yaw / 100.0f, 0);
-          }
-          else
-          {
-            // gimbal_set_yaw_speed(pgimbal, pangle->yaw / 10.0f);
-            auto_aiming_yaw = pangle->yaw;
-          }
+					struct cmd_shoot_num *pctrl;
+					pctrl = &manifold_cmd.shoot_num;
+					//shoot_set_cmd(pshoot, pctrl->shoot_cmd, pctrl->shoot_add_num);
+					//shoot_set_turn_speed(pshoot, pctrl->shoot_freq);
         }
-        //
-        // if (event.value.signals & MANIFOLD2_SHOOT_SIGNAL)
-        // {
-        //   struct cmd_shoot_num *pctrl;
-        //   pctrl = &manifold_cmd.shoot_num;
-        //   shoot_set_cmd(pshoot, pctrl->shoot_cmd, pctrl->shoot_add_num);
-        //   shoot_set_turn_speed(pshoot, pctrl->shoot_freq);
-        // }
         //
         // if (event.value.signals & MANIFOLD2_FRICTION_SIGNAL)
         // {

@@ -26,6 +26,7 @@
 #include "param.h"
 #include "ramp.h"
 #include "angle_queue.h"
+#include "gimbal_task_state.h"
 
 #define DEFAULT_IMU_TEMP 50
 
@@ -177,7 +178,7 @@ static float pit_speed_raw;
 float *yaw_kf_data;
 float *pit_kf_data;
 
-
+gimbal_state_t gimbal_state = {PATROL_STATE, 0};
 int pc_counter = 0;
 
 float target_speed_calc(speed_calc_data_t *S,uint32_t time,float position);
@@ -213,6 +214,15 @@ int32_t yaw_ecd_angle_js, pit_ecd_angle_js;
 
 int yaw_patrol_direction = 1;
 float yaw_patrol_counter = 0.0f ;
+
+/* chassis cv request handling */
+extern uint8_t chassis_cam_L;
+extern uint8_t chassis_cam_R;
+uint8_t chassis_cam_L_counter = 0;
+uint8_t chassis_cam_R_counter = 0;
+uint8_t chassis_cam_LR_counter = 0;
+
+
 
 /** Edited by Y.H. Liu
  * @Jun 12, 2019: modified the mode switch
@@ -281,6 +291,9 @@ void gimbal_task(void const *argument)
   soft_timer_register(gimbal_push_info, (void *)pgimbal, 10);
 
   imu_temp_ctrl_init();
+	
+	set_gimbal_state(&gimbal_state , PATROL_STATE);
+
   while (1)
   {
 		#ifdef KALMAN
@@ -483,11 +496,12 @@ void gimbal_task(void const *argument)
 			
 			//gimbal patrol set zero
 			//gimbal_set_yaw_angle(pgimbal, pgimbal->ecd_angle.yaw * (1 - ramp_calculate(&yaw_ramp)), 0);
-			//gimbal_set_yaw_angle(pgimbal, 0, 0 ); 
+			gimbal_set_yaw_angle(pgimbal, 0, 0 ); 
 		}
 		//Gimbal Patrol + auto aiming
 		if(rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK || rc_device_get_state(prc_dev, RC_S2_MID2UP ) == RM_OK )
 		{
+			if((get_gimbal_state(&gimbal_state) == AIM_STATE || get_gimbal_state(&gimbal_state) == ATTACK_STATE ) ) {
 			    //auto_aiming
 			if(prc_info->mouse.r || rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK)
         {
@@ -498,13 +512,17 @@ void gimbal_task(void const *argument)
 					auto_aiming_pitch = 0;
           auto_aiming_yaw = 0;
         }
+			}
+				
+			if(get_gimbal_state(&gimbal_state) == PATROL_STATE) {
+				
 				
 				//direction control for gimbal patrol
-				if(yaw_patrol_counter > MAX_YAW_PATROL_ANGLE) 
+				if(pgimbal->ecd_angle.yaw > MAX_YAW_PATROL_ANGLE) 
 				{
 				 yaw_patrol_direction = -1; //Left
 				}	
-				if(yaw_patrol_counter < MIN_YAW_PATROL_ANGLE) 
+				if(pgimbal->ecd_angle.yaw < MIN_YAW_PATROL_ANGLE) 
 				{
 				 yaw_patrol_direction = 1; //Right
 				}	
@@ -513,8 +531,46 @@ void gimbal_task(void const *argument)
 				
 				gimbal_set_yaw_delta(pgimbal, yaw_patrol_direction*YAW_PATROL_SPEED);
 				yaw_patrol_counter +=yaw_patrol_direction*YAW_PATROL_SPEED;
-				
+			}
+			
+			/**
+			 * Marco 2 Aug
+			 * @brief Gimbal State Change Controll			
+			 */	
+			if( chassis_cam_L == 1 && chassis_cam_R == 1) 
+      {
+        chassis_cam_LR_counter ++;
+        if ( chassis_cam_LR_counter == 5 )
+        {
+          gimbal_set_yaw_angle(pgimbal, 30, 0);
+          set_gimbal_state(&gimbal_state, AIM_STATE);
+        }
+      } else if ( chassis_cam_R == 1)
+      {
+        chassis_cam_R_counter ++;
+        if ( chassis_cam_R_counter == 5 )
+        {
+          gimbal_set_yaw_angle(pgimbal, 90, 0);
+          set_gimbal_state(&gimbal_state, AIM_STATE);
+        }
+      } else if ( chassis_cam_L == 1)
+      {
+        chassis_cam_L_counter ++;
+        if ( chassis_cam_L_counter == 5)
+        {
+          gimbal_set_yaw_angle(pgimbal, -90, 0);
+          set_gimbal_state(&gimbal_state, AIM_STATE);
+        }
+      }
+       else
+      {
+        chassis_cam_LR_counter = 0;
+        chassis_cam_R_counter = 0;
+        chassis_cam_L_counter = 0;
+				set_gimbal_state(&gimbal_state, PATROL_STATE);
+      }
 		}
+		
     if (get_offline_state() == 0)
     {
       gimbal_state_init(pgimbal);

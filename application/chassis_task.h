@@ -46,10 +46,10 @@ int get_chassis_power(struct chassis_power *chassis_power);
 #define RC_CH_SCALE 660
 #define CHASSIS_NETURAL_TH 10
 
-#define CHASSIS_POWER_TH  20
+#define CHASSIS_POWER_TH  20.0f
 #define LOW_BUFFER  10
 #define LOW_VOLTAGE   25
-#define WORKING_VOLTAGE 22
+#define WORKING_VOLTAGE 22.0f
 #define NO_BUFFER_TIME_TH 1000
 #define CHASSIS_POWER_CTRL
 

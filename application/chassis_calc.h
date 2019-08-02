@@ -10,8 +10,8 @@
 #include "chassis_task.h"
 
 #define IDLE_CONSTANT_SPEED 500  //speed of idle state
-#define NORMAL_CONSTANT_SPEED 1000 //speed of normal state
-#define BOOST_CONSTANT_SPEED 3000  //speed of boost state
+#define NORMAL_CONSTANT_SPEED 700 //speed of normal state
+#define BOOST_CONSTANT_SPEED 1000  //speed of boost state
 
 typedef enum chassis_state_name {
   IDLE_STATE, NORMAL_STATE, BOOST_STATE
