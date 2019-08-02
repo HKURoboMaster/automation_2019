@@ -14,6 +14,7 @@ float smooth_filter(int length,float input,float weight[])
       filter.weight[i] = weight[i];
     }
     flag = 1;
+		return input;
   }
   else
   {
