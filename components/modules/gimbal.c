@@ -71,16 +71,16 @@ int32_t gimbal_cascade_register(struct gimbal *gimbal, const char *name, enum de
 
   gimbal->mode.bit.yaw_mode = ENCODER_MODE;
   gimbal->ctrl[YAW_MOTOR_INDEX].convert_feedback = yaw_ecd_input_convert;
-  pid_struct_init(&(gimbal->cascade[YAW_MOTOR_INDEX].outer), 500, 600, 75, 0, 0);
-  pid_struct_init(&(gimbal->cascade[YAW_MOTOR_INDEX].inter), 30000, 3000, 220, 0, 0);
+  pid_struct_init(&(gimbal->cascade[YAW_MOTOR_INDEX].outer), 500, 600, 0, 0, 0); //75 0 0
+  pid_struct_init(&(gimbal->cascade[YAW_MOTOR_INDEX].inter), 30000, 3000, 0, 0, 0); //220 0 0
 
   gimbal->mode.bit.pitch_mode = ENCODER_MODE;
   gimbal->ctrl[PITCH_MOTOR_INDEX].convert_feedback = pitch_ecd_input_convert;
-  pid_struct_init(&(gimbal->cascade[PITCH_MOTOR_INDEX].outer), 1000, 200, 50, 0.008, 0);
-  pid_struct_init(&(gimbal->cascade[PITCH_MOTOR_INDEX].inter), 30000, 8000, 150, 0.001, 0);
+  pid_struct_init(&(gimbal->cascade[PITCH_MOTOR_INDEX].outer), 1000, 200, 10, 0, 0);
+  pid_struct_init(&(gimbal->cascade[PITCH_MOTOR_INDEX].inter), 30000, 8000, 10, 0, 0);
   gimbal->ctrl[PIICH_ASSIT_INDEX].convert_feedback = pitch_ecd_input_convert;
-  pid_struct_init(&(gimbal->cascade[PIICH_ASSIT_INDEX].outer), 1000, 200, 50, 0.008, 0);
-  pid_struct_init(&(gimbal->cascade[PIICH_ASSIT_INDEX].inter), 30000, 8000, 150, 0.001, 0);
+  pid_struct_init(&(gimbal->cascade[PIICH_ASSIT_INDEX].outer), 1000, 200, 10, 0, 0);
+  pid_struct_init(&(gimbal->cascade[PIICH_ASSIT_INDEX].inter), 30000, 8000, 10, 0, 0);
 
   for (int i = 0; i < 3; i++)
   {
