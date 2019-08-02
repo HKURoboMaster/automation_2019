@@ -147,7 +147,7 @@ void chassis_task(void const *argument)
       else
       {
         // wz  = pid_calculate(&pid_follow, follow_relative_angle, 0);
-        wz = (float)prc_info->ch1/RC_CH_SCALE*MAX_CHASSIS_VW_SPEED*0.51f; //TODO: Change back to PID
+        wz = -(float)prc_info->ch1/RC_CH_SCALE*MAX_CHASSIS_VW_SPEED*0.51f; //TODO: Change back to PID
         dodging &= 0;
       }
       if(abs(vx)>2*MAX_CHASSIS_VX_SPEED/3 || abs(vy)>=2*MAX_CHASSIS_VY_SPEED/3 || abs(wz)>=2*MAX_CHASSIS_VW_SPEED/3)
