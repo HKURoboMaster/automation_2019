@@ -72,15 +72,18 @@ int32_t gimbal_cascade_register(struct gimbal *gimbal, const char *name, enum de
   gimbal->mode.bit.yaw_mode = ENCODER_MODE;
   gimbal->ctrl[YAW_MOTOR_INDEX].convert_feedback = yaw_ecd_input_convert;
   pid_struct_init(&(gimbal->cascade[YAW_MOTOR_INDEX].outer), 500, 600, 0, 0, 0); //75 0 0
-  pid_struct_init(&(gimbal->cascade[YAW_MOTOR_INDEX].inter), 30000, 3000, 0, 0, 0); //220 0 0
+  // pid_struct_init(&(gimbal->cascade[YAW_MOTOR_INDEX].inter), 30000, 3000, 0, 0, 0); //220 0 0
+  pid_struct_init(&(gimbal->cascade[YAW_MOTOR_INDEX].inter), 0, 0, 0, 0, 0); //TODO: reset the PID
 
   gimbal->mode.bit.pitch_mode = ENCODER_MODE;
   gimbal->ctrl[PITCH_MOTOR_INDEX].convert_feedback = pitch_ecd_input_convert;
   pid_struct_init(&(gimbal->cascade[PITCH_MOTOR_INDEX].outer), 1000, 200, 10, 0, 0);
-  pid_struct_init(&(gimbal->cascade[PITCH_MOTOR_INDEX].inter), 30000, 8000, 10, 0, 0);
+  // pid_struct_init(&(gimbal->cascade[PITCH_MOTOR_INDEX].inter), 30000, 8000, 10, 0, 0);
+  pid_struct_init(&(gimbal->cascade[PITCH_MOTOR_INDEX].inter), 0, 0, 0, 0, 0); //TODO: reset the PID
   gimbal->ctrl[PIICH_ASSIT_INDEX].convert_feedback = pitch_ecd_input_convert;
   pid_struct_init(&(gimbal->cascade[PIICH_ASSIT_INDEX].outer), 1000, 200, 10, 0, 0);
-  pid_struct_init(&(gimbal->cascade[PIICH_ASSIT_INDEX].inter), 30000, 8000, 10, 0, 0);
+  // pid_struct_init(&(gimbal->cascade[PIICH_ASSIT_INDEX].inter), 30000, 8000, 10, 0, 0);
+  pid_struct_init(&(gimbal->cascade[PIICH_ASSIT_INDEX].inter), 0, 0, 0, 0, 0); //TODO: reset the PID
 
   for (int i = 0; i < 3; i++)
   {
@@ -330,7 +333,7 @@ int32_t gimbal_execute(struct gimbal *gimbal)
   gimbal->ecd_angle.pitch = PITCH_MOTOR_POSITIVE_DIR * gimbal_get_ecd_angle(pdata->ecd, gimbal->param.pitch_ecd_center) / ENCODER_ANGLE_RATIO;
   pdata = motor_device_get_data(&(gimbal->motor[PITCH_MOTOR_INDEX]));
   gimbal->ecd_angle.pitch = PITCH_MOTOR_POSITIVE_DIR * gimbal_get_ecd_angle(pdata->ecd, gimbal->param.pitch_ecd_center) / ENCODER_ANGLE_RATIO;
-    pdata = motor_device_get_data(&(gimbal->motor[PIICH_ASSIT_INDEX]));
+  pdata = motor_device_get_data(&(gimbal->motor[PIICH_ASSIT_INDEX]));
   gimbal->ecd_angle.pit2 = PITCH_MOTOR_POSITIVE_DIR * gimbal_get_ecd_angle(-1*pdata->ecd, gimbal->param.pit2_ecd_center) / ENCODER_ANGLE_RATIO;
 
   if (gimbal->mode.bit.yaw_mode == GYRO_MODE)

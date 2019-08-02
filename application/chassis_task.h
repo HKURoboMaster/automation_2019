@@ -56,7 +56,7 @@ int get_chassis_power(struct chassis_power *chassis_power);
 #define DODGING_TH 25.0f
 #endif
 #ifdef CHASSIS_POWER_CTRL
-#define MOTOR_TORQUE_CURRENT_CO 0.25F
+#define MOTOR_TORQUE_CURRENT_CO 0.1F
 #define SUPER_CAP_HOLDING_TIME 300u
 #define NO_MOVEMENT_TH 30
 #endif

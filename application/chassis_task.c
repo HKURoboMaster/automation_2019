@@ -147,6 +147,9 @@ void chassis_task(void const *argument)
       else
       {
         // wz  = pid_calculate(&pid_follow, follow_relative_angle, 0);
+        float wz_delta = (float)prc_info->ch1 * abs(prc_info->ch1) / RC_CH_SCALE;
+        wz_delta -= prc_info->mouse.x * 0.007f;
+        wz_delta += prc_info->kb.bit.E ? 0.25f : 0;
         wz = -(float)prc_info->ch1/RC_CH_SCALE*MAX_CHASSIS_VW_SPEED*0.51f; //TODO: Change back to PID
         dodging &= 0;
       }
@@ -184,6 +187,8 @@ void chassis_task(void const *argument)
                                   abs(pchassis->motor[1].data.given_current)+
                                   abs(pchassis->motor[2].data.given_current)+
                                   abs(pchassis->motor[3].data.given_current))/1000*MOTOR_TORQUE_CURRENT_CO;
+          if(sensor_offline & VOLTAGE_OFFLINE || chassis_power.voltage<LOW_VOLTAGE)
+            chassis_power.current *= 2;
         }
         osDelayUntil(&period, 2);
         /*-------- Then, adjust the power --------*/
@@ -324,17 +329,17 @@ int get_chassis_power(struct chassis_power *chassis_power)
 		chassis_power->voltage_debug = HAL_ADC_GetValue(&hadc2);
 	}
   // Check the offline
-  if(chassis_power->current_debug > 1200)
+  if(chassis_power->current_debug < 1300)
     sensor_offline |= CURRENT_OFFLINE;
-  if(chassis_power->voltage_debug > 1200)
+  if(chassis_power->voltage_debug <1300)
     sensor_offline |= VOLTAGE_OFFLINE;
   // Smoothed raw data
-	float current_smoothed = smooth_filter(10,((float)chassis_power->current_debug) * MAPPING_INDEX_CRT,weight)/2;
-	float voltage_smoothed = smooth_filter(10,((float)chassis_power->voltage_debug) * MAPPING_INDEX_VTG,weight); 
+	// float current_smoothed = smooth_filter(10,((float)chassis_power->current_debug) * MAPPING_INDEX_CRT,weight)/2;
+	// float voltage_smoothed = smooth_filter(10,((float)chassis_power->voltage_debug) * MAPPING_INDEX_VTG,weight); 
   // Store the real data
-  chassis_power->current = (((current_smoothed-2048.0f)*25.0f/1024.0f)/10.0f-2.45f)*3; // Assume the sensor is 20 A
+  chassis_power->current = (((chassis_power->current_debug-2048.0f)*25.0f/1024.0f)/10.0f-2.45f)*3; // Assume the sensor is 20 A
   //chassis_power->voltage = (((voltage_smoothed-2048.0f)*25.0f/1024.0f)/10.0f-2.45f)*3; 
-	chassis_power->voltage = (5*5)/4096*voltage_smoothed;
+	chassis_power->voltage = (5*5)/4096*chassis_power->voltage_debug;
 	chassis_power->power = chassis_power->current * chassis_power->voltage;
 	// Refresh the js variables
   current_js = (int) (chassis_power->current_debug*1000);
