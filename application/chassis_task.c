@@ -149,7 +149,7 @@ void chassis_task(void const *argument)
         wz  = pid_calculate(&pid_follow, follow_relative_angle, 0);
         dodging &= 0;
       }
-      if(abs(vx)>2*MAX_CHASSIS_VX_SPEED/3 || abs(vy)>=2*MAX_CHASSIS_VY_SPEED/3 || abs(wz)>=2*MAX_CHASSIS_VW_SPEED/3)
+      if(abs((int)vx)>2*MAX_CHASSIS_VX_SPEED/3 || abs((int)vy)>=2*MAX_CHASSIS_VY_SPEED/3 || abs((int)wz)>=2*MAX_CHASSIS_VW_SPEED/3)
         extra_current = 1;
       else
         extra_current = 0;
@@ -183,6 +183,8 @@ void chassis_task(void const *argument)
                                   abs(pchassis->motor[1].data.given_current)+
                                   abs(pchassis->motor[2].data.given_current)+
                                   abs(pchassis->motor[3].data.given_current))/1000*MOTOR_TORQUE_CURRENT_CO;
+          if(sensor_offline & VOLTAGE_OFFLINE || chassis_power.voltage < LOW_VOLTAGE)
+            chassis_power.current *= 2;
         }
         osDelayUntil(&period, 2);
         /*-------- Then, adjust the power --------*/
