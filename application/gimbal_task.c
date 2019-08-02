@@ -45,10 +45,10 @@
 #ifndef ACC_KALMAN
 kalman_filter_init_t yaw_kalman_filter_para = {
   .P_data = {2, 0, 0, 2},					// Co-variance Matrix
-  .A_data = {1, 0.0022, 0, 1},			// Predict function Transfer parameter 1000Hz?
+  .A_data = {1, 0.0028, 0, 1},			// Predict function Transfer parameter 1000Hz?
   .H_data = {1, 0, 0, 1},					// Measurement transfer parameter
   .Q_data = {1, 0, 0, 1},					// Co-variance of progress matrix
-  .R_data = {100, 0, 0, 200}		// Co-Variance of Measurement Observe matrix.
+  .R_data = {200, 0, 0, 400}		// Co-Variance of Measurement Observe matrix.
 };
 
 kalman_filter_init_t pit_kalman_filter_para = 
@@ -57,7 +57,7 @@ kalman_filter_init_t pit_kalman_filter_para =
   .A_data = {1, 0.0028, 0, 1},
   .H_data = {1, 0, 0, 1},
   .Q_data = {1, 0, 0, 1},
-  .R_data = {500, 0, 0, 1000}		// Basic Idea is kalman filter uses co-variance data.
+  .R_data = {400, 0, 0, 800}		// Basic Idea is kalman filter uses co-variance data.
 };	// Only consider the variance instead of co-variance.
 // Kalman Filter
 #else
@@ -399,12 +399,12 @@ void gimbal_task(void const *argument)
 					// Equavalent to P only control. Need a I term.
 					// Set angle speed is no matter what set the difference of angle
 					if((yaw_kf_data[0] - yaw_autoaim_offset + yaw_kf_data[1]*0.273f)>3.0f)
-						gimbal_set_yaw_speed(pgimbal,0.12f*(yaw_kf_data[0] - yaw_autoaim_offset + yaw_kf_data[1]*0.123f));
+						gimbal_set_yaw_speed(pgimbal,0.12f*(yaw_kf_data[0] + yaw_kf_data[1]*0.123f));
 					else
 						gimbal_set_yaw_speed(pgimbal,0.07f*(yaw_kf_data[0] + yaw_kf_data[1]*0.273f));
 				  //gimbal_set_yaw_speed(pgimbal,0.1*yaw_kf_data[0]);
 					if((pit_kf_data[0] - pitch_autoaim_offset + pit_kf_data[1]*0.273f)>3.0f)
-						gimbal_set_pitch_speed(pgimbal,0.12f*(pit_kf_data[0] - pitch_autoaim_offset + pit_kf_data[1]*0.15f));
+						gimbal_set_pitch_speed(pgimbal,0.12f*(pit_kf_data[0] + pit_kf_data[1]*0.15f));
 					else
 						gimbal_set_pitch_speed(pgimbal,0.07f*(pit_kf_data[0] + pit_kf_data[1]*0.273f));
 					}
@@ -440,7 +440,7 @@ void gimbal_task(void const *argument)
         
 
         gimbal_set_yaw_mode(pgimbal, GYRO_MODE);
-        pit_delta = (float)prc_info->ch2 * GIMBAL_RC_PITCH + -1 *  (float)pit_mouse * GIMBAL_MOUSE_PITCH;
+        pit_delta = (float)prc_info->ch2 * GIMBAL_RC_PITCH + 1 *  (float)pit_mouse * GIMBAL_MOUSE_PITCH;
         yaw_delta =     square_ch1       * GIMBAL_RC_YAW   +       (float)yaw_mouse * GIMBAL_MOUSE_YAW;
         yaw_delta += prc_info->kb.bit.E ? YAW_KB_SPEED : 0;
         yaw_delta -= prc_info->kb.bit.Q ? YAW_KB_SPEED : 0;

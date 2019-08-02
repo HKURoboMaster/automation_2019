@@ -33,9 +33,9 @@ uint8_t get_gimbal_init_state(void);
 void gimbal_init_state_reset(void);
 
 #define RC_CH_SCALE        660
-#define GIMBAL_RC_PITCH    0.0008f
-#define GIMBAL_RC_YAW      0.0007f
-#define GIMBAL_MOUSE_PITCH 0.01f
-#define GIMBAL_MOUSE_YAW   0.007f
+#define GIMBAL_RC_PITCH    0.0016f
+#define GIMBAL_RC_YAW      0.0014f
+#define GIMBAL_MOUSE_PITCH 0.003f
+#define GIMBAL_MOUSE_YAW   0.005f
 
 #endif // __GIMBAL_TASK_H__
