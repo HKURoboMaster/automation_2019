@@ -90,9 +90,11 @@ void HardFault_Handler(void)
     __BKPT(0);  // halt program execution here         
   }  
   /* USER CODE END HardFault_IRQn 0 */
+  NVIC_SystemReset();
   while (1)
   {
     /* USER CODE BEGIN W1_HardFault_IRQn 0 */
+    NVIC_SystemReset();
     /* USER CODE END W1_HardFault_IRQn 0 */
   }
   /* USER CODE BEGIN HardFault_IRQn 1 */
