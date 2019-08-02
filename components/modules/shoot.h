@@ -33,7 +33,7 @@
 
 #define FRIC_STOP_SPEED 100u
 #define FRIC_MAX_SPEED 149u //MAX=200u, for safety set it to be 160 //160 results in overheater
-#define FRIC_CON_SPEED 140u
+#define FRIC_CON_SPEED 137u //140u
 #define FRIC_MIN_SPEED 99u
 
 #define BLOCK_CURRENT_DEFAULT 9500.0F

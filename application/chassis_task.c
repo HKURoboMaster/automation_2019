@@ -26,7 +26,7 @@
 #include "drv_io.h"
 #define RAD_TO_DEG 57.296f // 180/PI
 #define MAPPING_INDEX_CRT 1.0f
-#define MAPPING_INDEX_VTG 0.005f
+#define MAPPING_INDEX_VTG 1.0f
 
 float follow_relative_angle;
 struct pid pid_follow = {0}; //angle control
@@ -331,14 +331,14 @@ int get_chassis_power(struct chassis_power *chassis_power)
     sensor_offline |= VOLTAGE_OFFLINE;
   // Smoothed raw data
 	float current_smoothed = smooth_filter(10,((float)chassis_power->current_debug) * MAPPING_INDEX_CRT,weight)/2;
-	float voltage_smoothed = smooth_filter(10,((float)chassis_power->voltage_debug) * MAPPING_INDEX_VTG,weight); //TODO: change the coefficient
+	//float voltage_smoothed = smooth_filter(10,((float)chassis_power->voltage_debug) * MAPPING_INDEX_VTG,weight); //TODO: change the coefficient
   // Store the real data
-  chassis_power->current = fabs((((current_smoothed-2048.0f)*25.0f/1024.0f)/10.0f-2.45f)*3); // Assume the sensor is 20 A
-  chassis_power->voltage = fabs(((5 * 5) / 4096)*voltage_smoothed); // TODO: change the scaling
-	chassis_power->power = chassis_power->current * chassis_power->voltage;
+  chassis_power->current = fabs((((chassis_power->current_debug-2048.0f)*25.0f/1024.0f)/10.0f-2.45f)*2.1); // Assume the sensor is 20 A
+  chassis_power->voltage = fabs(((5.0f * 5.0f) / 4096.0f)*chassis_power->voltage_debug); // TODO: change the scaling
+	//chassis_power->power = chassis_power->current * chassis_power->voltage;
 	// Refresh the js variables
   current_js = (int) (chassis_power->current_debug*1000);
 	current_js_smooth = (int) (chassis_power->current*1000);
-	power_js = (int)(chassis_power->power*1000);
+	//power_js = (int)(chassis_power->power*1000);
 	return chassis_power->power;
 }
