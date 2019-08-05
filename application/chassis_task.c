@@ -146,10 +146,7 @@ void chassis_task(void const *argument)
       }
       else
       {
-        // wz  = pid_calculate(&pid_follow, follow_relative_angle, 0);
-        float wz_delta = (float)prc_info->ch1 * abs(prc_info->ch1) / RC_CH_SCALE;
-        wz_delta -= prc_info->mouse.x * 0.007f;
-        wz_delta += prc_info->kb.bit.E ? 0.25f : 0;
+        wz  = pid_calculate(&pid_follow, follow_relative_angle, 0);
         wz = -(float)prc_info->ch1/RC_CH_SCALE*MAX_CHASSIS_VW_SPEED*0.51f; //TODO: Change back to PID
         dodging &= 0;
       }
