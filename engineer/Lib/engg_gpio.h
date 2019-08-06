@@ -9,7 +9,7 @@
 /* END of VARIABLES: SENSOR - related */
 
 /* VARIABLES: CAMERA - related */
-#define CAMERA_Pin GPIO_PIN_2
+#define CAMERA_Pin GPIO_PIN_0
 #define CAMERA_GPIO_Port GPIOI
 /* END of VARIABLES: CAMERA - related */
 
@@ -30,7 +30,6 @@
 #define FRONT 0
 #define LEFT 1
 /* END of VARIABLES: CAMERA - related */
-
 void ENGG_GPIO_Init(void);
 int read_sonicL(void);
 int read_sonicR(void);

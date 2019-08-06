@@ -21,4 +21,8 @@ typedef struct Seizer {
 	int state;
 } Seizer;
 
+void seizer_state_change(int state);
+int return_seizer_state(void);
+void seizer_task(void const *argument);
+
 #endif

@@ -11,7 +11,7 @@
 #define MOONROVER_OFFSET 0
 #define LEFT_MOONROVER_INDEX 0
 #define RIGHT_MOONROVER_INDEX 1
-#define ROTATION_SPEED 	1000
+#define ROTATION_SPEED 	10000
 /* END of VARIABLES: MOONROVER - related */
 
 /* VARIABLES: RAISER - related */
@@ -53,6 +53,7 @@
 /* DUALMOTOR STATES: DUALMOTOR - related */
 #define CLAW_FALL 0
 #define CLAW_RISE 1
+#define CLAW_GRAB 2
 /* END of DUALMOTOR STATES: DUALMOTOR - related */
 
 /* RELOADER STATES: RELOADER - related */

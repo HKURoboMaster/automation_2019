@@ -57,7 +57,8 @@ void chassis_task(void const *argument)
 		if (engg.HALT_CHASSIS) {
 			chassis_set_speed(pchassis, 0, 0, 0);
 		}
-    else if (rc_device_get_state(prc_dev, RC_S1_DOWN) != RM_OK && rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK) {
+		else if (rc_device_get_state(prc_dev, RC_S1_DOWN) != RM_OK) {
+    //else if (rc_device_get_state(prc_dev, RC_S1_DOWN) != RM_OK && rc_device_get_state(prc_dev, RC_S2_DOWN) != RM_OK) {
 			
 			int chassis_direction = 1;
 			int flip_ctrl = 0;
@@ -67,19 +68,32 @@ void chassis_task(void const *argument)
 			else if (engg.ENGINEER_BIG_STATE == UPPERPART)
 				flip_ctrl = 1;
 			
-      if (rc_device_get_state(prc_dev, RC_S2_MID) == RM_OK || rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK)
+      //if (rc_device_get_state(prc_dev, RC_S2_MID) == RM_OK || rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK)
+			if (rc_device_get_state(prc_dev, RC_S1_MID) == RM_OK)
       {
 				if (flip_ctrl) {
-					vx = (float)prc_info->ch2 / 660 * MAX_CHASSIS_VX_SPEED * chassis_direction;
-					vy = -(float)prc_info->ch1 / 660 * MAX_CHASSIS_VY_SPEED * chassis_direction;
-					wz = -(float)prc_info->ch3 / 660 * MAX_CHASSIS_VW_SPEED;
+					/*
+					Debugger's controller
+					vx = (float)prc_info->ch2 / 660 * MAX_CHASSIS_VX_SPEED * chassis_direction;	// ch4 vx
+					vy = -(float)prc_info->ch1 / 660 * MAX_CHASSIS_VY_SPEED * chassis_direction;	// -ch3
+					wz = -(float)prc_info->ch3 / 660 * MAX_CHASSIS_VW_SPEED;	// -ch1
+					*/
+					vx = (float)prc_info->ch4 / 660 * MAX_CHASSIS_VX_SPEED * chassis_direction;	// ch4 vx
+					vy = -(float)prc_info->ch3 / 660 * MAX_CHASSIS_VY_SPEED * chassis_direction;	// -ch3
+					wz = -(float)prc_info->ch1 / 660 * MAX_CHASSIS_VW_SPEED;	// -ch1
 					chassis_set_offset(pchassis, 0, 0);
 					chassis_set_speed(pchassis, -vy, vx, wz);
 				}
 				else {
-					vx = (float)prc_info->ch2 / 660 * MAX_CHASSIS_VX_SPEED * chassis_direction;
-					vy = -(float)prc_info->ch1 / 660 * MAX_CHASSIS_VY_SPEED * chassis_direction;
-					wz = -(float)prc_info->ch3 / 660 * MAX_CHASSIS_VW_SPEED;
+					/*
+					Debugger's controller
+					vx = (float)prc_info->ch2 / 660 * MAX_CHASSIS_VX_SPEED * chassis_direction;	// ch4 vx
+					vy = -(float)prc_info->ch1 / 660 * MAX_CHASSIS_VY_SPEED * chassis_direction;	// -ch3
+					wz = -(float)prc_info->ch3 / 660 * MAX_CHASSIS_VW_SPEED;	// -ch1
+					*/
+					vx = (float)prc_info->ch4 / 660 * MAX_CHASSIS_VX_SPEED * chassis_direction;	// ch4 vx
+					vy = -(float)prc_info->ch3 / 660 * MAX_CHASSIS_VY_SPEED * chassis_direction;	// -ch3
+					wz = -(float)prc_info->ch1 / 660 * MAX_CHASSIS_VW_SPEED;	// -ch1
 					chassis_set_offset(pchassis, 0, 0);
 					chassis_set_speed(pchassis, vx, vy, wz);
 				}

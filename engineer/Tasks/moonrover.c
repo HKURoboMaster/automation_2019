@@ -33,7 +33,7 @@ int32_t moonrover_pid_register(Engineer* engineer, const char *name, enum device
     engineer->motor[i].init_offset_f = 1;
 
     engineer->ctrl[i].convert_feedback = motor_pid_input_convert;
-    pid_struct_init(&engineer->motor_pid[i], 15000, 500, 6.5f, 0.1, 0);
+    pid_struct_init(&engineer->motor_pid[i], 1500000, 500000, 0.0f, 0, 0);
   }
 
   memcpy(&motor_name[0][name_len], "_MR\0", 4);
@@ -98,8 +98,8 @@ int32_t moonrover_execute(Engineer* engineer, chassis_t pchassis, rc_device_t pr
 	controller_get_output(&engineer->ctrl[LEFT_MOONROVER_INDEX], &lmotor_out);
 	controller_get_output(&engineer->ctrl[RIGHT_MOONROVER_INDEX], &rmotor_out);	
 			
-	motor_device_set_current(&engineer->motor[LEFT_MOONROVER_INDEX], (int16_t)lmotor_out);
-	motor_device_set_current(&engineer->motor[RIGHT_MOONROVER_INDEX], (int16_t)rmotor_out);
+	motor_device_set_current(&engineer->motor[LEFT_MOONROVER_INDEX], (int16_t)16384);
+	motor_device_set_current(&engineer->motor[RIGHT_MOONROVER_INDEX], (int16_t)-16384);
 	
   return RM_OK;
 }

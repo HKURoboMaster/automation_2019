@@ -48,11 +48,11 @@ int32_t dualmotor_cascade_register(upper_ctrl *upper, const char *name, enum dev
 	
 	upper->ctrl[LEFT_DUALMOTOR_INDEX].convert_feedback = dualmotor_left_input_convert;
 	pid_struct_init(&(upper->cascade[LEFT_DUALMOTOR_INDEX].outer), 360, 0, 1.0, 0, 0);
-  pid_struct_init(&(upper->cascade[LEFT_DUALMOTOR_INDEX].inter), 30000, 0, 100.0, 0, 0.0001);
+  pid_struct_init(&(upper->cascade[LEFT_DUALMOTOR_INDEX].inter), 30000, 0, 100.0, 0.0, 800.0);
 	
 	upper->ctrl[RIGHT_DUALMOTOR_INDEX].convert_feedback = dualmotor_right_input_convert;
   pid_struct_init(&(upper->cascade[RIGHT_DUALMOTOR_INDEX].outer), 360, 0, 1.0, 0, 0);
-  pid_struct_init(&(upper->cascade[RIGHT_DUALMOTOR_INDEX].inter), 30000, 0, 100.0, 0, 0.0001);
+  pid_struct_init(&(upper->cascade[RIGHT_DUALMOTOR_INDEX].inter), 30000, 0, 100.0, 0.0, 800.0);	//100.0, 0.0, 400.0
 	for (int i = 0; i < 2; i++)
   {
     err = cascade_controller_register(&(upper->ctrl[i]), motor_name[i],
@@ -84,22 +84,91 @@ int32_t dualmotor_execute(upper_ctrl* upper) {
 	upper->dualMotor.left_ecd_angle = dualmotor_get_ecd_angle(pdata_lm->total_angle);
 	upper->dualMotor.right_ecd_angle = dualmotor_get_ecd_angle(pdata_rm->total_angle);
 	
+	float eps = 0.1;
+	
+	/*
 	if (upper->dualMotor.DUALMOTOR_STATE == CLAW_RISE) {
-		ecd_target_angle = upper->dualMotor.current_target_angle;
-		if (upper->dualMotor.current_target_angle < upper->dualMotor.rise_angle &&
-				upper->dualMotor.left_ecd_angle < upper->dualMotor.rise_angle &&
-				upper->dualMotor.right_ecd_angle < upper->dualMotor.rise_angle)
-				upper->dualMotor.current_target_angle += 1;
 		ecd_target_angle = upper->dualMotor.rise_angle;
 	}
 	else if (upper->dualMotor.DUALMOTOR_STATE == CLAW_FALL) {
-		ecd_target_angle = upper->dualMotor.current_target_angle;
-		float eps = 0.1;
-		if (upper->dualMotor.current_target_angle > 0 + eps)
-				upper->dualMotor.current_target_angle -= 0.3;
+		ecd_target_angle = upper->dualMotor.rest_angle;
 	}
 	else {
 		ecd_target_angle = 0;
+	}
+	*/
+	
+	/*
+	if (upper->dualMotor.init == 0 && (pdata_lm->total_ecd != 0 || pdata_rm->total_ecd != 0) ) {
+		ecd_target_angle = dualmotor_get_ecd_angle(pdata_lm->total_ecd) + dualmotor_get_ecd_angle(pdata_rm->total_ecd);
+		return RM_OK;
+	}
+	
+	
+	if (upper->dualMotor.DUALMOTOR_STATE == CLAW_RISE) {
+		ecd_target_angle = upper->dualMotor.current_target_angle;
+		
+		if (upper->dualMotor.current_target_angle < upper->dualMotor.rise_angle &&
+				fabs(upper->dualMotor.current_target_angle - upper->dualMotor.left_ecd_angle) < eps &&
+				fabs(upper->dualMotor.current_target_angle - upper->dualMotor.right_ecd_angle) < eps) {
+				upper->dualMotor.current_target_angle += 0.1;
+		}
+	}
+	else if (upper->dualMotor.DUALMOTOR_STATE == CLAW_FALL) {
+		ecd_target_angle = upper->dualMotor.current_target_angle;
+		
+		if (upper->dualMotor.current_target_angle < upper->dualMotor.rise_angle &&
+				fabs(upper->dualMotor.current_target_angle - upper->dualMotor.left_ecd_angle) < eps &&
+				fabs(upper->dualMotor.current_target_angle - upper->dualMotor.right_ecd_angle) < eps) {
+				upper->dualMotor.current_target_angle += 0.1;
+		}
+	}
+	else {
+		ecd_target_angle = 0;
+	}
+	
+	*/
+	if (upper->dualMotor.DUALMOTOR_STATE == CLAW_RISE) {
+		ecd_target_angle = upper->dualMotor.current_target_angle;
+			
+		if (upper->dualMotor.current_target_angle < upper->dualMotor.rise_angle &&
+				upper->dualMotor.left_ecd_angle < upper->dualMotor.rise_angle &&
+				upper->dualMotor.right_ecd_angle < upper->dualMotor.rise_angle) {
+				upper->dualMotor.current_target_angle += 0.8;
+		}
+		else if (upper->dualMotor.current_target_angle > upper->dualMotor.rise_angle &&
+				upper->dualMotor.left_ecd_angle > upper->dualMotor.rise_angle &&
+				upper->dualMotor.right_ecd_angle > upper->dualMotor.rise_angle) {
+				upper->dualMotor.current_target_angle -= 0.8;
+		}
+	}
+	else if (upper->dualMotor.DUALMOTOR_STATE == CLAW_FALL) {
+		ecd_target_angle = upper->dualMotor.current_target_angle;
+		
+		if (upper->dualMotor.current_target_angle > upper->dualMotor.rest_angle &&
+				(upper->dualMotor.left_ecd_angle > upper->dualMotor.rest_angle &&
+				upper->dualMotor.right_ecd_angle > upper->dualMotor.rest_angle)) {
+				upper->dualMotor.current_target_angle -= 1.0;
+		}
+		else if (upper->dualMotor.current_target_angle < upper->dualMotor.rest_angle &&
+				(upper->dualMotor.left_ecd_angle < upper->dualMotor.rest_angle &&
+				upper->dualMotor.right_ecd_angle < upper->dualMotor.rest_angle)) {
+				upper->dualMotor.current_target_angle += 0.1;
+		}
+	}
+	else if (upper->dualMotor.DUALMOTOR_STATE == CLAW_GRAB) {
+		ecd_target_angle = upper->dualMotor.current_target_angle;
+		
+		if (upper->dualMotor.current_target_angle > upper->dualMotor.grab_angle &&
+				(upper->dualMotor.left_ecd_angle > upper->dualMotor.grab_angle &&
+				upper->dualMotor.right_ecd_angle > upper->dualMotor.grab_angle)) {
+				upper->dualMotor.current_target_angle -= 0.5;
+		}
+		else if (upper->dualMotor.current_target_angle < upper->dualMotor.grab_angle &&
+				(upper->dualMotor.left_ecd_angle < upper->dualMotor.grab_angle &&
+				upper->dualMotor.right_ecd_angle < upper->dualMotor.grab_angle)) {
+				upper->dualMotor.current_target_angle += 0.5;
+		}
 	}
 	
 	ctrl_lm = &(upper->ctrl[LEFT_DUALMOTOR_INDEX]);
@@ -171,12 +240,34 @@ int32_t dualmotor_disable(upper_ctrl* upper)
 
   return RM_OK;
 }
+
+void rotate_to_grab(upper_ctrl* upper) {
+	upper->dualMotor.DUALMOTOR_STATE = CLAW_RISE;
+}
+
+void rotate_to_zero(upper_ctrl* upper) {
+	upper->dualMotor.DUALMOTOR_STATE = CLAW_FALL;
+}
+
+void rotate_to_grabbing(upper_ctrl* upper) {
+	upper->dualMotor.DUALMOTOR_STATE = CLAW_GRAB;
+}
+
+int check_grab_angle(upper_ctrl* upper) {
+	float eps = 0.1;
+	if (fabs(upper->dualMotor.right_ecd_angle - CLAW_RISE) <= eps) {
+		return 1;
+	}
+	else
+		return 0;
+}
 /* END of FUNCTIONS: DUALMOTOR - related */
 
 /* RTOS: DUALMOTOR - related */
 void dualmotor_task(void const *argument)
 {
   uint32_t period = osKernelSysTick();
+	upper_controller.dualMotor.DUALMOTOR_ACTUAL_STATE = AT_TARGET_fall;
 	for(;;) {
 		dualmotor_execute(&upper_controller);
     osDelayUntil(&period, 2);

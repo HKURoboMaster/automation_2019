@@ -10,13 +10,18 @@
 #define LEFT_DUALMOTOR_INDEX 0
 #define RIGHT_DUALMOTOR_INDEX 1
 #define DUALMOTOR_OFFSET 0
-#define REST_ANGLE 0
-#define RISE_ANGLE 120
+#define REST_ANGLE 10
+#define RISE_ANGLE 110
+#define GRAB_ANGLE 150
 /* END of VARIABLES: DUALMOTOR - related */
 
 /* VARIABLES: UPPER - related */
 #define NO_GRAB 0
 #define START_GRAB 1
+
+#define GRAB_READY 2
+#define DUNKING 3
+#define THROWING 4
 /* END of VARIABLES: UPPER - related */
 
 /* VARIABLES: REQUEST (except for slider) - related */
@@ -39,6 +44,7 @@ typedef struct upper_ctrl
   struct controller ctrl[2];
 		
   int START_GRABBING;
+	int CURRENT_STATE;
 	
 } upper_ctrl;
 

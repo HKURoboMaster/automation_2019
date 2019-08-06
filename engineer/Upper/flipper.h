@@ -22,5 +22,7 @@ typedef struct Flipper {
 } Flipper;
 
 void flipper_task(void const *argument);
+void flipper_state_change(int state);
+int return_flipper_state(void);
 
 #endif

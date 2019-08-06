@@ -18,28 +18,67 @@ struct upper_info upper;
 upper_ctrl upper_controller;
 extern Sub_Engineer sub_engg;
 
-extern Flipper flipper;
 extern Extender extender;
 extern Slider slider;
-extern Seizer seizer;
 /* END of VARIABLES: UPPER - related */
 
 /* FUNCTIONS: UPPER - related */
-void reset_to_grab_state(void);
+void reset_to_grab_state(upper_ctrl* upperctrl);
+void grab_n_dunk(upper_ctrl* upperctrl);
+void grab_n_throw(upper_ctrl* upperctrl);
+void throw_box(upper_ctrl* upperctrl);
+
 int ok_to_grab();
 
-int32_t upper_execute(Sub_Engineer* sub_engineer, struct upper_info* upperinf, upper_ctrl* upperctrl, UpperPneum* upperpneum, rc_device_t prc_dev, rc_info_t prc_info) {
+int32_t upper_execute(Sub_Engineer* sub_engineer, struct upper_info* upperinf, upper_ctrl* upperctrl, rc_device_t prc_dev, rc_info_t prc_info) {
 	if (upperinf == NULL || upperctrl == NULL)
 		return -RM_INVAL;
 	
 	if (sub_engineer->ENGINEER_BIG_STATE != UPPERPART) {
 		// reset
 		upperctrl->START_GRABBING = NO_GRAB;
+		flipper_state_change(REST);
+		seizer_state_change(RELEASE);
+		rotate_to_zero(upperctrl);
 		return RM_OK;
 	}
 	
-	if (sub_engineer->ENGINEER_SMALL_STATE == SINGLE_LOCATE) {
-		flipper.request = FLIP;
+	if (sub_engineer->ENGINEER_SMALL_STATE == PENTA_LOCATE) {
+		extender_state_change(EXTEND);
+	}
+	else {
+		extender_state_change(RETRACT);
+	}
+	
+	if (sub_engineer->ENGINEER_SMALL_STATE == SINGLE_LOCATE || sub_engineer->ENGINEER_SMALL_STATE == TRIO_LOCATE ||
+			sub_engineer->ENGINEER_SMALL_STATE == PENTA_LOCATE) {
+		if (upperctrl->CURRENT_STATE == GRAB_READY) {
+			reset_to_grab_state(upperctrl);
+		}
+		else if (upperctrl->CURRENT_STATE == DUNKING) {
+			//grab_n_dunk(upperctrl);
+			grab_n_throw(upperctrl);
+			
+		}
+		
+		if (rc_device_get_state(prc_dev, RC_WHEEL_DOWN) == RM_OK && upperctrl->CURRENT_STATE == GRAB_READY) {
+			upperctrl->CURRENT_STATE = DUNKING;
+		}
+		else if (rc_device_get_state(prc_dev, RC_WHEEL_UP) == RM_OK && upperctrl->CURRENT_STATE == DUNKING) {
+			//upperctrl->CURRENT_STATE = THROWING;
+		}
+		
+		//extender_state_change(EXTEND);
+		//flipper_state_change(FLIP);
+		/*
+		rotate_to_grab(upperctrl);
+		osDelay(2000);
+		seizer_state_change(SEIZE);
+		osDelay(2000);
+		rotate_to_zero(upperctrl);
+		osDelay(2000);
+		seizer_state_change(RELEASE);
+		*/
 	}
 	
 	/*
@@ -76,20 +115,41 @@ void set_upper_info(int mode) {
 	upper.mode = mode;
 }
 
-void reset_to_grab_state(void) {
-	if (flipper.state != FLIPPER_RESTED)
-		flipper.request = FLIP;
-	if (slider.state != SLIDER_toCenter)
-		slider.request = SLIDER_toCenter;
-	if (seizer.state != SEIZER_RELEASED)
-		seizer.request = RELEASE;
-	if (extender.state != EXTENDER_RETRACTED)
-		extender.request = RETRACT;
+void reset_to_grab_state(upper_ctrl* upperctrl) {
+	rotate_to_grab(upperctrl);
+	seizer_state_change(RELEASE);
+}
+
+void grab_n_dunk(upper_ctrl* upperctrl) {
+	seizer_state_change(SEIZE);
+	osDelay(100);
+	rotate_to_zero(upperctrl);
+}
+
+void grab_n_throw(upper_ctrl* upperctrl) {
+	rotate_to_grabbing(upperctrl);
+	osDelay(2000);
+	seizer_state_change(SEIZE);
+	osDelay(2000);
+	rotate_to_zero(upperctrl);
+	osDelay(2000);
+	seizer_state_change(RELEASE);
+	osDelay(2000);
+	flipper_state_change(FLIP);
+	osDelay(2000);
+	flipper_state_change(REST);
+	upperctrl->CURRENT_STATE = GRAB_READY;
+}
+
+void throw_box(upper_ctrl* upperctrl) {
+	rotate_to_grab(upperctrl);
+	osDelay(50);
+	seizer_state_change(RELEASE);
 }
 
 int ok_to_grab() {
 	if (slider.state == SLIDER_toCenter  &&
-			seizer.state == SEIZER_RELEASED &&
+			return_seizer_state() == SEIZER_RELEASED &&
 			extender.state == EXTENDER_RETRACTED)
 		return 1;
 	else
@@ -104,6 +164,7 @@ void upper_task(void const *argument)
 	
 	upper_controller.dualMotor.rest_angle = REST_ANGLE;
 	upper_controller.dualMotor.rise_angle = RISE_ANGLE;
+	upper_controller.dualMotor.grab_angle = GRAB_ANGLE;
 	
 	rc_device_t prc_dev = NULL;
 	rc_info_t prc_info = NULL;
@@ -116,14 +177,10 @@ void upper_task(void const *argument)
 	
 	soft_timer_register(upper_push_info, (void *)&upper, 10);
 	
-	UpperPneum upperpneum;
-	upperpneum.flipper = init_pneum_1head(FLIP_GPIO_Port, FLIP_Pin);
-	upperpneum.flipper_state = EXTENDED;
-	upperpneum.extender = init_pneum_1head(EXTEND_GPIO_Port, EXTEND_Pin);
-	upperpneum.extender_state = RETRACTED;
+	upper_controller.CURRENT_STATE = GRAB_READY;
 	
 	for(;;) {
-		upper_execute(&sub_engg, &upper, &upper_controller, &upperpneum, prc_dev, prc_info);
+		upper_execute(&sub_engg, &upper, &upper_controller, prc_dev, prc_info);
 
     osDelayUntil(&period, 2);
 	}

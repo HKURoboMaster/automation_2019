@@ -4,6 +4,7 @@
 #include "servos.h"
 #include "engg_gpio.h"
 #include "upper.h"
+#include "tim.h"
 
 /* VARIABLES: LOCOMOTION - related */
 extern Engineer engg;
@@ -36,10 +37,6 @@ int32_t locomotion_execute(Engineer* engineer, Ammobox* ammobox, rc_device_t prc
 		// look forward and close servos
 		permlock_ammobox(ammobox);
 	}
-	else {
-		if (engineer->HALT_CHASSIS != 0)
-			engineer->HALT_CHASSIS = 0;
-	}
 	
 	if (engineer->ENGINEER_SMALL_STATE != UNLOAD) {
 		permlock_ammobox(ammobox);
@@ -48,15 +45,11 @@ int32_t locomotion_execute(Engineer* engineer, Ammobox* ammobox, rc_device_t prc
 	if (engineer->ENGINEER_SMALL_STATE == CHASSIS) {
 		camservo_state = use_RMcam();
 	}
-	else if (engineer->ENGINEER_SMALL_STATE == REVERSE_CHASSIS) {
-		use_rear_cam();
-	}
 	else if (engineer->ENGINEER_SMALL_STATE == UNLOAD) {
 		permunlock_ammobox(ammobox);
 	}
 	
 	if (engineer->ENGINEER_BIG_STATE == UPPERPART) {
-		use_front_cam();
 		if (upper.mode == LOCATED) {
 			engineer->HALT_CHASSIS = 1;
 		}
@@ -151,18 +144,20 @@ void locomotion_task(void const *argument)
 	Ammobox ammobox;
 	
 	for (int i = 0; i < 255; ++i) {
-		PCA9685_transmit(reload_0.servoNo, 0, reload_0.maxPulse - reload_0.step_size * i);
 		PCA9685_transmit(reload_1.servoNo, 0, reload_1.step_size * i);
 	}
-	osDelay(100);
-	for (int i = 0; i < 255; ++i) {
+	osDelay(500);
+	for (int i = 0; i < 100; ++i) {
 		PCA9685_transmit(reload_0.servoNo, 0, reload_0.step_size * i);
 	}
-	
-	for (int i = 0; i < 51; ++i) {
-		PCA9685_transmit(RMcam.servoNo, 0, RMcam.step_size * i);
+	osDelay(500);
+	for (int i = 0; i < 255; ++i) {
+		PCA9685_transmit(reload_1.servoNo, 0, reload_1.maxPulse - reload_1.step_size * i);
 	}
-	
+	for (int i = 0; i < 220; ++i) {
+		//PCA9685_transmit(RMcam.servoNo, 0, 15 * i);
+	}
+		
 	ammobox.boxlock_state = UNLOCKED;
 	ammobox.boxgate_state = GATED;
 	camservo_state = FRONT;	

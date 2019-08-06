@@ -21,4 +21,9 @@ typedef struct Extender {
 	int state;
 } Extender;
 
+void extender_state_change(int state);
+int return_extender_state(void);
+
+void extender_task(void const *argument);
+
 #endif

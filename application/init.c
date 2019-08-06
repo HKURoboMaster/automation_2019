@@ -42,9 +42,10 @@
 #include "upper.h"
 #include "sub_engineer.h"
 #include "raiser.h"
-#include "rescue.h"
 
 #include "flipper.h"
+#include "seizer.h"
+#include "extender.h"
 
 struct chassis chassis;
 static struct rc_device rc_dev;
@@ -73,7 +74,7 @@ void hw_init(void)
   system_config();
   ulog_init();
   ulog_console_backend_init();
-  gpio_init(); // For rescue task.
+  
   referee_param_init();
   usart3_rx_callback_register(referee_uart_rx_data_handle);
   referee_send_data_register(usart3_transmit);
@@ -86,13 +87,13 @@ void hw_init(void)
     chassis_disable(&chassis);
 		moonrover_pid_register(&engg, "moonrover", DEVICE_CAN1);
 		moonrover_disable(&engg);
-		raiser_cascade_register(&engg, "raiser", DEVICE_CAN1);
-		raiser_disable(&engg);
+		//raiser_cascade_register(&engg, "raiser", DEVICE_CAN1);
+		//raiser_disable(&engg);
   }
 	else if (glb_sys_cfg == UPPER_APP) {
 		rc_device_register(&rc_dev, "can_rc", 0);
-		dualmotor_cascade_register(&upper_controller, "dualmotor", DEVICE_CAN1);
-		dualmotor_disable(&upper_controller);
+		//dualmotor_cascade_register(&upper_controller, "dualmotor", DEVICE_CAN1);
+		//dualmotor_disable(&upper_controller);
 	}
 
   offline_init();
@@ -112,7 +113,8 @@ osThreadId subengineer_task_t;
 osThreadId raiser_task_t;
 
 osThreadId flipper_task_t;
-osThreadId rescue_task_t;
+osThreadId seizer_task_t;
+osThreadId extender_task_t;
 
 void task_init(void)
 {
@@ -142,16 +144,13 @@ void task_init(void)
 		osThreadDef(LOCOMOTION_TASK, locomotion_task, osPriorityNormal, 0, 512);
 		locomotion_task_t = osThreadCreate(osThread(LOCOMOTION_TASK), NULL);
 		
-		osThreadDef(RAISER_TASK, raiser_task, osPriorityNormal, 0, 512);
-		raiser_task_t = osThreadCreate(osThread(RAISER_TASK), NULL);
-		
-		osThreadDef(RESCUE_TASK,rescue_task, osPriorityNormal , 0 , 512);
-		rescue_task_t = osThreadCreate(osThread(RESCUE_TASK),NULL);
+		//osThreadDef(RAISER_TASK, raiser_task, osPriorityNormal, 0, 512);
+		//raiser_task_t = osThreadCreate(osThread(RAISER_TASK), NULL);
   }
 	else if (app == UPPER_APP)
 	{
-		osThreadDef(DUALMOTOR_TASK, dualmotor_task, osPriorityRealtime, 0, 512);
-		dualmotor_task_t = osThreadCreate(osThread(DUALMOTOR_TASK), NULL);
+		//osThreadDef(DUALMOTOR_TASK, dualmotor_task, osPriorityRealtime, 0, 512);
+		//dualmotor_task_t = osThreadCreate(osThread(DUALMOTOR_TASK), NULL);
 		
 		osThreadDef(UPPER_TASK, upper_task, osPriorityNormal, 0, 512);
 		upper_task_t = osThreadCreate(osThread(UPPER_TASK), NULL);
@@ -164,5 +163,11 @@ void task_init(void)
 		
 		osThreadDef(FLIPPER_TASK, flipper_task, osPriorityNormal, 0, 512);
 		flipper_task_t = osThreadCreate(osThread(FLIPPER_TASK), NULL);
+		
+		osThreadDef(SEIZER_TASK, seizer_task, osPriorityNormal, 0, 512);
+		seizer_task_t = osThreadCreate(osThread(SEIZER_TASK), NULL);
+		
+		osThreadDef(EXTENDER_TASK, extender_task, osPriorityNormal, 0, 512);
+		extender_task_t = osThreadCreate(osThread(EXTENDER_TASK), NULL);
 	}
 }
