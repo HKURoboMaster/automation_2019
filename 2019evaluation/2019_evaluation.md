@@ -7,6 +7,8 @@
 * EE:
 **software**: make use of a current sensor and a voltage sensor to detect the real-time power and turn on the supercapacitor when power is byond the limitation. (pls refer to the code for details)
 **hardware**: below sees the schematic
+![image](https://github.com/project-herakles/Infantry-RTOS-2019/blob/infantry/2019evaluation/overall_schematic.jpg)
+![image](https://github.com/project-herakles/Infantry-RTOS-2019/blob/infantry/2019evaluation/supercapacitor.jpg)
 ### Dodging (rotating for 360 degree)
 * ME: 
 1. use 6010 motor from Dji as the yaw motor that connects the gimbal and chassis.
@@ -29,3 +31,6 @@
 ### Single/Continuous shooting
 * EE: set the reference of the trigger motor to 45 degree or 360 degree (pls refer to the code for details)
 ### Auto-aiming
+* ME:
+* EE:
+* CV:
