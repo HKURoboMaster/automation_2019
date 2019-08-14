@@ -63,7 +63,7 @@ uint8_t sensor_offline = 0;
   static uint8_t superCapacitor_Ctrl(chassis_t pchassis, uint8_t low_cap_flag, uint8_t extra_current, uint8_t last_sw);
 #endif
 
-#define km_dodge          prc_info->kb.bit.V == 1
+#define km_dodge          prc_info->kb.bit.SHIFT == 1
 
 static uint8_t dodging = 0;
 void chassis_task(void const *argument)
@@ -103,7 +103,7 @@ void chassis_task(void const *argument)
       chassis_enable(pchassis);
       int32_t key_x_speed = MAX_CHASSIS_VX_SPEED/2;
       int32_t key_y_speed = MAX_CHASSIS_VY_SPEED/2;
-      if(prc_info->kb.bit.SHIFT)
+      if(prc_info->kb.bit.V)
       {
         key_x_speed = MAX_CHASSIS_VX_SPEED;
         key_y_speed = MAX_CHASSIS_VY_SPEED;
