@@ -311,12 +311,13 @@ void gimbal_task(void const *argument)
       //switched out disabled mode
       gimbal_pitch_enable(pgimbal);
       gimbal_yaw_enable(pgimbal);
+      auto_init_f = 0; // invoke ramp
     }
     if (rc_device_get_state(prc_dev, RC_S2_UP) == RM_OK || rc_device_get_state(prc_dev, RC_S2_MID) == RM_OK
     ||  rc_device_get_state(prc_dev, RC_S2_MID2UP) == RM_OK || rc_device_get_state(prc_dev,RC_S2_UP2MID == RM_OK))
     {
       //manual control mode i.e. chassis follow gimbal
-      if(prc_info->kb.bit.X != 1)
+      if(prc_info->kb.bit.X != 1 && auto_init_f != 0)
       {
         //auto_aimming
 				#ifndef KALMAN
@@ -447,7 +448,7 @@ void gimbal_task(void const *argument)
         gimbal_set_pitch_delta(pgimbal, pit_delta);
         gimbal_set_yaw_delta(pgimbal, yaw_delta);
       }
-      else
+      else if (auto_init_f != 0)
       {
         gimbal_set_yaw_mode(pgimbal, ENCODER_MODE);
         gimbal_set_yaw_angle(pgimbal, 0, 0);
@@ -466,12 +467,14 @@ void gimbal_task(void const *argument)
           }
         }
       }
+      // else: still initialization, do not receive any controlling commands
     }
     if(rc_device_get_state(prc_dev, RC_S2_DOWN) == RM_OK)
     {
       //disbaled
       gimbal_pitch_disable(pgimbal);
       gimbal_yaw_disable(pgimbal);
+      auto_init_f = 0==auto_init_f?1:auto_init_f; // prohibit auto initialization
     }
 
     if (get_offline_state() == 0)
