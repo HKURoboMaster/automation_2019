@@ -707,11 +707,6 @@
               <FileType>1</FileType>
               <FilePath>..\components\support\exp_predict.c</FilePath>
             </File>
-            <File>
-              <FileName>kf_calculator.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\components\support\kf_calculator.c</FilePath>
-            </File>
           </Files>
         </Group>
         <Group>
